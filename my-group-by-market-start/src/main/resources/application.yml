@@ -17,6 +17,7 @@ spring:
 
 # MyBatis Plus 全局通用配置
 mybatis-plus:
+  mapper-locations: classpath:/mybatis/mapper/*.xml
   configuration:
     map-underscore-to-camel-case: true
   global-config:
