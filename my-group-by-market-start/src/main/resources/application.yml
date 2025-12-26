@@ -1,0 +1,35 @@
+# ===================================================================
+# 公共配置 (Common)
+# ===================================================================
+spring:
+  profiles:
+    # 【关键】在这里切换环境：dev | prod | test
+    active: dev
+
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    default-property-inclusion: non_null
+  
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+
+# MyBatis Plus 全局通用配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 应用自定义配置 (可以作为默认值)
+app:
+  thread-pool:
+    core-size: 8
+    max-size: 20
+    queue-capacity: 200
+    keep-alive-seconds: 60
+    thread-name-prefix: "my-async-"

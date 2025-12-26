@@ -1,0 +1,24 @@
+# ===================================================================
+# 生产环境 (Production)
+# ===================================================================
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 连的是 生产服务器 IP
+    url: jdbc:mysql://192.168.100.20:3306/prod_db?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: prod_user_bj8s  # 生产环境通常用户名复杂
+    password: Pwd_@123_Secure # 生产环境密码复杂
+
+# 生产环境通常只要 INFO 或 WARN，减少日志量
+logging:
+  level:
+    root: INFO
+    org.example: INFO
+    # 生产环境通常关闭 SQL 打印，除非排查问题
+    org.example.infrastructure.persistence.mapper: INFO
+
+# 如果生产环境需要更大的线程池，可以在这里覆盖 application.yml 的配置
+app:
+  thread-pool:
+    core-size: 20  # 核心线程数加大
+    max-size: 50   # 最大线程数加大

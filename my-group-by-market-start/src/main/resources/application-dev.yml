@@ -1,0 +1,17 @@
+# ===================================================================
+# 开发环境 (Development)
+# ===================================================================
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 连的是 localhost
+    url: jdbc:mysql://localhost:3306/my_db?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+
+# 开发环境日志级别控制
+logging:
+  level:
+    root: INFO
+    org.example: DEBUG # 开发环境开启业务代码 Debug
+    org.example.infrastructure.persistence.mapper: DEBUG # 开启 SQL 打印
