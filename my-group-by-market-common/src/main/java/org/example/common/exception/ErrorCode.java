@@ -7,39 +7,33 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum ErrorCode implements IErrorCode {
 
-    // --- 成功 ---
-    // Key: response.success
-    SUCCESS("00000", "response.success"),
+    SUCCESS("00000", "操作成功"),
 
     // --- A类: 用户端错误 ---
-    // Key: error.client.base
-    USER_ERROR("A0001", "error.client.base"),
-    
-    // Key: error.param.invalid
-    PARAM_ERROR("A0400", "error.param.invalid"),
-    
-    // Key: error.unauthorized
-    UNAUTHORIZED("A0401", "error.unauthorized"),
-
-    // Key: error.resource.not.found
-    RESOURCE_NOT_FOUND("A0404", "error.resource.not.found"),
-    
-    // Key: error.user.not.exist
-    USER_NOT_EXIST("A0201", "error.user.not.exist"),
+    USER_ERROR("A0001", "用户端错误"),
+    PARAM_ERROR("A0400", "请求参数非法"),
+    UNAUTHORIZED("A0401", "用户未登录"),
+    USER_NOT_EXIST("A0201", "用户不存在"),
 
     // --- B类: 业务执行错误 ---
-    // Key: error.system.error
-    SYSTEM_ERROR("B0001", "error.system.error"),
-    
-    // Key: error.business.base
-    BUSINESS_ERROR("B0002", "error.business.base"),
+    SYSTEM_ERROR("B0001", "系统执行出错"),
+    BUSINESS_ERROR("B0002", "业务逻辑错误"),
+
+    // --- B1类: 订单相关错误 ---
+    ORDER_NOT_FOUND("B1001", "拼团订单不存在"),
+    ORDER_ALREADY_FULL("B1002", "拼团已满"),
+    ORDER_CLOSED("B1003", "拼团已结束"),
+    ORDER_EXPIRED("B1004", "拼团已过期"),
+    ORDER_JOIN_FAILED("B1005", "加入拼团失败"),
+    ORDER_USER_ALREADY_JOINED("B1006", "您已参与该拼团"),
+
+    // --- B2类: 账户相关错误 ---
+    ACCOUNT_NOT_FOUND("B2001", "用户账户不存在"),
+    ACCOUNT_INSUFFICIENT("B2002", "参团次数不足"),
 
     // --- C类: 第三方调用错误 ---
-    // Key: error.third.party
-    THIRD_PARTY_ERROR("C0001", "error.third.party");
+    THIRD_PARTY_ERROR("C0001", "第三方服务调用出错");
 
     private final String code;
-    
-    // 这里不再是具体的 msg，而是国际化资源文件里的 Key
-    private final String msgKey;
+    private final String msg;
 }

@@ -8,6 +8,12 @@ spring:
     url: jdbc:mysql://192.168.100.20:3306/prod_db?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
     username: prod_user_bj8s  # 生产环境通常用户名复杂
     password: Pwd_@123_Secure # 生产环境密码复杂
+  data:
+    redis:
+      host: 192.168.100.20  # 生产环境 Redis 地址
+      port: 6379
+      database: 0
+      password: prod_redis_password  # 生产环境密码
 
 # 生产环境通常只要 INFO 或 WARN，减少日志量
 logging:

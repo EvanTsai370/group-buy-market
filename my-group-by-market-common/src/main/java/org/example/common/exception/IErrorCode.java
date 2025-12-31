@@ -2,5 +2,5 @@ package org.example.common.exception;
 
 public interface IErrorCode {
     String getCode();
-    String getMsgKey();
+    String getMsg();
 }

@@ -4,24 +4,28 @@ import lombok.Getter;
 
 @Getter
 public class BizException extends RuntimeException {
-    
-    private final String code;
-    private final String msgKey;
-    private final Object[] args; // 新增：支持动态参数
 
-    // 场景：直接传 Key
-    public BizException(String msgKey, Object... args) {
-        super(msgKey);
+    private final String code;
+    private final String msg;
+
+    // 默认构造：使用通用业务错误
+    public BizException(String msg) {
+        super(msg);
         this.code = ErrorCode.BUSINESS_ERROR.getCode();
-        this.msgKey = msgKey;
-        this.args = args;
+        this.msg = msg;
     }
 
-    // 场景：传枚举
-    public BizException(IErrorCode errorCode, Object... args) {
-        super(errorCode.getMsgKey()); // 这里拿的是 Key
+    // 使用枚举构造
+    public BizException(IErrorCode errorCode) {
+        super(errorCode.getMsg());
         this.code = errorCode.getCode();
-        this.msgKey = errorCode.getMsgKey();
-        this.args = args;
+        this.msg = errorCode.getMsg();
+    }
+
+    // 自定义错误码和消息
+    public BizException(String code, String msg) {
+        super(msg);
+        this.code = code;
+        this.msg = msg;
     }
 }

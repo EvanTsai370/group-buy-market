@@ -1,0 +1,160 @@
+package org.example.domain.model.activity;
+
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import org.example.common.exception.BizException;
+import org.example.domain.model.activity.valueobject.ActivityStatus;
+import org.example.domain.model.activity.valueobject.GroupType;
+
+import java.time.LocalDateTime;
+
+/**
+ * Activity 聚合根（拼团活动）
+ * 职责：管理活动的配置和生命周期
+ */
+@Slf4j
+@Data
+public class Activity {
+
+    /** 活动ID */
+    private String activityId;
+
+    /** 活动名称 */
+    private String activityName;
+
+    /** 活动描述 */
+    private String activityDesc;
+
+    /** 商品ID（外部引用） */
+    private String goodsId;
+
+    /** 折扣ID（外部引用） */
+    private String discountId;
+
+    /** 人群标签ID（外部引用） */
+    private String tagId;
+
+    /** 成团方式（0=虚拟成团，1=真实成团） */
+    private GroupType groupType;
+
+    /** 成团目标人数 */
+    private Integer target;
+
+    /** 拼单有效时长（秒） */
+    private Integer validTime;
+
+    /** 用户参团次数限制 */
+    private Integer takeLimitCount;
+
+    /** 活动状态 */
+    private ActivityStatus status;
+
+    /** 活动开始时间 */
+    private LocalDateTime startTime;
+
+    /** 活动结束时间 */
+    private LocalDateTime endTime;
+
+    /** 来源 */
+    private String source;
+
+    /** 渠道 */
+    private String channel;
+
+    /** 创建时间 */
+    private LocalDateTime createTime;
+
+    /** 更新时间 */
+    private LocalDateTime updateTime;
+
+    /**
+     * 创建活动（工厂方法）
+     */
+    public static Activity create(
+            String activityId,
+            String activityName,
+            String goodsId,
+            String discountId,
+            String tagId,
+            GroupType groupType,
+            Integer target,
+            Integer validTime,
+            Integer takeLimitCount,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            String source,
+            String channel) {
+
+        // 强不变式1：折扣ID不能为空
+        if (discountId == null || discountId.isEmpty()) {
+            throw new BizException("折扣配置不能为空");
+        }
+
+        // 强不变式2：时间校验
+        if (startTime.isAfter(endTime)) {
+            throw new BizException("活动开始时间不能晚于结束时间");
+        }
+
+        Activity activity = new Activity();
+        activity.activityId = activityId;
+        activity.activityName = activityName;
+        activity.goodsId = goodsId;
+        activity.discountId = discountId;
+        activity.tagId = tagId;
+        activity.groupType = groupType;
+        activity.target = target;
+        activity.validTime = validTime;
+        activity.takeLimitCount = takeLimitCount;
+        activity.status = ActivityStatus.DRAFT;
+        activity.startTime = startTime;
+        activity.endTime = endTime;
+        activity.source = source;
+        activity.channel = channel;
+        activity.createTime = LocalDateTime.now();
+        activity.updateTime = LocalDateTime.now();
+
+        log.info("【Activity聚合】活动创建成功, activityId: {}, name: {}", activityId, activityName);
+        return activity;
+    }
+
+    /**
+     * 激活活动
+     * 状态转换：DRAFT → ACTIVE
+     */
+    public void activate() {
+        // 强不变式3：状态转换规则
+        if (this.status != ActivityStatus.DRAFT) {
+            throw new BizException("只有草稿状态的活动才能激活");
+        }
+
+        this.status = ActivityStatus.ACTIVE;
+        this.updateTime = LocalDateTime.now();
+
+        log.info("【Activity聚合】活动已激活, activityId: {}", activityId);
+    }
+
+    /**
+     * 关闭活动
+     * 状态转换：ACTIVE → CLOSED
+     */
+    public void close() {
+        if (this.status != ActivityStatus.ACTIVE) {
+            throw new BizException("只有生效中的活动才能关闭");
+        }
+
+        this.status = ActivityStatus.CLOSED;
+        this.updateTime = LocalDateTime.now();
+
+        log.info("【Activity聚合】活动已关闭, activityId: {}", activityId);
+    }
+
+    /**
+     * 检查活动是否有效
+     */
+    public boolean isValid() {
+        LocalDateTime now = LocalDateTime.now();
+        return this.status == ActivityStatus.ACTIVE
+                && now.isAfter(startTime)
+                && now.isBefore(endTime);
+    }
+}

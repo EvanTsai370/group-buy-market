@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.infrastructure.persistence.mapper.OrderMapper">
+
+    <!--
+    原子化增加完成人数（解决高并发误杀问题）
+
+    核心思想：
+    1. 使用条件更新代替乐观锁，避免高并发下的误杀
+    2. 在 WHERE 条件中限制 complete_count < target_count，保证不会超卖
+    3. 使用 CASE WHEN 实现：如果达到目标人数，同时更新状态为 SUCCESS
+
+    并发安全分析：
+    - MySQL InnoDB 的行锁机制保证同一时刻只有一个事务能更新同一行
+    - 条件 complete_count < target_count 在行锁保护下是安全的
+    - 不会出现多个用户同时成功加入导致超卖的问题
+    -->
+    <update id="incrementCompleteCount">
+        UPDATE `order`
+        SET complete_count = complete_count + 1,
+            status = CASE
+                WHEN complete_count + 1 = target_count THEN 'SUCCESS'
+                ELSE status
+            END,
+            completed_time = CASE
+                WHEN complete_count + 1 = target_count THEN NOW()
+                ELSE completed_time
+            END,
+            update_time = NOW()
+        WHERE order_id = #{orderId}
+          AND status = 'PENDING'
+          AND complete_count &lt; target_count
+          AND deadline_time &gt; NOW()
+    </update>
+
+    <select id="selectTimeoutOrders" resultType="org.example.infrastructure.persistence.po.OrderPO">
+        SELECT *
+        FROM `order`
+        WHERE status = 'PENDING'
+          AND deadline_time &lt; NOW()
+    </select>
+
+    <select id="selectVirtualCompletableOrders" resultType="org.example.infrastructure.persistence.po.OrderPO">
+        SELECT o.*
+        FROM `order` o
+                 INNER JOIN activity a ON o.activity_id = a.activity_id
+        WHERE o.status = 'PENDING'
+          AND o.deadline_time &lt; NOW()
+          AND a.group_type = 0
+    </select>
+
+</mapper>

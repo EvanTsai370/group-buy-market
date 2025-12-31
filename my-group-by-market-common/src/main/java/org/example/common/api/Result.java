@@ -1,8 +1,6 @@
 package org.example.common.api;
 
 import lombok.Data;
-import org.example.common.exception.ErrorCode;
-
 import java.io.Serializable;
 
 /**
@@ -31,8 +29,8 @@ public class Result<T> implements Serializable {
      */
     public static <T> Result<T> success(T data) {
         Result<T> result = new Result<>();
-        result.setCode(ErrorCode.SUCCESS.getCode());
-        result.setMsg(ErrorCode.SUCCESS.getMsgKey()); // 这里存的是 Key "response.success"
+        result.setCode("0000"); // 建议定义一个 ResultCode 枚举来管理
+        result.setMsg("操作成功");
         result.setData(data);
         return result;
     }
