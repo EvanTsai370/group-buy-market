@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.infrastructure.persistence.mapper.ActivityGoodsMapper">
+
+    <!-- 根据商品ID、来源、渠道查询活动ID -->
+    <select id="selectActivityIdByGoodsSourceChannel" resultType="java.lang.String">
+        SELECT ag.activity_id
+        FROM activity_goods ag
+                 INNER JOIN activity a ON ag.activity_id = a.activity_id
+        WHERE ag.goods_id = #{goodsId}
+          AND ag.source = #{source}
+          AND ag.channel = #{channel}
+          AND a.status = 'ACTIVE'
+          AND a.start_time &lt;= NOW()
+          AND a.end_time &gt;= NOW()
+        LIMIT 1
+    </select>
+
+    <!-- 根据活动ID查询所有关联商品 -->
+    <select id="selectByActivityId" resultType="org.example.infrastructure.persistence.po.ActivityGoodsPO">
+        SELECT *
+        FROM activity_goods
+        WHERE activity_id = #{activityId}
+    </select>
+
+    <!-- 根据活动ID和商品ID查询关联信息 -->
+    <select id="selectByActivityGoods" resultType="org.example.infrastructure.persistence.po.ActivityGoodsPO">
+        SELECT *
+        FROM activity_goods
+        WHERE activity_id = #{activityId}
+          AND goods_id = #{goodsId}
+          AND source = #{source}
+          AND channel = #{channel}
+        LIMIT 1
+    </select>
+
+</mapper>
