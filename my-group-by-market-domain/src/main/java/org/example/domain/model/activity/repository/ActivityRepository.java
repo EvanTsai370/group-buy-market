@@ -1,6 +1,8 @@
 package org.example.domain.model.activity.repository;
 
 import org.example.domain.model.activity.Activity;
+import org.example.domain.model.activity.ActivityGoods;
+import org.example.domain.model.activity.Discount;
 
 import java.util.Optional;
 
@@ -25,24 +27,26 @@ public interface ActivityRepository {
     Optional<Activity> findById(String activityId);
 
     /**
-     * 根据来源和渠道查找活动
-     *
-     * @param source 来源
-     * @param channel 渠道
-     * @return 活动聚合
-     */
-    Optional<Activity> findBySourceAndChannel(String source, String channel);
-
-    /**
-     * 根据来源、渠道和商品ID查询活动ID
+     * 根据商品ID、来源、渠道查询活动ID
      * 用于试算场景：根据商品和渠道定位活动
      *
+     * @param goodsId 商品ID
      * @param source 来源
      * @param channel 渠道
-     * @param goodsId 商品ID
      * @return 活动ID（可能为空）
      */
-    String queryActivityIdBySourceChannelGoods(String source, String channel, String goodsId);
+    String queryActivityIdByGoodsSourceChannel(String goodsId, String source, String channel);
+
+    /**
+     * 根据活动ID和商品信息查询活动商品关联
+     *
+     * @param activityId 活动ID
+     * @param goodsId 商品ID
+     * @param source 来源
+     * @param channel 渠道
+     * @return 活动商品关联信息
+     */
+    ActivityGoods queryActivityGoods(String activityId, String goodsId, String source, String channel);
 
     /**
      * 查询折扣配置
@@ -50,7 +54,7 @@ public interface ActivityRepository {
      * @param discountId 折扣ID
      * @return 折扣配置
      */
-    org.example.domain.model.activity.Discount queryDiscountById(String discountId);
+    Discount queryDiscountById(String discountId);
 
     /**
      * 判断是否在降级开关范围内

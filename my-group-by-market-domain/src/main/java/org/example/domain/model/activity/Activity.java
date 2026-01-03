@@ -25,10 +25,7 @@ public class Activity {
     /** 活动描述 */
     private String activityDesc;
 
-    /** 商品ID（外部引用） */
-    private String goodsId;
-
-    /** 折扣ID（外部引用） */
+    /** 默认折扣ID（外部引用） */
     private String discountId;
 
     /** 人群标签ID（外部引用） */
@@ -55,12 +52,6 @@ public class Activity {
     /** 活动结束时间 */
     private LocalDateTime endTime;
 
-    /** 来源 */
-    private String source;
-
-    /** 渠道 */
-    private String channel;
-
     /** 创建时间 */
     private LocalDateTime createTime;
 
@@ -73,7 +64,6 @@ public class Activity {
     public static Activity create(
             String activityId,
             String activityName,
-            String goodsId,
             String discountId,
             String tagId,
             GroupType groupType,
@@ -81,9 +71,7 @@ public class Activity {
             Integer validTime,
             Integer takeLimitCount,
             LocalDateTime startTime,
-            LocalDateTime endTime,
-            String source,
-            String channel) {
+            LocalDateTime endTime) {
 
         // 强不变式1：折扣ID不能为空
         if (discountId == null || discountId.isEmpty()) {
@@ -98,7 +86,6 @@ public class Activity {
         Activity activity = new Activity();
         activity.activityId = activityId;
         activity.activityName = activityName;
-        activity.goodsId = goodsId;
         activity.discountId = discountId;
         activity.tagId = tagId;
         activity.groupType = groupType;
@@ -108,8 +95,6 @@ public class Activity {
         activity.status = ActivityStatus.DRAFT;
         activity.startTime = startTime;
         activity.endTime = endTime;
-        activity.source = source;
-        activity.channel = channel;
         activity.createTime = LocalDateTime.now();
         activity.updateTime = LocalDateTime.now();
 

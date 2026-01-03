@@ -10,13 +10,16 @@
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <mapstruct.version>1.5.5.Final</mapstruct.version>
-    <lombok.version>1.18.36</lombok.version>
+    <lombok.version>1.18.42</lombok.version>
     <mybatis-plus.version>3.5.15</mybatis-plus.version>
     <mysql.version>8.2.0</mysql.version>
     <knife4j.version>4.5.0</knife4j.version>
     <fastjson.version>2.0.28</fastjson.version>
     <slf4j-api.version>2.0.9</slf4j-api.version>
+    <commons-lang3.version>3.14.0</commons-lang3.version>
+    <redisson.version>3.26.0</redisson.version>
   </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.projectlombok</groupId>
@@ -25,6 +28,7 @@
       <scope>provided</scope>
     </dependency>
   </dependencies>
+
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -39,7 +43,7 @@
         <artifactId>mybatis-plus-boot-starter</artifactId>
         <version>${mybatis-plus.version}</version>
       </dependency>
-      <!-- 🔑 强制 Spring 6 兼容版本 -->
+      <!-- 强制 Spring 6 兼容版本 -->
       <dependency>
         <groupId>org.mybatis</groupId>
         <artifactId>mybatis-spring</artifactId>
@@ -70,8 +74,19 @@
         <artifactId>slf4j-api</artifactId>
         <version>${slf4j-api.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${commons-lang3.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.redisson</groupId>
+        <artifactId>redisson-spring-boot-starter</artifactId>
+        <version>${redisson.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
+
   <build>
     <plugins>
       <plugin>
@@ -102,6 +117,7 @@
       </plugin>
     </plugins>
   </build>
+
   <modules>
     <module>my-group-by-market-domain</module>
     <module>my-group-by-market-infrastructure</module>

@@ -3,27 +3,31 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.example.infrastructure.persistence.mapper.ActivityMapper">
 
+    <!-- 注意：此查询已调整，现在通过 activity_goods 表关联查询 -->
     <select id="selectBySourceAndChannel" resultType="org.example.infrastructure.persistence.po.ActivityPO">
-        SELECT *
-        FROM activity
-        WHERE source = #{source}
-          AND channel = #{channel}
-          AND status = 'ACTIVE'
-          AND start_time &lt;= NOW()
-          AND end_time &gt;= NOW()
-            LIMIT 1
+        SELECT a.*
+        FROM activity a
+                 INNER JOIN activity_goods ag ON a.activity_id = ag.activity_id
+        WHERE ag.source = #{source}
+          AND ag.channel = #{channel}
+          AND a.status = 'ACTIVE'
+          AND a.start_time &lt;= NOW()
+          AND a.end_time &gt;= NOW()
+        LIMIT 1
     </select>
 
+    <!-- 注意：此查询已调整，现在通过 activity_goods 表关联查询 -->
     <select id="selectActivityIdBySourceChannelGoods" resultType="java.lang.String">
-        SELECT activity_id
-        FROM activity
-        WHERE source = #{source}
-          AND channel = #{channel}
-          AND goods_id = #{goodsId}
-          AND status = 'ACTIVE'
-          AND start_time &lt;= NOW()
-          AND end_time &gt;= NOW()
-            LIMIT 1
+        SELECT ag.activity_id
+        FROM activity_goods ag
+                 INNER JOIN activity a ON ag.activity_id = a.activity_id
+        WHERE ag.source = #{source}
+          AND ag.channel = #{channel}
+          AND ag.goods_id = #{goodsId}
+          AND a.status = 'ACTIVE'
+          AND a.start_time &lt;= NOW()
+          AND a.end_time &gt;= NOW()
+        LIMIT 1
     </select>
 
 </mapper>

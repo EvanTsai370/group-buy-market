@@ -2,7 +2,7 @@ package org.example.application.job;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.domain.model.tag.repository.CrowdTagRepository;  // ✅ 依赖接口
+import org.example.domain.model.tag.repository.CrowdTagRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -21,7 +21,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CrowdTagCalculateJob {
 
-    // ✅ 正确：依赖 Domain 层的接口
     private final CrowdTagRepository crowdTagRepository;
 
     /**

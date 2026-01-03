@@ -7,10 +7,13 @@ import org.example.domain.model.activity.Activity;
 import org.example.domain.model.activity.Discount;
 import org.example.domain.model.activity.repository.ActivityRepository;
 import org.example.domain.shared.IdGenerator;
+import org.example.domain.model.activity.ActivityGoods;
 import org.example.infrastructure.persistence.converter.ActivityConverter;
 import org.example.infrastructure.persistence.converter.DiscountConverter;
+import org.example.infrastructure.persistence.mapper.ActivityGoodsMapper;
 import org.example.infrastructure.persistence.mapper.ActivityMapper;
 import org.example.infrastructure.persistence.mapper.DiscountMapper;
+import org.example.infrastructure.persistence.po.ActivityGoodsPO;
 import org.example.infrastructure.persistence.po.ActivityPO;
 import org.example.infrastructure.persistence.po.DiscountPO;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -27,6 +30,7 @@ import java.util.Optional;
 public class ActivityRepositoryImpl implements ActivityRepository {
 
     private final ActivityMapper activityMapper;
+    private final ActivityGoodsMapper activityGoodsMapper;
     private final DiscountMapper discountMapper;
     private final IdGenerator idGenerator;
     private final StringRedisTemplate stringRedisTemplate;
@@ -61,22 +65,32 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     }
 
     @Override
-    public Optional<Activity> findBySourceAndChannel(String source, String channel) {
-        ActivityPO po = activityMapper.selectBySourceAndChannel(source, channel);
-        if (po == null) {
-            return Optional.empty();
-        }
-
-        Activity activity = ActivityConverter.INSTANCE.toDomain(po);
-        return Optional.of(activity);
+    public String queryActivityIdByGoodsSourceChannel(String goodsId, String source, String channel) {
+        String activityId = activityGoodsMapper.selectActivityIdByGoodsSourceChannel(goodsId, source, channel);
+        log.info("【ActivityRepository】查询活动ID，goodsId: {}, source: {}, channel: {}, result: {}",
+                 goodsId, source, channel, activityId);
+        return activityId;
     }
 
     @Override
-    public String queryActivityIdBySourceChannelGoods(String source, String channel, String goodsId) {
-        String activityId = activityMapper.selectActivityIdBySourceChannelGoods(source, channel, goodsId);
-        log.info("【ActivityRepository】查询活动ID，source: {}, channel: {}, goodsId: {}, result: {}",
-                 source, channel, goodsId, activityId);
-        return activityId;
+    public ActivityGoods queryActivityGoods(String activityId, String goodsId, String source, String channel) {
+        ActivityGoodsPO po = activityGoodsMapper.selectByActivityGoods(activityId, goodsId, source, channel);
+        if (po == null) {
+            log.warn("【ActivityRepository】活动商品关联不存在，activityId: {}, goodsId: {}, source: {}, channel: {}",
+                     activityId, goodsId, source, channel);
+            return null;
+        }
+
+        ActivityGoods activityGoods = new ActivityGoods(
+                po.getActivityId(),
+                po.getGoodsId(),
+                po.getSource(),
+                po.getChannel(),
+                po.getDiscountId()
+        );
+        log.info("【ActivityRepository】查询活动商品关联，activityId: {}, goodsId: {}, discountId: {}",
+                 activityId, goodsId, activityGoods.getDiscountId());
+        return activityGoods;
     }
 
     @Override

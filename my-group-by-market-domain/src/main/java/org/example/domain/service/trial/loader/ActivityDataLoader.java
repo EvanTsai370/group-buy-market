@@ -27,12 +27,12 @@ public class ActivityDataLoader implements DataLoader<TrialBalanceRequest, Trial
         try {
             String activityId = request.getActivityId();
 
-            // 如果没有指定活动ID，根据来源渠道和商品ID查询
+            // 如果没有指定活动ID，根据商品ID、来源、渠道查询
             if (StringUtils.isBlank(activityId)) {
-                activityId = activityRepository.queryActivityIdBySourceChannelGoods(
+                activityId = activityRepository.queryActivityIdByGoodsSourceChannel(
+                    request.getGoodsId(),
                     request.getSource(),
-                    request.getChannel(),
-                    request.getGoodsId()
+                    request.getChannel()
                 );
             }
 

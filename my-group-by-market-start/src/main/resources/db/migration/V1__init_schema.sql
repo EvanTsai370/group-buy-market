@@ -14,8 +14,7 @@ CREATE TABLE activity (
                           activity_desc VARCHAR(500) COMMENT '活动描述',
 
     -- 关联配置
-                          goods_id VARCHAR(50) NOT NULL COMMENT '商品ID（外部引用）',
-                          discount_id VARCHAR(50) NOT NULL COMMENT '折扣ID',
+                          discount_id VARCHAR(50) NOT NULL COMMENT '默认折扣ID',
                           tag_id VARCHAR(50) COMMENT '人群标签ID',
 
     -- 成团规则
@@ -31,21 +30,38 @@ CREATE TABLE activity (
     -- 状态管理
                           status VARCHAR(20) NOT NULL DEFAULT 'DRAFT' COMMENT '活动状态：DRAFT/ACTIVE/CLOSED',
 
-    -- 来源追踪
-                          source VARCHAR(50) COMMENT '来源（如：s01-小程序、s02-App）',
-                          channel VARCHAR(50) COMMENT '渠道（如：c01-首页、c02-搜索）',
-
     -- 审计字段
                           create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                           update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 
-                          INDEX idx_goods_id (goods_id),
                           INDEX idx_status_time (status, start_time, end_time),
-                          INDEX idx_source_channel (source, channel),
                           INDEX idx_tag_id (tag_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='拼团活动表';
 
--- 2. 折扣配置表
+-- 2. 活动商品关联表（支持一个活动配置多个商品）
+CREATE TABLE activity_goods (
+                                 id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
+                                 activity_id VARCHAR(50) NOT NULL COMMENT '活动ID',
+                                 goods_id VARCHAR(50) NOT NULL COMMENT '商品ID',
+
+    -- 来源追踪（商品维度）
+                                 source VARCHAR(50) NOT NULL COMMENT '来源（如：s01-小程序、s02-App）',
+                                 channel VARCHAR(50) NOT NULL COMMENT '渠道（如：c01-首页、c02-搜索）',
+
+    -- 可选：商品级别的折扣覆盖
+                                 discount_id VARCHAR(50) COMMENT '折扣ID（为空则使用活动默认折扣）',
+
+    -- 审计字段
+                                 create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                 update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+
+                                 UNIQUE KEY uk_activity_goods_source_channel (activity_id, goods_id, source, channel),
+                                 INDEX idx_goods_id (goods_id),
+                                 INDEX idx_activity_id (activity_id),
+                                 INDEX idx_source_channel (source, channel)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='活动商品关联表';
+
+-- 3. 折扣配置表
 CREATE TABLE discount (
                           id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
                           discount_id VARCHAR(50) NOT NULL UNIQUE COMMENT '折扣ID',
@@ -71,7 +87,7 @@ CREATE TABLE discount (
                           INDEX idx_tag_id (tag_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='折扣配置表';
 
--- 3. 人群标签表
+-- 4. 人群标签表
 CREATE TABLE crowd_tag (
                            id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
                            tag_id VARCHAR(50) NOT NULL UNIQUE COMMENT '标签ID',
@@ -91,7 +107,7 @@ CREATE TABLE crowd_tag (
                            INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='人群标签表';
 
--- 4. 人群标签明细表
+-- 5. 人群标签明细表
 CREATE TABLE crowd_tag_detail (
                                   id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
                                   tag_id VARCHAR(50) NOT NULL COMMENT '标签ID',
@@ -104,7 +120,7 @@ CREATE TABLE crowd_tag_detail (
                                   INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='人群标签明细表';
 
--- 5. 拼团账户表
+-- 6. 拼团账户表
 CREATE TABLE account (
                          id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
                          account_id VARCHAR(50) NOT NULL UNIQUE COMMENT '账户ID',
@@ -122,7 +138,7 @@ CREATE TABLE account (
                          INDEX idx_activity_id (activity_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='拼团账户表';
 
--- 6. 拼团订单表（主单）
+-- 7. 拼团订单表（主单）
 CREATE TABLE `order` (
                          id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
                          order_id VARCHAR(50) NOT NULL UNIQUE COMMENT '拼团订单ID',
@@ -170,7 +186,7 @@ CREATE TABLE `order` (
                          INDEX idx_leader (leader_user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='拼团订单表';
 
--- 7. 拼团订单明细表
+-- 8. 拼团订单明细表
 CREATE TABLE order_detail (
                               id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
                               detail_id VARCHAR(50) NOT NULL UNIQUE COMMENT '明细ID',
@@ -203,7 +219,7 @@ CREATE TABLE order_detail (
                               UNIQUE KEY uk_out_trade_no (out_trade_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='拼团订单明细表';
 
--- 8. 商品SKU表（简化版，用于试算）
+-- 9. 商品SKU表（简化版，用于试算）
 CREATE TABLE sku (
                      id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
                      goods_id VARCHAR(50) NOT NULL UNIQUE COMMENT '商品ID',
@@ -214,7 +230,7 @@ CREATE TABLE sku (
                      update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品SKU表';
 
--- 9. 回调任务表（可选，用于异步通知）
+-- 10. 回调任务表（可选，用于异步通知）
 CREATE TABLE notify_task (
                              id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
                              task_id VARCHAR(50) NOT NULL UNIQUE COMMENT '任务ID',

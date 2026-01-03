@@ -32,10 +32,7 @@ public class ActivityPO {
     /** 活动描述 */
     private String activityDesc;
 
-    /** 商品ID */
-    private String goodsId;
-
-    /** 折扣ID */
+    /** 默认折扣ID */
     private String discountId;
 
     /** 人群标签ID */
@@ -61,12 +58,6 @@ public class ActivityPO {
 
     /** 活动状态 */
     private String status;
-
-    /** 来源 */
-    private String source;
-
-    /** 渠道 */
-    private String channel;
 
     /** 创建时间 */
     @TableField(fill = FieldFill.INSERT)

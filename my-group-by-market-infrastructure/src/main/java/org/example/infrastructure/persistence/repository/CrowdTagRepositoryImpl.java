@@ -167,34 +167,16 @@ public class CrowdTagRepositoryImpl implements CrowdTagRepository {
 
     /**
      * 获取标签下的所有用户
+     * 注意：BitMap 结构不支持遍历获取所有用户，此方法直接查询数据库
      *
      * @param tagId 标签ID
      * @return 用户ID列表
      */
     public List<String> getUserIdsByTagId(String tagId) {
-        // 1. 先查 Redis
-        try {
-            if (cacheService.existsTagCache(tagId)) {
-                var userIds = cacheService.getUserIdsByTagId(tagId);
-                if (!userIds.isEmpty()) {
-                    log.debug("【CrowdTagRepository】从缓存查询标签用户, tagId: {}, count: {}",
-                            tagId, userIds.size());
-                    return userIds.stream().toList();
-                }
-            }
-        } catch (Exception e) {
-            log.warn("【CrowdTagRepository】Redis查询失败，降级到数据库, tagId: {}", tagId, e);
-        }
-
-        // 2. 查询数据库
+        // BitMap 不支持遍历，直接查询数据库
         List<String> userIds = crowdTagDetailMapper.selectUserIdsByTagId(tagId);
         log.debug("【CrowdTagRepository】从数据库查询标签用户, tagId: {}, count: {}",
                 tagId, userIds.size());
-
-        // 3. 加载到缓存（异步）
-        if (!userIds.isEmpty()) {
-            tryLoadTagCacheAsync(tagId);
-        }
 
         return userIds;
     }

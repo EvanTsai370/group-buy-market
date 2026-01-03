@@ -1,4 +1,3 @@
-// ============ 文件: domain/model/tag/CrowdTag.java ============
 package org.example.domain.model.tag;
 
 import lombok.Data;

@@ -1,65 +1,70 @@
-// ============ 文件: CrowdTagCacheService.java ============
 package org.example.infrastructure.cache;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.redisson.api.RBitSet;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
  * 人群标签缓存服务
- * 使用 Redis Set 结构存储标签用户关系
+ * 使用 Redis BitMap 结构存储标签用户关系
  *
  * 数据结构：
- * Key: crowd:tag:{tagId}
- * Value: Set<userId>
+ * Key: crowd:tag:bitmap:{tagId}
+ * Value: BitMap（位图）
  *
  * 优势：
- * 1. SISMEMBER 命令 O(1) 复杂度，查询极快
- * 2. Set 结构天然去重
- * 3. 支持批量操作
+ * 1. 极低内存占用：100万用户仅需约 125KB（vs Set 约 50MB）
+ * 2. GETBIT 命令 O(1) 复杂度
+ * 3. 支持 BITOP 进行标签交集/并集运算
+ *
+ * 注意：
+ * 1. userId 需通过哈希转换为整数索引
+ * 2. 存在极小概率的哈希冲突（可接受的误判）
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class CrowdTagCacheService {
 
-    private final StringRedisTemplate redisTemplate;
+    private final IRedisService redisService;
 
     /** Redis Key 前缀 */
-    private static final String TAG_USER_KEY_PREFIX = "crowd:tag:";
+    private static final String TAG_BITMAP_KEY_PREFIX = "crowd:tag:bitmap:";
 
     /** 缓存过期时间（小时） */
     private static final long CACHE_EXPIRE_HOURS = 24;
 
     /**
-     * 获取标签用户集合的 Redis Key
+     * 获取标签 BitMap 的 Redis Key
      */
-    private String getTagUserKey(String tagId) {
-        return TAG_USER_KEY_PREFIX + tagId;
+    private String getTagBitmapKey(String tagId) {
+        return TAG_BITMAP_KEY_PREFIX + tagId;
     }
 
     /**
-     * 检查用户是否在标签内（使用 Redis）
+     * 检查用户是否在标签内（使用 BitMap）
      *
      * @param userId 用户ID
      * @param tagId 标签ID
-     * @return true=在标签内，false=不在标签内
+     * @return true=在标签内，false=不在标签内，null=查询失败
      */
     public Boolean checkUserInTag(String userId, String tagId) {
         try {
-            String key = getTagUserKey(tagId);
-            Boolean isMember = redisTemplate.opsForSet().isMember(key, userId);
+            String key = getTagBitmapKey(tagId);
+            RBitSet bitSet = redisService.getBitSet(key);
+            long index = redisService.getIndexFromUserId(userId);
 
-            log.debug("【标签缓存】检查用户, userId: {}, tagId: {}, exists: {}",
-                    userId, tagId, isMember);
+            boolean exists = bitSet.get(index);
 
-            return isMember != null && isMember;
+            log.debug("【标签缓存】检查用户(BitMap), userId: {}, tagId: {}, index: {}, exists: {}",
+                    userId, tagId, index, exists);
+
+            return exists;
         } catch (Exception e) {
             log.error("【标签缓存】检查用户失败, userId: {}, tagId: {}", userId, tagId, e);
             return null;  // 返回 null 表示缓存查询失败，调用方降级到数据库
@@ -67,7 +72,28 @@ public class CrowdTagCacheService {
     }
 
     /**
-     * 全量替换标签用户（同步到 Redis）
+     * 添加单个用户到标签 BitMap
+     *
+     * @param tagId 标签ID
+     * @param userId 用户ID
+     */
+    public void addUserToTag(String tagId, String userId) {
+        try {
+            String key = getTagBitmapKey(tagId);
+            RBitSet bitSet = redisService.getBitSet(key);
+            long index = redisService.getIndexFromUserId(userId);
+
+            bitSet.set(index, true);
+
+            log.debug("【标签缓存】添加用户(BitMap), tagId: {}, userId: {}, index: {}",
+                    tagId, userId, index);
+        } catch (Exception e) {
+            log.error("【标签缓存】添加用户失败, tagId: {}, userId: {}", tagId, userId, e);
+        }
+    }
+
+    /**
+     * 全量替换标签用户（同步到 Redis BitMap）
      * 先删除旧数据，再写入新数据
      *
      * @param tagId 标签ID
@@ -80,18 +106,22 @@ public class CrowdTagCacheService {
         }
 
         try {
-            String key = getTagUserKey(tagId);
+            String key = getTagBitmapKey(tagId);
 
             // 先删除旧数据（保证幂等性）
-            redisTemplate.delete(key);
+            redisService.delete(key);
 
-            // 批量添加（Redis Set 的 SADD 命令支持多个值）
-            redisTemplate.opsForSet().add(key, userIds.toArray(new String[0]));
+            // 获取 BitSet 并批量设置
+            RBitSet bitSet = redisService.getBitSet(key);
+            for (String userId : userIds) {
+                long index = redisService.getIndexFromUserId(userId);
+                bitSet.set(index, true);
+            }
 
             // 设置过期时间
-            redisTemplate.expire(key, CACHE_EXPIRE_HOURS, TimeUnit.HOURS);
+            redisService.expire(key, CACHE_EXPIRE_HOURS, TimeUnit.HOURS);
 
-            log.info("【标签缓存】批量添加用户成功, tagId: {}, count: {}", tagId, userIds.size());
+            log.info("【标签缓存】批量添加用户成功(BitMap), tagId: {}, count: {}", tagId, userIds.size());
         } catch (Exception e) {
             log.error("【标签缓存】批量添加用户失败, tagId: {}, count: {}", tagId, userIds.size(), e);
             throw new RuntimeException("标签缓存写入失败", e);
@@ -99,43 +129,23 @@ public class CrowdTagCacheService {
     }
 
     /**
-     * 获取标签下的所有用户（从 Redis）
+     * 统计标签用户数量（从 BitMap）
+     * 返回 BitMap 中值为 1 的位数
      *
      * @param tagId 标签ID
-     * @return 用户ID集合
-     */
-    public Set<String> getUserIdsByTagId(String tagId) {
-        try {
-            String key = getTagUserKey(tagId);
-            Set<String> userIds = redisTemplate.opsForSet().members(key);
-
-            if (userIds == null) {
-                userIds = Collections.emptySet();
-            }
-
-            log.debug("【标签缓存】查询标签用户, tagId: {}, count: {}", tagId, userIds.size());
-
-            return userIds;
-        } catch (Exception e) {
-            log.error("【标签缓存】查询标签用户失败, tagId: {}", tagId, e);
-            return Collections.emptySet();
-        }
-    }
-
-    /**
-     * 统计标签用户数量（从 Redis）
-     *
-     * @param tagId 标签ID
-     * @return 用户数量
+     * @return 用户数量（近似值，因存在哈希冲突可能略小于实际值）
      */
     public Long countUsersByTagId(String tagId) {
         try {
-            String key = getTagUserKey(tagId);
-            Long count = redisTemplate.opsForSet().size(key);
+            String key = getTagBitmapKey(tagId);
+            RBitSet bitSet = redisService.getBitSet(key);
 
-            log.debug("【标签缓存】统计标签用户, tagId: {}, count: {}", tagId, count);
+            // cardinality() 返回 BitMap 中 1 的个数
+            long count = bitSet.cardinality();
 
-            return count != null ? count : 0L;
+            log.debug("【标签缓存】统计标签用户(BitMap), tagId: {}, count: {}", tagId, count);
+
+            return count;
         } catch (Exception e) {
             log.error("【标签缓存】统计标签用户失败, tagId: {}", tagId, e);
             return 0L;
@@ -149,8 +159,8 @@ public class CrowdTagCacheService {
      */
     public void deleteTagCache(String tagId) {
         try {
-            String key = getTagUserKey(tagId);
-            redisTemplate.delete(key);
+            String key = getTagBitmapKey(tagId);
+            redisService.delete(key);
             log.info("【标签缓存】删除标签缓存成功, tagId: {}", tagId);
         } catch (Exception e) {
             log.error("【标签缓存】删除标签缓存失败, tagId: {}", tagId, e);
@@ -180,9 +190,10 @@ public class CrowdTagCacheService {
      */
     public Boolean existsTagCache(String tagId) {
         try {
-            String key = getTagUserKey(tagId);
-            Boolean exists = redisTemplate.hasKey(key);
-            return exists != null && exists;
+            String key = getTagBitmapKey(tagId);
+            RBitSet bitSet = redisService.getBitSet(key);
+            // BitMap 存在且不为空
+            return bitSet.isExists() && bitSet.cardinality() > 0;
         } catch (Exception e) {
             log.error("【标签缓存】检查缓存是否存在失败, tagId: {}", tagId, e);
             return false;
@@ -202,19 +213,86 @@ public class CrowdTagCacheService {
         }
 
         try {
-            String key = getTagUserKey(tagId);
+            String key = getTagBitmapKey(tagId);
+            RBitSet bitSet = redisService.getBitSet(key);
 
-            // 使用 pipeline 批量查询（性能优化）
             return userIds.stream()
                     .filter(userId -> {
-                        Boolean isMember = redisTemplate.opsForSet().isMember(key, userId);
-                        return isMember != null && isMember;
+                        long index = redisService.getIndexFromUserId(userId);
+                        return bitSet.get(index);
                     })
                     .toList();
         } catch (Exception e) {
             log.error("【标签缓存】批量检查用户失败, tagId: {}, count: {}",
                     tagId, userIds.size(), e);
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 计算两个标签的交集用户数量
+     * 场景：统计同时属于「高消费」和「活跃用户」的人数
+     *
+     * @param tagId1 标签1
+     * @param tagId2 标签2
+     * @return 交集用户数量
+     */
+    public Long countIntersection(String tagId1, String tagId2) {
+        try {
+            String key1 = getTagBitmapKey(tagId1);
+            String key2 = getTagBitmapKey(tagId2);
+
+            // 创建临时 BitSet 存储交集结果
+            String tempKey = TAG_BITMAP_KEY_PREFIX + "temp:and:" + tagId1 + ":" + tagId2;
+            RBitSet tempBitSet = redisService.getBitSet(tempKey);
+
+            // 执行 AND 操作（直接使用 key 名称）
+            tempBitSet.and(key1, key2);
+            long count = tempBitSet.cardinality();
+
+            // 删除临时 key
+            redisService.delete(tempKey);
+
+            log.debug("【标签缓存】计算标签交集, tagId1: {}, tagId2: {}, count: {}",
+                    tagId1, tagId2, count);
+
+            return count;
+        } catch (Exception e) {
+            log.error("【标签缓存】计算标签交集失败, tagId1: {}, tagId2: {}", tagId1, tagId2, e);
+            return 0L;
+        }
+    }
+
+    /**
+     * 计算两个标签的并集用户数量
+     *
+     * @param tagId1 标签1
+     * @param tagId2 标签2
+     * @return 并集用户数量
+     */
+    public Long countUnion(String tagId1, String tagId2) {
+        try {
+            String key1 = getTagBitmapKey(tagId1);
+            String key2 = getTagBitmapKey(tagId2);
+
+            // 创建临时 BitSet 存储并集结果
+            String tempKey = TAG_BITMAP_KEY_PREFIX + "temp:or:" + tagId1 + ":" + tagId2;
+            RBitSet tempBitSet = redisService.getBitSet(tempKey);
+
+            // 执行 OR 操作
+            tempBitSet.or(key1, key2);
+            long count = tempBitSet.cardinality();
+
+            // 删除临时 key
+            redisService.delete(tempKey);
+
+            log.debug("【标签缓存】计算标签并集, tagId1: {}, tagId2: {}, count: {}",
+                    tagId1, tagId2, count);
+
+            return count;
+        } catch (Exception e) {
+            log.error("【标签缓存】计算标签并集失败, tagId1: {}, tagId2: {}", tagId1, tagId2, e);
+            return 0L;
         }
     }
 }
