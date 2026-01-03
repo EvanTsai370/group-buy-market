@@ -14,4 +14,16 @@
             LIMIT 1
     </select>
 
+    <select id="selectActivityIdBySourceChannelGoods" resultType="java.lang.String">
+        SELECT activity_id
+        FROM activity
+        WHERE source = #{source}
+          AND channel = #{channel}
+          AND goods_id = #{goodsId}
+          AND status = 'ACTIVE'
+          AND start_time &lt;= NOW()
+          AND end_time &gt;= NOW()
+            LIMIT 1
+    </select>
+
 </mapper>
