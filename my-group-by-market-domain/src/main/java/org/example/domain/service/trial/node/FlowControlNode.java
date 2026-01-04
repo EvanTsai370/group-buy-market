@@ -19,7 +19,7 @@ import org.example.domain.model.activity.repository.ActivityRepository;
 public class FlowControlNode extends AbstractFlowNode<TrialBalanceRequest, TrialBalanceContext, TrialBalanceResult> {
 
     private final ActivityRepository activityRepository;
-    private DiscountCalculationNode discountCalculationNode;
+    private CrowdTagValidationNode crowdTagValidationNode;
 
     public FlowControlNode(ActivityRepository activityRepository) {
         this.activityRepository = activityRepository;
@@ -49,6 +49,6 @@ public class FlowControlNode extends AbstractFlowNode<TrialBalanceRequest, Trial
     @Override
     public FlowNode<TrialBalanceRequest, TrialBalanceContext, TrialBalanceResult> route(
             TrialBalanceRequest request, TrialBalanceContext context) {
-        return discountCalculationNode;
+        return crowdTagValidationNode;
     }
 }

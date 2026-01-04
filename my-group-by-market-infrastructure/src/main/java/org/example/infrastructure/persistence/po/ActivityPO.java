@@ -38,6 +38,9 @@ public class ActivityPO {
     /** 人群标签ID */
     private String tagId;
 
+    /** 人群标签作用域 */
+    private String tagScope;
+
     /** 成团方式（0=虚拟，1=真实） */
     private Integer groupType;
 

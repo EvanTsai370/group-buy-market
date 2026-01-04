@@ -4,6 +4,7 @@ package org.example.infrastructure.persistence.converter;
 import org.example.domain.model.activity.Activity;
 import org.example.domain.model.activity.valueobject.ActivityStatus;
 import org.example.domain.model.activity.valueobject.GroupType;
+import org.example.domain.model.activity.valueobject.TagScope;
 import org.example.infrastructure.persistence.po.ActivityPO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -24,6 +25,7 @@ public interface ActivityConverter {
      */
     @Mapping(source = "groupType", target = "groupType", qualifiedByName = "intToGroupType")
     @Mapping(source = "status", target = "status", qualifiedByName = "stringToActivityStatus")
+    @Mapping(source = "tagScope", target = "tagScope", qualifiedByName = "stringToTagScope")
     Activity toDomain(ActivityPO po);
 
     /**
@@ -31,6 +33,7 @@ public interface ActivityConverter {
      */
     @Mapping(source = "groupType", target = "groupType", qualifiedByName = "groupTypeToInt")
     @Mapping(source = "status", target = "status", qualifiedByName = "activityStatusToString")
+    @Mapping(source = "tagScope", target = "tagScope", qualifiedByName = "tagScopeToString")
     ActivityPO toPO(Activity activity);
 
     /**
@@ -63,5 +66,28 @@ public interface ActivityConverter {
     @Named("activityStatusToString")
     default String activityStatusToString(ActivityStatus status) {
         return status == null ? null : status.name();
+    }
+
+    /**
+     * String 转 TagScope
+     */
+    @Named("stringToTagScope")
+    default TagScope stringToTagScope(String tagScope) {
+        if (tagScope == null || tagScope.trim().isEmpty()) {
+            return TagScope.STRICT;  // 默认严格模式
+        }
+        try {
+            return TagScope.valueOf(tagScope);
+        } catch (IllegalArgumentException e) {
+            return TagScope.STRICT;  // 非法值默认为严格模式
+        }
+    }
+
+    /**
+     * TagScope 转 String
+     */
+    @Named("tagScopeToString")
+    default String tagScopeToString(TagScope tagScope) {
+        return tagScope == null ? TagScope.STRICT.name() : tagScope.name();
     }
 }

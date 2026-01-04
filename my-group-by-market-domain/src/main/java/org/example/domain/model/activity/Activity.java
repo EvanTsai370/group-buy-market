@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.common.exception.BizException;
 import org.example.domain.model.activity.valueobject.ActivityStatus;
 import org.example.domain.model.activity.valueobject.GroupType;
+import org.example.domain.model.activity.valueobject.TagScope;
 
 import java.time.LocalDateTime;
 
@@ -30,6 +31,15 @@ public class Activity {
 
     /** 人群标签ID（外部引用） */
     private String tagId;
+
+    /**
+     * 人群标签作用域
+     * 定义非目标人群（不在tagId标签内的用户）的可见性和参与性规则
+     * - STRICT: 严格模式，不在标签内不可见不可参与（默认）
+     * - VISIBLE_ONLY: 可见模式，不在标签内仅可见不可参与
+     * - OPEN: 开放模式，不在标签内可见可参与（慎用）
+     */
+    private TagScope tagScope;
 
     /** 成团方式（0=虚拟成团，1=真实成团） */
     private GroupType groupType;
@@ -66,6 +76,7 @@ public class Activity {
             String activityName,
             String discountId,
             String tagId,
+            TagScope tagScope,
             GroupType groupType,
             Integer target,
             Integer validTime,
@@ -88,6 +99,7 @@ public class Activity {
         activity.activityName = activityName;
         activity.discountId = discountId;
         activity.tagId = tagId;
+        activity.tagScope = tagScope != null ? tagScope : TagScope.STRICT;  // 默认严格模式
         activity.groupType = groupType;
         activity.target = target;
         activity.validTime = validTime;

@@ -23,24 +23,42 @@ public class ResultAssemblyNode extends AbstractFlowNode<TrialBalanceRequest, Tr
         Activity activity = context.getActivity();
         Sku sku = context.getSku();
 
-        // 组装返回结果
-        TrialBalanceResult result = TrialBalanceResult.builder()
-                .goodsId(sku.getGoodsId())
-                .goodsName(sku.getGoodsName())
-                .originalPrice(sku.getOriginalPrice())
-                .deductionAmount(context.getDeductionAmount())
-                .payAmount(context.getPayAmount())
-                .targetCount(activity.getTarget())
-                .startTime(activity.getStartTime())
-                .endTime(activity.getEndTime())
+        // 判断是否跳过了折扣计算（不可见或仅可见用户）
+        boolean skippedDiscountCalculation = (sku == null);
+
+        TrialBalanceResult.TrialBalanceResultBuilder resultBuilder = TrialBalanceResult.builder()
                 .visible(context.isVisible())
                 .participable(context.isParticipable())
                 .activityId(activity.getActivityId())
                 .activityName(activity.getActivityName())
-                .build();
+                .targetCount(activity.getTarget())
+                .startTime(activity.getStartTime())
+                .endTime(activity.getEndTime());
+
+        if (skippedDiscountCalculation) {
+            // 跳过了折扣计算：仅返回活动基本信息，价格相关字段为 null
+            log.info("【结果组装节点】跳过折扣计算，仅返回活动基本信息，userId: {}", request.getUserId());
+            resultBuilder
+                    .goodsId(request.getGoodsId())  // 使用请求中的 goodsId
+                    .goodsName(null)
+                    .originalPrice(null)
+                    .deductionAmount(null)
+                    .payAmount(null);
+        } else {
+            // 正常流程：返回完整信息（包括价格）
+            resultBuilder
+                    .goodsId(sku.getGoodsId())
+                    .goodsName(sku.getGoodsName())
+                    .originalPrice(sku.getOriginalPrice())
+                    .deductionAmount(context.getDeductionAmount())
+                    .payAmount(context.getPayAmount());
+        }
+
+        TrialBalanceResult result = resultBuilder.build();
 
         context.addExecutedNode(getNodeName());
-        log.info("【结果组装节点】组装完成，实付金额: {}", result.getPayAmount());
+        log.info("【结果组装节点】组装完成，跳过折扣计算: {}, 实付金额: {}",
+                 skippedDiscountCalculation, result.getPayAmount());
 
         return result;
     }

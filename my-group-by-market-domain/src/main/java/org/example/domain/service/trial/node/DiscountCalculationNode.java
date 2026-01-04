@@ -15,7 +15,6 @@ import org.example.domain.model.activity.context.TrialBalanceContext;
 import org.example.domain.model.activity.repository.ActivityRepository;
 import org.example.domain.model.goods.repository.SkuRepository;
 import org.example.domain.service.discount.DiscountCalculator;
-import org.example.domain.service.trial.loader.ActivityDataLoader;
 import org.example.domain.service.trial.loader.DiscountDataLoader;
 import org.example.domain.service.trial.loader.SkuDataLoader;
 
@@ -38,7 +37,7 @@ public class DiscountCalculationNode extends AbstractAsyncDataFlowNode<TrialBala
     private final SkuRepository skuRepository;
     private final Map<String, DiscountCalculator> discountCalculatorMap;
 
-    private CrowdTagValidationNode crowdTagValidationNode;
+    private ResultAssemblyNode resultAssemblyNode;
     private ErrorHandlingNode errorHandlingNode;
 
     public DiscountCalculationNode(
@@ -55,12 +54,11 @@ public class DiscountCalculationNode extends AbstractAsyncDataFlowNode<TrialBala
 
     @Override
     protected List<DataLoader<TrialBalanceRequest, TrialBalanceContext>> getDataLoaders() {
-        // 注意：这里需要同步加载（活动 -> 折扣），因为折扣依赖活动配置
-        // 实际应该先加载活动和商品，再加载折扣
+        // 加载商品信息和折扣配置
+        // 此时 Activity 已经在人群标签校验节点加载完成，DiscountDataLoader 可以正常工作
         return List.of(
-            new ActivityDataLoader(activityRepository),
-            new SkuDataLoader(skuRepository)
-            // DiscountDataLoader 需要在活动加载后执行，这里先不加入
+            new SkuDataLoader(skuRepository),
+            new DiscountDataLoader(activityRepository)
         );
     }
 
@@ -69,10 +67,7 @@ public class DiscountCalculationNode extends AbstractAsyncDataFlowNode<TrialBala
         log.info("【折扣计算节点】开始计算折扣，userId: {}, goodsId: {}",
                  request.getUserId(), request.getGoodsId());
 
-        // 手动加载折扣配置（依赖活动配置）
-        new DiscountDataLoader(activityRepository).loadData(request, context);
-
-        // 获取加载的数据
+        // 获取异步加载的数据（Activity 来自上一个节点，Discount 和 Sku 由当前节点加载）
         Activity activity = context.getActivity();
         Discount discount = context.getDiscount();
         Sku sku = context.getSku();
@@ -118,6 +113,6 @@ public class DiscountCalculationNode extends AbstractAsyncDataFlowNode<TrialBala
             return errorHandlingNode;
         }
 
-        return crowdTagValidationNode;
+        return resultAssemblyNode;
     }
 }

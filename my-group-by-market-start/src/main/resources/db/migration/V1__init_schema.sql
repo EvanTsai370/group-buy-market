@@ -16,6 +16,7 @@ CREATE TABLE activity (
     -- 关联配置
                           discount_id VARCHAR(50) NOT NULL COMMENT '默认折扣ID',
                           tag_id VARCHAR(50) COMMENT '人群标签ID',
+                          tag_scope VARCHAR(20) DEFAULT 'STRICT' COMMENT '人群标签作用域：STRICT=严格模式，VISIBLE_ONLY=仅可见，OPEN=开放模式',
 
     -- 成团规则
                           group_type TINYINT NOT NULL DEFAULT 0 COMMENT '成团方式：0=虚拟成团，1=真实成团',

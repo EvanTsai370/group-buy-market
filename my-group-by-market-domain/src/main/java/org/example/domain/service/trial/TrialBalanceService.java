@@ -18,17 +18,20 @@ public class TrialBalanceService {
     public TrialBalanceService(
             ParameterValidationNode parameterValidationNode,
             FlowControlNode flowControlNode,
-            DiscountCalculationNode discountCalculationNode,
             CrowdTagValidationNode crowdTagValidationNode,
+            DiscountCalculationNode discountCalculationNode,
             ResultAssemblyNode resultAssemblyNode,
             ErrorHandlingNode errorHandlingNode) {
 
         // 设置节点之间的依赖关系（责任链）
+        // 新流程：参数校验 → 流控 → 人群标签校验 → [折扣计算] → 结果组装
+        // 注意：人群标签校验节点可以根据可见性直接路由到结果组装（跳过折扣计算）
         parameterValidationNode.setFlowControlNode(flowControlNode);
-        flowControlNode.setDiscountCalculationNode(discountCalculationNode);
-        discountCalculationNode.setCrowdTagValidationNode(crowdTagValidationNode);
+        flowControlNode.setCrowdTagValidationNode(crowdTagValidationNode);
+        crowdTagValidationNode.setDiscountCalculationNode(discountCalculationNode);
+        crowdTagValidationNode.setResultAssemblyNode(resultAssemblyNode);  // 支持跳过折扣计算
+        discountCalculationNode.setResultAssemblyNode(resultAssemblyNode);
         discountCalculationNode.setErrorHandlingNode(errorHandlingNode);
-        crowdTagValidationNode.setResultAssemblyNode(resultAssemblyNode);
 
         this.parameterValidationNode = parameterValidationNode;
 
