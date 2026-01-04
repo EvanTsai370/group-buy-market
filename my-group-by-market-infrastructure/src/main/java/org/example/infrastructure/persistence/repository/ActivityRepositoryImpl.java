@@ -16,7 +16,7 @@ import org.example.infrastructure.persistence.mapper.DiscountMapper;
 import org.example.infrastructure.persistence.po.ActivityGoodsPO;
 import org.example.infrastructure.persistence.po.ActivityPO;
 import org.example.infrastructure.persistence.po.DiscountPO;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -33,7 +33,7 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     private final ActivityGoodsMapper activityGoodsMapper;
     private final DiscountMapper discountMapper;
     private final IdGenerator idGenerator;
-    private final StringRedisTemplate stringRedisTemplate;
+    private final Environment environment;
 
     @Override
     public void save(Activity activity) {
@@ -112,36 +112,22 @@ public class ActivityRepositoryImpl implements ActivityRepository {
 
     @Override
     public boolean isDowngraded() {
-        // 从 Redis 读取降级开关
-        String key = "group_buy:downgrade:switch";
-        String value = stringRedisTemplate.opsForValue().get(key);
-        boolean isDowngraded = "true".equalsIgnoreCase(value);
-        log.debug("【ActivityRepository】降级开关检查，key: {}, isDowngraded: {}", key, isDowngraded);
+        // 使用动态配置读取降级开关
+        boolean isDowngraded = environment.getProperty("activity.downgrade.switch", Boolean.class, false);
+        log.debug("【ActivityRepository】降级开关检查，isDowngraded: {}", isDowngraded);
         return isDowngraded;
     }
 
     @Override
     public boolean isInCutRange(String userId) {
-        // 从 Redis 读取切量配置（示例：使用用户ID的hash值进行切量）
-        String key = "group_buy:cut:range";
-        String range = stringRedisTemplate.opsForValue().get(key);
+        // 从动态配置读取切量配置（100表示100%全量，10表示10%切量）
+        int cutPercentage = environment.getProperty("activity.cut.range", Integer.class, 100);
 
-        if (range == null) {
-            // 未配置切量，默认全部放行
-            return true;
-        }
-
-        try {
-            int cutPercentage = Integer.parseInt(range); // 如 "10" 表示10%
-            int hash = Math.abs(userId.hashCode() % 100);
-            boolean isInRange = hash < cutPercentage;
-            log.debug("【ActivityRepository】切量检查，userId: {}, hash: {}, cutPercentage: {}, isInRange: {}",
-                     userId, hash, cutPercentage, isInRange);
-            return isInRange;
-        } catch (NumberFormatException e) {
-            log.error("【ActivityRepository】切量配置格式错误，range: {}", range, e);
-            return true; // 配置错误时默认放行
-        }
+        int hash = Math.abs(userId.hashCode() % 100);
+        boolean isInRange = hash < cutPercentage;
+        log.debug("【ActivityRepository】切量检查，userId: {}, hash: {}, cutPercentage: {}, isInRange: {}",
+                 userId, hash, cutPercentage, isInRange);
+        return isInRange;
     }
 
     @Override

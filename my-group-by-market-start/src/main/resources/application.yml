@@ -49,3 +49,10 @@ app:
     queue-capacity: 200
     keep-alive-seconds: 60
     thread-name-prefix: "my-async-"
+
+# 活动动态配置
+activity:
+  downgrade:
+    switch: false  # 降级开关，默认关闭
+  cut:
+    range: 100     # 切量范围（0-100），100表示100%全量放行，10表示10%切量
