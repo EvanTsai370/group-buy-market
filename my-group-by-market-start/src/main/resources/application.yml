@@ -50,6 +50,28 @@ app:
     keep-alive-seconds: 60
     thread-name-prefix: "my-async-"
 
+# 支付安全配置
+payment:
+  # 支付宝配置
+  alipay:
+    secret: ${ALIPAY_SECRET:your-alipay-secret-key-change-in-production}
+  
+  # 微信支付配置
+  wechat:
+    secret: ${WECHAT_SECRET:your-wechat-secret-key-change-in-production}
+  
+  # 银联支付配置
+  unionpay:
+    secret: ${UNIONPAY_SECRET:your-unionpay-secret-key-change-in-production}
+  
+  # IP 白名单（支付系统回调IP）
+  # 生产环境请替换为真实的支付系统IP
+  allowed-ips:
+    - 127.0.0.1        # 本地测试
+    - ::1              # 本地测试 IPv6
+    # - 123.45.67.89   # 支付宝回调IP（示例，请替换为真实IP）
+    # - 98.76.54.32    # 微信回调IP（示例，请替换为真实IP）
+
 # 活动动态配置
 activity:
   downgrade:

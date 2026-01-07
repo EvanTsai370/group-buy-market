@@ -2,11 +2,19 @@ package org.example.interfaces.web.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.example.application.service.trade.TradeOrderService;
 import org.example.application.service.trade.cmd.LockOrderCmd;
 import org.example.application.service.trade.vo.TradeOrderVO;
 import org.example.common.api.Result;
+import org.example.common.exception.BizException;
+import org.example.domain.model.payment.PaymentCallbackDTO;
+import org.example.domain.model.payment.PaymentCallbackRecord;
+import org.example.domain.model.payment.repository.PaymentCallbackRecordRepository;
+import org.example.domain.model.trade.TradeOrder;
+import org.example.domain.model.trade.repository.TradeOrderRepository;
+import org.example.application.service.payment.PaymentSignatureValidator;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -22,9 +30,18 @@ import org.springframework.web.bind.annotation.*;
 public class TradeOrderController {
 
     private final TradeOrderService tradeOrderService;
+    private final PaymentSignatureValidator paymentSignatureValidator;
+    private final PaymentCallbackRecordRepository paymentCallbackRecordRepository;
+    private final TradeOrderRepository tradeOrderRepository;
 
-    public TradeOrderController(TradeOrderService tradeOrderService) {
+    public TradeOrderController(TradeOrderService tradeOrderService,
+            PaymentSignatureValidator paymentSignatureValidator,
+            PaymentCallbackRecordRepository paymentCallbackRecordRepository,
+            TradeOrderRepository tradeOrderRepository) {
         this.tradeOrderService = tradeOrderService;
+        this.paymentSignatureValidator = paymentSignatureValidator;
+        this.paymentCallbackRecordRepository = paymentCallbackRecordRepository;
+        this.tradeOrderRepository = tradeOrderRepository;
     }
 
     /**
@@ -48,15 +65,78 @@ public class TradeOrderController {
     /**
      * 支付成功回调接口
      *
+     * <p>
+     * 安全措施：
+     * <ol>
+     * <li>IP白名单验证（拦截器层）</li>
+     * <li>签名验证（HMAC-SHA256）</li>
+     * <li>时间戳验证（防重放攻击）</li>
+     * <li>幂等性检查（基于callbackId）</li>
+     * <li>金额校验</li>
+     * </ol>
+     *
      * @param tradeOrderId 交易订单ID
+     * @param sign         签名
+     * @param timestamp    时间戳（毫秒）
+     * @param callbackId   支付系统的唯一回调ID
+     * @param callback     回调数据
+     * @param request      HTTP请求（用于获取IP）
      * @return 处理结果
      */
     @PostMapping("/payment/success/{tradeOrderId}")
     @Operation(summary = "支付成功回调", description = "支付系统回调，通知支付成功")
-    public Result<Void> handlePaymentSuccess(@PathVariable String tradeOrderId) {
-        log.info("【TradeOrderController】支付成功回调, tradeOrderId: {}", tradeOrderId);
+    public Result<Void> handlePaymentSuccess(
+            @PathVariable String tradeOrderId,
+            @RequestParam String sign,
+            @RequestParam Long timestamp,
+            @RequestParam String callbackId,
+            @RequestBody PaymentCallbackDTO callback,
+            HttpServletRequest request) {
 
+        log.info("【TradeOrderController】支付成功回调, tradeOrderId: {}, callbackId: {}, " +
+                "amount: {}, payTime: {}, channel: {}, ip: {}",
+                tradeOrderId, callbackId, callback.getAmount(),
+                callback.getPayTime(), callback.getChannel(),
+                request.getRemoteAddr());
+
+        // 1. 签名验证
+        if (!paymentSignatureValidator.validate(callback, sign, timestamp, callback.getChannel())) {
+            log.error("【支付回调】签名验证失败, tradeOrderId: {}, callbackId: {}", tradeOrderId, callbackId);
+            throw new BizException("签名验证失败");
+        }
+
+        // 2. 时间戳验证（防重放攻击，5分钟有效期）
+        if (System.currentTimeMillis() - timestamp > 5 * 60 * 1000) {
+            log.error("【支付回调】请求已过期, tradeOrderId: {}, timestamp: {}", tradeOrderId, timestamp);
+            throw new BizException("请求已过期");
+        }
+
+        // 3. 幂等性检查
+        if (paymentCallbackRecordRepository.existsByCallbackId(callbackId)) {
+            log.warn("【支付回调】回调已处理, callbackId: {}", callbackId);
+            return Result.success();
+        }
+
+        // 4. 金额校验
+        TradeOrder tradeOrder = tradeOrderRepository.findByTradeOrderId(tradeOrderId)
+                .orElseThrow(() -> new BizException("交易订单不存在"));
+
+        if (callback.getAmount().compareTo(tradeOrder.getPayPrice()) != 0) {
+            log.error("【支付回调】支付金额不匹配, tradeOrderId: {}, expected: {}, actual: {}",
+                    tradeOrderId, tradeOrder.getPayPrice(), callback.getAmount());
+            throw new BizException("支付金额不匹配");
+        }
+
+        // 5. 记录回调（幂等性保护）
+        String recordId = "REC-" + System.currentTimeMillis();
+        PaymentCallbackRecord record = PaymentCallbackRecord.create(recordId, callbackId, callback);
+        paymentCallbackRecordRepository.save(record);
+
+        // 6. 处理支付成功
         tradeOrderService.handlePaymentSuccess(tradeOrderId);
+
+        log.info("【TradeOrderController】支付成功处理完成, tradeOrderId: {}, callbackId: {}",
+                tradeOrderId, callbackId);
 
         return Result.success();
     }
