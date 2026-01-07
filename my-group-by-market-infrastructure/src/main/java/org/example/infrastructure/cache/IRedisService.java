@@ -75,6 +75,65 @@ public interface IRedisService {
     boolean exists(String key);
 
     /**
+     * 原子递增操作
+     *
+     * <p>将key对应的值原子性地增加1
+     * <p>如果key不存在,则初始化为0再增加
+     *
+     * @param key Redis key
+     * @return 递增后的值
+     */
+    long incr(String key);
+
+    /**
+     * 原子递减操作
+     *
+     * <p>将key对应的值原子性地减少1
+     * <p>如果key不存在,则初始化为0再减少
+     *
+     * @param key Redis key
+     * @return 递减后的值
+     */
+    long decr(String key);
+
+    /**
+     * SET if Not eXists（分布式锁的基础操作）
+     *
+     * <p>只有在key不存在时才设置值
+     *
+     * @param key Redis key
+     * @param timeout 过期时间
+     * @param unit 时间单位
+     * @return true=设置成功，false=key已存在
+     */
+    Boolean setNx(String key, long timeout, TimeUnit unit);
+
+    /**
+     * 获取Long类型的值
+     *
+     * @param key Redis key
+     * @return Long值（如果不存在返回null）
+     */
+    Long getAtomicLong(String key);
+
+    /**
+     * 设置Long类型的值
+     *
+     * @param key     Redis key
+     * @param value   Long值
+     * @param timeout 过期时间
+     * @param unit    时间单位
+     */
+    void setLong(String key, Long value, long timeout, TimeUnit unit);
+
+    /**
+     * 删除key
+     *
+     * @param key Redis key
+     */
+    void remove(String key);
+
+    /**
      * 将 userId 转换为 BitMap 索引
      * 使用 MD5 哈希算法将字符串 userId 映射为整数索引
      *

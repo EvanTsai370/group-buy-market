@@ -51,7 +51,7 @@ public class Activity {
     private Integer validTime;
 
     /** 用户参团次数限制 */
-    private Integer takeLimitCount;
+    private Integer participationLimit;
 
     /** 活动状态 */
     private ActivityStatus status;
@@ -80,7 +80,7 @@ public class Activity {
             GroupType groupType,
             Integer target,
             Integer validTime,
-            Integer takeLimitCount,
+            Integer participationLimit,
             LocalDateTime startTime,
             LocalDateTime endTime) {
 
@@ -99,11 +99,11 @@ public class Activity {
         activity.activityName = activityName;
         activity.discountId = discountId;
         activity.tagId = tagId;
-        activity.tagScope = tagScope != null ? tagScope : TagScope.STRICT;  // 默认严格模式
+        activity.tagScope = tagScope != null ? tagScope : TagScope.STRICT; // 默认严格模式
         activity.groupType = groupType;
         activity.target = target;
         activity.validTime = validTime;
-        activity.takeLimitCount = takeLimitCount;
+        activity.participationLimit = participationLimit;
         activity.status = ActivityStatus.DRAFT;
         activity.startTime = startTime;
         activity.endTime = endTime;
@@ -153,5 +153,45 @@ public class Activity {
         return this.status == ActivityStatus.ACTIVE
                 && now.isAfter(startTime)
                 && now.isBefore(endTime);
+    }
+
+    /**
+     * 断言活动可用（守卫方法）
+     * 
+     * <p>
+     * 用于交易前的活动可用性校验，确保活动处于可参与状态。
+     * 这是一个守卫方法（Guard Method），如果活动不可用会抛出业务异常。
+     * 
+     * <p>
+     * 校验规则：
+     * <ul>
+     * <li>活动状态必须为 ACTIVE</li>
+     * <li>当前时间必须在活动有效期内（startTime ~ endTime）</li>
+     * </ul>
+     * 
+     * @throws BizException 如果活动不可用，抛出带详细信息的业务异常
+     */
+    public void assertAvailable() {
+        // 校验活动状态
+        if (this.status != ActivityStatus.ACTIVE) {
+            throw new BizException(
+                    org.example.common.exception.ErrorCode.ACTIVITY_NOT_ACTIVE,
+                    this.status.getDesc());
+        }
+
+        // 校验活动时间
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(this.startTime)) {
+            throw new BizException(
+                    org.example.common.exception.ErrorCode.ACTIVITY_NOT_STARTED,
+                    this.startTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        }
+        if (now.isAfter(this.endTime)) {
+            throw new BizException(
+                    org.example.common.exception.ErrorCode.ACTIVITY_EXPIRED,
+                    this.endTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        }
+
+        log.debug("【Activity聚合】活动可用性校验通过, activityId: {}", this.activityId);
     }
 }

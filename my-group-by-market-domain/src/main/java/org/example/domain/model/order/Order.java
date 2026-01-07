@@ -9,7 +9,6 @@ import org.example.domain.model.order.event.OrderFailedEvent;
 import org.example.domain.model.order.event.UserJoinedOrderEvent;
 import org.example.domain.model.order.valueobject.Money;
 import org.example.domain.model.order.valueobject.OrderStatus;
-import org.example.domain.model.order.valueobject.UserType;
 import org.example.domain.shared.DomainEvent;
 import org.example.domain.shared.IdGenerator;
 
@@ -29,6 +28,9 @@ public class Order {
     /** 拼团订单ID */
     private String orderId;
 
+    /** 拼团队伍ID（8位随机数，用户友好，用于前端展示和快速查询） */
+    private String teamId;
+
     /** 活动ID（外部引用） */
     private String activityId;
 
@@ -41,8 +43,11 @@ public class Order {
     /** 目标人数 */
     private Integer targetCount;
 
-    /** 完成人数 */
+    /** 完成人数（实际支付成功的人数） */
     private Integer completeCount;
+
+    /** 锁单量（已锁定名额数量，防止超卖） */
+    private Integer lockCount;
 
     /** 订单状态 */
     private OrderStatus status;
@@ -74,9 +79,6 @@ public class Order {
     /** 乐观锁版本号（关键！防止并发超卖） */
     private Long version;
 
-    /** 订单明细列表（内部实体） */
-    private List<OrderDetail> details = new ArrayList<>();
-
     /** 领域事件列表 */
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 
@@ -86,6 +88,7 @@ public class Order {
      */
     public static Order create(
             String orderId,
+            String teamId,
             String activityId,
             String goodsId,
             String leaderUserId,
@@ -103,11 +106,13 @@ public class Order {
 
         Order order = new Order();
         order.orderId = orderId;
+        order.teamId = teamId;
         order.activityId = activityId;
         order.goodsId = goodsId;
         order.leaderUserId = leaderUserId;
         order.targetCount = targetCount;
         order.completeCount = 1; // 团长算一人
+        order.lockCount = 1; // 团长已锁定1个名额
         order.status = OrderStatus.PENDING;
         order.originalPrice = price.getOriginalPrice();
         order.deductionPrice = price.getDeductionPrice();
@@ -118,20 +123,11 @@ public class Order {
         order.channel = channel;
         order.version = 1L;
 
-        // 创建团长明细
-        OrderDetail leaderDetail = OrderDetail.create(
-                leaderUserId,
-                UserType.LEADER,
-                null,
-                price.getDeductionPrice(),
-                idGenerator
-        );
-        order.details.add(leaderDetail);
-
         // 发出领域事件
         order.addDomainEvent(new OrderCreatedEvent(orderId, leaderUserId, activityId));
 
-        log.info("【Order聚合】拼团创建成功, orderId: {}, targetCount: {}", orderId, targetCount);
+        log.info("【Order聚合】拼团创建成功, orderId: {}, teamId: {}, targetCount: {}",
+                orderId, teamId, targetCount);
         return order;
     }
 
@@ -163,72 +159,9 @@ public class Order {
         }
 
         // 业务规则4：防止重复加入
-        boolean alreadyJoined = this.details.stream()
-                .anyMatch(d -> d.getUserId().equals(userId));
-        if (alreadyJoined) {
-            throw new BizException("您已参与该拼团");
-        }
+        // 注意：重复加入的检查现在由 TradeOrder 的 outTradeNo 唯一索引保证
 
         log.debug("【Order聚合】用户加入校验通过, orderId: {}, userId: {}", orderId, userId);
-    }
-
-    /**
-     * 创建订单明细（工厂方法）
-     *
-     * 注意：此方法不修改聚合状态（completeCount），
-     * 状态变更由 Repository 层的原子操作完成
-     *
-     * @param userId 用户ID
-     * @param outTradeNo 外部交易单号
-     * @param payAmount 支付金额
-     * @param idGenerator ID生成器
-     * @return 订单明细
-     */
-    public OrderDetail createDetail(String userId, String outTradeNo,
-                                    BigDecimal payAmount, IdGenerator idGenerator) {
-        return OrderDetail.create(
-                userId,
-                UserType.MEMBER,
-                outTradeNo,
-                payAmount,
-                idGenerator
-        );
-    }
-
-    /**
-     * 用户加入拼团（团员）- 保留原方法用于低并发场景或测试
-     *
-     * @deprecated 高并发场景请使用 validateJoin + Repository.tryIncrementCompleteCount
-     */
-    @Deprecated
-    public OrderDetail join(String userId, String outTradeNo, BigDecimal payAmount, IdGenerator idGenerator) {
-        // 业务规则校验
-        validateJoin(userId);
-
-        // 状态变更
-        OrderDetail detail = OrderDetail.create(
-                userId,
-                UserType.MEMBER,
-                outTradeNo,
-                payAmount,
-                idGenerator
-        );
-        this.details.add(detail);
-        this.completeCount++;
-        // 乐观锁版本号递增由Repository层的update操作控制
-
-        // 发出事件
-        this.addDomainEvent(new UserJoinedOrderEvent(orderId, userId, completeCount, targetCount));
-
-        log.info("【Order聚合】用户加入成功, orderId: {}, userId: {}, progress: {}/{}",
-                orderId, userId, completeCount, targetCount);
-
-        // 判断是否成团
-        if (this.completeCount >= this.targetCount) {
-            this.markAsCompleted();
-        }
-
-        return detail;
     }
 
     /**
@@ -271,6 +204,158 @@ public class Order {
         return this.status == OrderStatus.PENDING
                 && this.completeCount < this.targetCount
                 && LocalDateTime.now().isBefore(this.deadlineTime);
+    }
+
+    // ==================== 锁单相关业务逻辑 ====================
+
+    /**
+     * 校验是否可以锁单
+     *
+     * <p>
+     * 业务规则：
+     * <ol>
+     * <li>拼团状态必须为PENDING</li>
+     * <li>锁单量不能超过目标人数</li>
+     * <li>不能超过截止时间</li>
+     * </ol>
+     *
+     * @throws BizException 如果不满足锁单条件
+     */
+    public void validateLock() {
+        // 业务规则1：检查状态
+        if (this.status != OrderStatus.PENDING) {
+            throw new BizException("拼团已结束，无法锁单，当前状态: " + this.status);
+        }
+
+        // 业务规则2：检查锁单量是否已达上限
+        if (this.lockCount >= this.targetCount) {
+            throw new BizException("拼团锁单已满，lockCount: " + this.lockCount + ", targetCount: " + this.targetCount);
+        }
+
+        // 业务规则3：检查是否已过期
+        if (LocalDateTime.now().isAfter(this.deadlineTime)) {
+            throw new BizException("拼团已过期，无法锁单");
+        }
+
+        log.debug("【Order聚合】锁单校验通过, orderId: {}, lockCount: {}/{}", orderId, lockCount, targetCount);
+    }
+
+    /**
+     * 尝试锁定名额（业务层校验）
+     *
+     * <p>
+     * 设计说明：
+     * <ul>
+     * <li>此方法只负责业务规则校验，不修改聚合状态</li>
+     * <li>实际的锁单量增加由 Repository 层通过数据库原子操作完成</li>
+     * <li>这样设计可以保持领域模型的纯粹性，同时保证并发安全</li>
+     * </ul>
+     *
+     * @return true=可以锁单, false=不可以锁单
+     */
+    public boolean canLock() {
+        try {
+            validateLock();
+            return true;
+        } catch (BizException e) {
+            log.warn("【Order聚合】锁单校验失败, orderId: {}, reason: {}", orderId, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 锁定名额成功后的回调（由Repository层调用）
+     *
+     * <p>
+     * 用途：
+     * <ul>
+     * <li>Repository 层执行原子操作成功后，调用此方法同步内存状态</li>
+     * <li>保持内存对象和数据库的一致性</li>
+     * </ul>
+     *
+     * @param newLockCount 新的锁单量
+     */
+    public void onLockSuccess(Integer newLockCount) {
+        this.lockCount = newLockCount;
+        log.info("【Order聚合】锁单成功, orderId: {}, lockCount: {}/{}", orderId, lockCount, targetCount);
+    }
+
+    /**
+     * 释放锁定的名额（超时或退单时调用）
+     *
+     * <p>
+     * 业务场景：
+     * <ol>
+     * <li>用户下单锁定名额，但超时未支付 → 释放名额</li>
+     * <li>用户支付失败或主动取消订单 → 释放名额</li>
+     * </ol>
+     *
+     * <p>
+     * 注意：此方法也只负责业务校验，实际的减少操作由Repository层完成
+     */
+    public void validateReleaseLock() {
+        if (this.lockCount <= 0) {
+            throw new BizException("锁单量已为0，无法释放");
+        }
+
+        if (this.lockCount < this.completeCount) {
+            throw new BizException(
+                    "锁单量不能小于完成人数，lockCount: " + this.lockCount + ", completeCount: " + this.completeCount);
+        }
+
+        log.debug("【Order聚合】释放锁单校验通过, orderId: {}, lockCount: {}", orderId, lockCount);
+    }
+
+    /**
+     * 释放名额成功后的回调（由Repository层调用）
+     *
+     * @param newLockCount 新的锁单量
+     */
+    public void onReleaseLockSuccess(Integer newLockCount) {
+        this.lockCount = newLockCount;
+        log.info("【Order聚合】释放锁单成功, orderId: {}, lockCount: {}/{}", orderId, lockCount, targetCount);
+    }
+
+    /**
+     * 支付成功后更新完成人数
+     *
+     * <p>
+     * 业务流程：
+     * <ol>
+     * <li>用户锁单 → lockCount++</li>
+     * <li>用户支付 → completeCount++</li>
+     * <li>判断是否成团 → completeCount >= targetCount</li>
+     * </ol>
+     *
+     * @param newCompleteCount 新的完成人数
+     */
+    public void onPaymentSuccess(Integer newCompleteCount) {
+        this.completeCount = newCompleteCount;
+
+        log.info("【Order聚合】支付成功, orderId: {}, completeCount: {}/{}", orderId, completeCount, targetCount);
+
+        // 判断是否成团
+        if (this.completeCount >= this.targetCount) {
+            this.markAsCompleted();
+        }
+    }
+
+    /**
+     * 检查锁单量是否已达上限
+     *
+     * @return true=已达上限, false=未达上限
+     */
+    public boolean isLockFull() {
+        return this.lockCount >= this.targetCount;
+    }
+
+    /**
+     * 获取剩余可锁单名额
+     *
+     * @return 剩余名额数量
+     */
+    public int getAvailableLockCount() {
+        return Math.max(0, this.targetCount - this.lockCount);
     }
 
     /**

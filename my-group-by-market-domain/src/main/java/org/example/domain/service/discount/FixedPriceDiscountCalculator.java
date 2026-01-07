@@ -1,6 +1,7 @@
 package org.example.domain.service.discount;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.util.LogDesensitizer;
 import org.example.domain.model.activity.Discount;
 import org.example.domain.model.tag.repository.CrowdTagRepository;
 
@@ -20,7 +21,7 @@ public class FixedPriceDiscountCalculator extends AbstractDiscountCalculator {
 
     @Override
     protected BigDecimal doCalculate(BigDecimal originalPrice, Discount discount) {
-        log.info("【N元购折扣计算】原价: {}, 折扣表达式: {}", originalPrice, discount.getMarketExpr());
+        log.info("【N元购折扣计算】原价: {}, 折扣表达式: {}", LogDesensitizer.maskPrice(originalPrice, log), discount.getMarketExpr());
 
         // 折扣表达式 - 直接为优惠后的金额
         String marketExpr = discount.getMarketExpr();
@@ -28,7 +29,7 @@ public class FixedPriceDiscountCalculator extends AbstractDiscountCalculator {
         // n元购
         BigDecimal fixedPrice = new BigDecimal(marketExpr);
 
-        log.info("【N元购折扣计算】计算完成，实付金额: {}", fixedPrice);
+        log.info("【N元购折扣计算】计算完成，实付金额: {}", LogDesensitizer.maskPrice(fixedPrice, log));
         return fixedPrice;
     }
 }

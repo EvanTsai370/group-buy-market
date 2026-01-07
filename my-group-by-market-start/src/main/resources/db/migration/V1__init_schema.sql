@@ -22,7 +22,7 @@ CREATE TABLE activity (
                           group_type TINYINT NOT NULL DEFAULT 0 COMMENT '成团方式：0=虚拟成团，1=真实成团',
                           target INT NOT NULL COMMENT '成团目标人数（3人团、5人团）',
                           valid_time INT NOT NULL DEFAULT 1200 COMMENT '拼单有效时长（秒），默认20分钟',
-                          take_limit_count INT NOT NULL DEFAULT 1 COMMENT '用户参团次数限制',
+                          participation_limit INT NOT NULL DEFAULT 1 COMMENT '用户参团次数限制',
 
     -- 活动时间
                           start_time DATETIME NOT NULL COMMENT '活动开始时间',
@@ -129,8 +129,10 @@ CREATE TABLE account (
                          activity_id VARCHAR(50) NOT NULL COMMENT '活动ID',
 
     -- 参团次数控制
-                         take_limit_count INT NOT NULL COMMENT '总限制次数',
-                         take_limit_count_used INT NOT NULL DEFAULT 0 COMMENT '已使用次数',
+                         participation_count INT NOT NULL DEFAULT 0 COMMENT '已参与次数',
+
+    -- 并发控制（乐观锁）
+                         version BIGINT NOT NULL DEFAULT 1 COMMENT '乐观锁版本号',
 
                          create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                          update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -143,6 +145,7 @@ CREATE TABLE account (
 CREATE TABLE `order` (
                          id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
                          order_id VARCHAR(50) NOT NULL UNIQUE COMMENT '拼团订单ID',
+                         team_id VARCHAR(50) COMMENT '拼团队伍ID（8位随机数，用户友好）',
                          activity_id VARCHAR(50) NOT NULL COMMENT '活动ID',
 
     -- 商品信息（冗余，避免JOIN）
@@ -152,7 +155,8 @@ CREATE TABLE `order` (
 
     -- 拼团规则
                          target_count INT NOT NULL COMMENT '目标人数',
-                         complete_count INT NOT NULL DEFAULT 0 COMMENT '完成人数',
+                         complete_count INT NOT NULL DEFAULT 0 COMMENT '完成人数（实际成团人数）',
+                         lock_count INT NOT NULL DEFAULT 0 COMMENT '锁单量（已锁定名额数量，防止超卖）',
 
     -- 状态管理
                          status VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '状态：PENDING/SUCCESS/FAILED',
@@ -181,46 +185,14 @@ CREATE TABLE `order` (
                          create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                          update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 
+                         INDEX idx_team_id (team_id),
                          INDEX idx_activity_id (activity_id),
                          INDEX idx_status_deadline (status, deadline_time),
                          INDEX idx_completed_time (completed_time),
                          INDEX idx_leader (leader_user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='拼团订单表';
 
--- 8. 拼团订单明细表
-CREATE TABLE order_detail (
-                              id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
-                              detail_id VARCHAR(50) NOT NULL UNIQUE COMMENT '明细ID',
-
-    -- 关联信息
-                              order_id VARCHAR(50) NOT NULL COMMENT '拼团订单ID',
-                              activity_id VARCHAR(50) NOT NULL COMMENT '活动ID',
-                              user_id VARCHAR(50) NOT NULL COMMENT '用户ID',
-
-    -- 用户角色
-                              user_type VARCHAR(20) NOT NULL COMMENT '用户类型：LEADER=团长，MEMBER=团员',
-
-    -- 商品信息（冗余）
-                              goods_id VARCHAR(50) NOT NULL COMMENT '商品ID',
-
-    -- 支付信息
-                              pay_amount DECIMAL(10,2) NOT NULL COMMENT '实际支付金额',
-                              out_trade_no VARCHAR(100) COMMENT '外部交易单号（幂等校验）',
-
-    -- 来源追踪
-                              source VARCHAR(50) COMMENT '来源',
-                              channel VARCHAR(50) COMMENT '渠道',
-
-                              create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                              update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-
-                              INDEX idx_order_id (order_id),
-                              INDEX idx_user_id (user_id),
-                              INDEX idx_activity_id (activity_id),
-                              UNIQUE KEY uk_out_trade_no (out_trade_no)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='拼团订单明细表';
-
--- 9. 商品SKU表（简化版，用于试算）
+-- 8. 商品SKU表（简化版，用于试算）
 CREATE TABLE sku (
                      id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
                      goods_id VARCHAR(50) NOT NULL UNIQUE COMMENT '商品ID',
@@ -231,7 +203,61 @@ CREATE TABLE sku (
                      update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品SKU表';
 
--- 10. 回调任务表（可选，用于异步通知）
+-- 9. 交易订单表（拼团锁单、支付、结算记录）
+CREATE TABLE trade_order (
+                             id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
+                             trade_order_id VARCHAR(50) NOT NULL UNIQUE COMMENT '交易订单ID',
+
+    -- 关联信息
+                             team_id VARCHAR(50) NOT NULL COMMENT '拼团队伍ID（关联 order 表）',
+                             order_id VARCHAR(50) NOT NULL COMMENT '拼团订单ID（关联 order 表）',
+                             activity_id VARCHAR(50) NOT NULL COMMENT '活动ID',
+                             user_id VARCHAR(50) NOT NULL COMMENT '用户ID',
+
+    -- 商品信息（冗余，避免JOIN）
+                             goods_id VARCHAR(50) NOT NULL COMMENT '商品ID',
+                             goods_name VARCHAR(200) NOT NULL COMMENT '商品名称',
+
+    -- 金额信息
+                             original_price DECIMAL(10,2) NOT NULL COMMENT '原始价格（商品原价）',
+                             deduction_price DECIMAL(10,2) NOT NULL COMMENT '减免金额（优惠金额）',
+                             pay_price DECIMAL(10,2) NOT NULL COMMENT '实付金额（原价 - 减免）',
+
+    -- 交易状态
+                             status VARCHAR(20) NOT NULL DEFAULT 'CREATE' COMMENT '交易状态：CREATE=已创建（锁单）, PAID=已支付, SETTLED=已结算, TIMEOUT=已超时, REFUND=已退单',
+
+    -- 外部交易单号（幂等性保证）
+                             out_trade_no VARCHAR(100) NOT NULL COMMENT '外部交易单号（商城系统传入，用于幂等校验）',
+
+    -- 支付时间
+                             pay_time DATETIME COMMENT '支付时间（用户支付成功的时间）',
+                             settlement_time DATETIME COMMENT '结算时间（拼团成功的时间）',
+
+    -- 来源追踪
+                             source VARCHAR(50) NOT NULL COMMENT '来源（如：s01-小程序、s02-App）',
+                             channel VARCHAR(50) NOT NULL COMMENT '渠道（如：c01-首页、c02-搜索）',
+
+    -- 回调通知配置
+                             notify_type VARCHAR(20) COMMENT '通知类型：HTTP=HTTP回调, MQ=消息队列',
+                             notify_url VARCHAR(500) COMMENT 'HTTP回调地址',
+                             notify_mq VARCHAR(100) COMMENT 'MQ主题',
+                             notify_status VARCHAR(20) DEFAULT 'INIT' COMMENT '通知状态：INIT=未发送, SUCCESS=成功, FAILED=失败',
+
+    -- 审计字段
+                             create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                             update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+
+    -- 索引设计
+                             UNIQUE KEY uk_out_trade_no (out_trade_no) COMMENT '外部交易单号唯一索引（幂等校验）',
+                             INDEX idx_team_id (team_id) COMMENT '队伍ID索引（查询某个团的所有交易）',
+                             INDEX idx_order_id (order_id) COMMENT '订单ID索引',
+                             INDEX idx_user_id (user_id) COMMENT '用户ID索引（查询用户的所有交易）',
+                             INDEX idx_activity_id (activity_id) COMMENT '活动ID索引',
+                             INDEX idx_status (status) COMMENT '状态索引（查询待结算订单）',
+                             INDEX idx_notify_status (notify_status) COMMENT '通知状态索引（查询待通知任务）'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='交易订单表（拼团锁单、支付、结算记录）';
+
+-- 11. 回调任务表（可选，用于异步通知）
 CREATE TABLE notify_task (
                              id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
                              task_id VARCHAR(50) NOT NULL UNIQUE COMMENT '任务ID',

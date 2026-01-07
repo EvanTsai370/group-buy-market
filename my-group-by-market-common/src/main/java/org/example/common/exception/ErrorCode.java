@@ -30,6 +30,14 @@ public enum ErrorCode implements IErrorCode {
     // --- B2类: 账户相关错误 ---
     ACCOUNT_NOT_FOUND("B2001", "用户账户不存在"),
     ACCOUNT_INSUFFICIENT("B2002", "参团次数不足"),
+    ACCOUNT_PARTICIPATION_LIMIT_REACHED("B2003", "您的参与次数已达上限（%d/%d）"),
+
+    // --- B3类: 活动相关错误 ---
+    ACTIVITY_NOT_FOUND("B3001", "活动不存在"),
+    ACTIVITY_NOT_ACTIVE("B3002", "活动未开启，当前状态: %s"),
+    ACTIVITY_NOT_STARTED("B3003", "活动未开始，开始时间: %s"),
+    ACTIVITY_EXPIRED("B3004", "活动已结束，结束时间: %s"),
+    ACTIVITY_CLOSED("B3005", "活动已关闭"),
 
     // --- C类: 第三方调用错误 ---
     THIRD_PARTY_ERROR("C0001", "第三方服务调用出错");

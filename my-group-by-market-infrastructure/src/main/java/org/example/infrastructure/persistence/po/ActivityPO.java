@@ -51,7 +51,7 @@ public class ActivityPO {
     private Integer validTime;
 
     /** 用户参团次数限制 */
-    private Integer takeLimitCount;
+    private Integer participationLimit;
 
     /** 活动开始时间 */
     private LocalDateTime startTime;

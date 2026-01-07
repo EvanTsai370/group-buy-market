@@ -1,7 +1,6 @@
 package org.example.domain.model.order.repository;
 
 import org.example.domain.model.order.Order;
-import org.example.domain.model.order.OrderDetail;
 import org.example.domain.model.order.valueobject.OrderStatus;
 
 import java.util.List;
@@ -29,12 +28,47 @@ public interface OrderRepository {
     Optional<Order> findById(String orderId);
 
     /**
+     * 原子化增加锁单量（解决高并发超卖问题）
+     *
+     * 使用条件更新 SQL：
+     * UPDATE `order` SET lock_count = lock_count + 1
+     * WHERE order_id = ? AND status = 'PENDING'
+     * AND lock_count < target_count AND deadline_time > NOW()
+     *
+     * 设计说明：
+     * - 通过数据库层面的条件更新保证并发安全
+     * - 防止锁单量超过目标人数（超卖保护）
+     * - 只有PENDING状态且未超时的订单才能增加锁单量
+     * - 更新成功后返回最新的lockCount值,确保内存与数据库一致
+     *
+     * @param orderId 订单ID
+     * @return 成功返回最新的lockCount值,失败返回-1
+     */
+    int incrementLockCount(String orderId);
+
+    /**
+     * 原子化减少锁单量（释放锁定）
+     *
+     * 使用条件更新 SQL：
+     * UPDATE `order` SET lock_count = lock_count - 1
+     * WHERE order_id = ? AND lock_count > 0
+     *
+     * 设计说明：
+     * - 用于退单场景，释放已锁定的名额
+     * - 确保lock_count不会减到负数
+     *
+     * @param orderId 订单ID
+     * @return 更新结果：true=成功, false=失败
+     */
+    boolean decrementLockCount(String orderId);
+
+    /**
      * 原子化增加完成人数（解决高并发误杀问题）
      *
      * 使用条件更新 SQL：
      * UPDATE `order` SET complete_count = complete_count + 1, status = ...
      * WHERE order_id = ? AND status = 'PENDING'
-     *   AND complete_count < target_count AND deadline_time > NOW()
+     * AND complete_count < target_count AND deadline_time > NOW()
      *
      * 设计说明：
      * - 通过数据库层面的条件更新保证并发安全
@@ -45,16 +79,6 @@ public interface OrderRepository {
      * @return 更新结果：成功返回更新后的完成人数，失败返回 -1
      */
     int tryIncrementCompleteCount(String orderId);
-
-    /**
-     * 保存订单明细（独立保存，不走聚合根）
-     *
-     * 配合 tryIncrementCompleteCount 使用，在原子更新成功后保存明细
-     *
-     * @param orderId 订单ID
-     * @param detail 订单明细
-     */
-    void saveDetail(String orderId, OrderDetail detail);
 
     /**
      * 根据活动ID查找进行中的拼团
@@ -82,7 +106,7 @@ public interface OrderRepository {
      * 更新订单状态
      *
      * @param orderId 订单ID
-     * @param status 新状态
+     * @param status  新状态
      */
     void updateStatus(String orderId, OrderStatus status);
 

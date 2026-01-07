@@ -66,6 +66,39 @@ public class RedisService implements IRedisService {
         return redissonClient.getBucket(key).isExists();
     }
 
+    @Override
+    public long incr(String key) {
+        return redissonClient.getAtomicLong(key).incrementAndGet();
+    }
+
+    @Override
+    public long decr(String key) {
+        return redissonClient.getAtomicLong(key).decrementAndGet();
+    }
+
+    @Override
+    public Boolean setNx(String key, long timeout, TimeUnit unit) {
+        return redissonClient.getBucket(key).trySet("1", timeout, unit);
+    }
+
+    @Override
+    public Long getAtomicLong(String key) {
+        long value = redissonClient.getAtomicLong(key).get();
+        // 如果key不存在，Redisson返回0，我们返回null以区分"不存在"和"值为0"
+        return redissonClient.getBucket(key).isExists() ? value : null;
+    }
+
+    @Override
+    public void setLong(String key, Long value, long timeout, TimeUnit unit) {
+        redissonClient.getAtomicLong(key).set(value);
+        redissonClient.getAtomicLong(key).expire(java.time.Duration.of(timeout, toChronoUnit(unit)));
+    }
+
+    @Override
+    public void remove(String key) {
+        redissonClient.getBucket(key).delete();
+    }
+
     /**
      * 将 TimeUnit 转换为 ChronoUnit
      */

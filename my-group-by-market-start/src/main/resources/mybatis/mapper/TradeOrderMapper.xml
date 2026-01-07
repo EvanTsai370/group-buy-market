@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.infrastructure.persistence.mapper.TradeOrderMapper">
+
+    <!--
+    根据外部交易单号查询交易订单
+
+    业务场景：
+    - 幂等性校验：防止同一笔订单重复提交
+    - 外部系统对账：通过外部交易单号查询订单状态
+
+    性能说明：
+    - out_trade_no 字段有唯一索引，查询性能O(1)
+    - LIMIT 1 明确表示只返回一条记录
+    -->
+    <select id="selectByOutTradeNo" resultType="org.example.infrastructure.persistence.po.TradeOrderPO">
+        SELECT *
+        FROM trade_order
+        WHERE out_trade_no = #{outTradeNo}
+        LIMIT 1
+    </select>
+
+    <!--
+    根据用户ID和活动ID查询交易订单列表
+
+    业务场景：
+    - 查询用户在某个活动下的所有参与记录
+    - 用于用户参与次数统计和限制
+
+    性能说明：
+    - 组合索引：idx_user_activity(user_id, activity_id)
+    - 适用于用户维度的查询（一个用户通常参与次数不多）
+    -->
+    <select id="selectByUserIdAndActivityId" resultType="org.example.infrastructure.persistence.po.TradeOrderPO">
+        SELECT *
+        FROM trade_order
+        WHERE user_id = #{userId}
+          AND activity_id = #{activityId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!--
+    根据队伍ID查询交易订单列表
+
+    业务场景：
+    - 查询某个拼团队伍的所有成员订单
+    - 用于拼团进度展示和成团判断
+
+    性能说明：
+    - team_id 字段有索引
+    - 适用于团队维度的查询（一个团通常只有几个到几十个成员）
+    -->
+    <select id="selectByTeamId" resultType="org.example.infrastructure.persistence.po.TradeOrderPO">
+        SELECT *
+        FROM trade_order
+        WHERE team_id = #{teamId}
+        ORDER BY create_time ASC
+    </select>
+
+    <!--
+    根据拼团订单ID查询交易订单列表
+
+    业务场景：
+    - 查询某个拼团订单下的所有交易订单
+    - 用于结算、退款等批量操作
+
+    性能说明：
+    - order_id 字段有索引
+    - 一个拼团订单可能包含多个交易订单（多个用户参与）
+    -->
+    <select id="selectByOrderId" resultType="org.example.infrastructure.persistence.po.TradeOrderPO">
+        SELECT *
+        FROM trade_order
+        WHERE order_id = #{orderId}
+        ORDER BY create_time ASC
+    </select>
+
+    <!--
+    统计用户在某个活动下的参与次数
+
+    业务场景：
+    - 限制用户参与次数（例如每个活动最多参与3次）
+    - 防止用户恶意刷单
+
+    性能说明：
+    - 使用组合索引：idx_user_activity(user_id, activity_id)
+    - COUNT(*) 在InnoDB中性能良好（使用覆盖索引）
+    - 如果需要高并发下的精确计数，建议使用Redis缓存
+    -->
+    <select id="countByUserIdAndActivityId" resultType="int">
+        SELECT COUNT(*)
+        FROM trade_order
+        WHERE user_id = #{userId}
+          AND activity_id = #{activityId}
+    </select>
+
+</mapper>

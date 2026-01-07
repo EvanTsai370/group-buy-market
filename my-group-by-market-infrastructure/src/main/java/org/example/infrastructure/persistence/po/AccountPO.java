@@ -25,8 +25,7 @@ public class AccountPO {
     private String accountId;
     private String userId;
     private String activityId;
-    private Integer takeLimitCount;
-    private Integer takeLimitCountUsed;
+    private Integer participationCount;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;

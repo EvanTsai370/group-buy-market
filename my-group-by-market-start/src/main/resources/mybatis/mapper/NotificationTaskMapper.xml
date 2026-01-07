@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.infrastructure.persistence.mapper.NotificationTaskMapper">
+
+    <resultMap id="BaseResultMap" type="org.example.infrastructure.persistence.po.NotificationTaskPO">
+        <id column="task_id" property="taskId"/>
+        <result column="trade_order_id" property="tradeOrderId"/>
+        <result column="notify_type" property="notifyType"/>
+        <result column="notify_url" property="notifyUrl"/>
+        <result column="notify_mq" property="notifyMq"/>
+        <result column="status" property="status"/>
+        <result column="retry_count" property="retryCount"/>
+        <result column="max_retry_count" property="maxRetryCount"/>
+        <result column="last_execute_time" property="lastExecuteTime"/>
+        <result column="failure_reason" property="failureReason"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 根据交易订单ID查询 -->
+    <select id="selectByTradeOrderId" resultMap="BaseResultMap">
+        SELECT *
+        FROM notification_task
+        WHERE trade_order_id = #{tradeOrderId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询待处理任务 -->
+    <select id="selectPendingTasks" resultMap="BaseResultMap">
+        SELECT *
+        FROM notification_task
+        WHERE status = 'PENDING'
+        ORDER BY create_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询待处理任务（分页） -->
+    <select id="selectPendingTasksWithPage" resultMap="BaseResultMap">
+        SELECT *
+        FROM notification_task
+        WHERE status = 'PENDING'
+        ORDER BY create_time ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+</mapper>

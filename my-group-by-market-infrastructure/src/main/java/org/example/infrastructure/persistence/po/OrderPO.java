@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("`order`")  // order 是 MySQL 关键字，需要加反引号
+@TableName("`order`") // order 是 MySQL 关键字，需要加反引号
 public class OrderPO {
 
     @TableId(type = IdType.AUTO)
@@ -30,6 +30,8 @@ public class OrderPO {
     private BigDecimal deductionPrice;
     private Integer targetCount;
     private Integer completeCount;
+    private Integer lockCount;
+    private String teamId;
     private String status;
     private LocalDateTime startTime;
     private LocalDateTime deadlineTime;

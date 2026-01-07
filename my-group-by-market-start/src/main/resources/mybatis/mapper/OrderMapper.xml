@@ -4,6 +4,48 @@
 <mapper namespace="org.example.infrastructure.persistence.mapper.OrderMapper">
 
     <!--
+    原子化增加锁单量（解决高并发超卖问题）
+
+    核心思想：
+    1. 使用条件更新代替乐观锁，避免高并发下的误杀
+    2. 在 WHERE 条件中限制 lock_count < target_count，保证不会超卖
+    3. 只有PENDING状态且未超时的订单才能增加锁单量
+
+    并发安全分析：
+    - MySQL InnoDB 的行锁机制保证同一时刻只有一个事务能更新同一行
+    - 条件 lock_count < target_count 在行锁保护下是安全的
+    - 不会出现多个用户同时锁单导致超卖的问题
+    -->
+    <update id="incrementLockCount">
+        UPDATE `order`
+        SET lock_count = lock_count + 1,
+            update_time = NOW()
+        WHERE order_id = #{orderId}
+          AND status = 'PENDING'
+          AND lock_count &lt; target_count
+          AND deadline_time &gt; NOW()
+    </update>
+
+    <!--
+    原子化减少锁单量（释放锁定）
+
+    核心思想：
+    1. 用于退单场景，释放已锁定的名额
+    2. 确保lock_count不会减到负数
+
+    并发安全分析：
+    - MySQL InnoDB 的行锁机制保证同一时刻只有一个事务能更新同一行
+    - 条件 lock_count > 0 确保不会出现负数
+    -->
+    <update id="decrementLockCount">
+        UPDATE `order`
+        SET lock_count = lock_count - 1,
+            update_time = NOW()
+        WHERE order_id = #{orderId}
+          AND lock_count &gt; 0
+    </update>
+
+    <!--
     原子化增加完成人数（解决高并发误杀问题）
 
     核心思想：

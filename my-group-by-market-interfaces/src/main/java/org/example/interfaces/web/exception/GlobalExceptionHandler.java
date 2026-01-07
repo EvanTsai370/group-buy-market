@@ -22,9 +22,11 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BizException.class)
     public Result<Void> handleBizException(BizException e, HttpServletRequest request) {
-        log.warn("业务异常: code={}, msg={}, url={}", e.getCode(), e.getMsg(), request.getRequestURI());
+        // 使用 getFormattedMsg() 获取格式化后的消息（支持参数化）
+        String formattedMsg = e.getFormattedMsg();
+        log.warn("业务异常: code={}, msg={}, url={}", e.getCode(), formattedMsg, request.getRequestURI());
         // 业务异常通常返回 200 HTTP 状态码，但在 Body 里标明错误
-        return Result.failure(e.getCode(), e.getMsg());
+        return Result.failure(e.getCode(), formattedMsg);
     }
 
     /**
