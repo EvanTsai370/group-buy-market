@@ -1,5 +1,6 @@
 package org.example.infrastructure.config;
 
+import org.example.domain.model.activity.repository.ActivityRepository;
 import org.example.domain.model.notification.repository.NotificationTaskRepository;
 import org.example.domain.model.order.repository.OrderRepository;
 import org.example.domain.model.tag.repository.CrowdTagRepository;
@@ -92,22 +93,28 @@ public class DomainServiceConfiguration {
      * 未支付退单策略
      *
      * <p>
-     * 处理未支付订单的退单逻辑，释放锁定的拼团名额
+     * 处理未支付订单的退单逻辑，释放锁定的拼团名额并恢复Redis库存
      */
     @Bean
-    public UnpaidRefundStrategy unpaidRefundStrategy(OrderRepository orderRepository) {
-        return new UnpaidRefundStrategy(orderRepository);
+    public UnpaidRefundStrategy unpaidRefundStrategy(
+            OrderRepository orderRepository,
+            TradeOrderRepository tradeOrderRepository,
+            ActivityRepository activityRepository) {
+        return new UnpaidRefundStrategy(orderRepository, tradeOrderRepository, activityRepository);
     }
 
     /**
      * 已支付退单策略
      *
      * <p>
-     * 处理已支付订单的退单逻辑，调用支付网关退款
+     * 处理已支付订单的退单逻辑，调用支付网关退款并恢复Redis库存
      */
     @Bean
-    public PaidRefundStrategy paidRefundStrategy(OrderRepository orderRepository) {
-        return new PaidRefundStrategy(orderRepository);
+    public PaidRefundStrategy paidRefundStrategy(
+            OrderRepository orderRepository,
+            TradeOrderRepository tradeOrderRepository,
+            ActivityRepository activityRepository) {
+        return new PaidRefundStrategy(orderRepository, tradeOrderRepository, activityRepository);
     }
 
     /**

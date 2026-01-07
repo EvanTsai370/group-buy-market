@@ -15,6 +15,7 @@ import org.example.domain.model.payment.repository.PaymentCallbackRecordReposito
 import org.example.domain.model.trade.TradeOrder;
 import org.example.domain.model.trade.repository.TradeOrderRepository;
 import org.example.application.service.payment.PaymentSignatureValidator;
+import org.example.domain.shared.IdGenerator;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -33,15 +34,18 @@ public class TradeOrderController {
     private final PaymentSignatureValidator paymentSignatureValidator;
     private final PaymentCallbackRecordRepository paymentCallbackRecordRepository;
     private final TradeOrderRepository tradeOrderRepository;
+    private final IdGenerator idGenerator;
 
     public TradeOrderController(TradeOrderService tradeOrderService,
-            PaymentSignatureValidator paymentSignatureValidator,
-            PaymentCallbackRecordRepository paymentCallbackRecordRepository,
-            TradeOrderRepository tradeOrderRepository) {
+                                PaymentSignatureValidator paymentSignatureValidator,
+                                PaymentCallbackRecordRepository paymentCallbackRecordRepository,
+                                TradeOrderRepository tradeOrderRepository,
+                                IdGenerator idGenerator) {
         this.tradeOrderService = tradeOrderService;
         this.paymentSignatureValidator = paymentSignatureValidator;
         this.paymentCallbackRecordRepository = paymentCallbackRecordRepository;
         this.tradeOrderRepository = tradeOrderRepository;
+      this.idGenerator = idGenerator;
     }
 
     /**
@@ -128,7 +132,7 @@ public class TradeOrderController {
         }
 
         // 5. 记录回调（幂等性保护）
-        String recordId = "REC-" + System.currentTimeMillis();
+        String recordId = "REC-" + idGenerator.nextId();
         PaymentCallbackRecord record = PaymentCallbackRecord.create(recordId, callbackId, callback);
         paymentCallbackRecordRepository.save(record);
 
