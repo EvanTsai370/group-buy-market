@@ -5,6 +5,7 @@ import org.example.domain.model.notification.repository.NotificationTaskReposito
 import org.example.domain.model.order.repository.OrderRepository;
 import org.example.domain.model.tag.repository.CrowdTagRepository;
 import org.example.domain.model.trade.repository.TradeOrderRepository;
+import org.example.domain.service.lock.IDistributedLockService;
 import org.example.domain.service.LockOrderService;
 import org.example.domain.service.RefundService;
 import org.example.domain.service.SettlementService;
@@ -99,8 +100,9 @@ public class DomainServiceConfiguration {
     public UnpaidRefundStrategy unpaidRefundStrategy(
             OrderRepository orderRepository,
             TradeOrderRepository tradeOrderRepository,
-            ActivityRepository activityRepository) {
-        return new UnpaidRefundStrategy(orderRepository, tradeOrderRepository, activityRepository);
+            ActivityRepository activityRepository,
+            IDistributedLockService lockService) {
+        return new UnpaidRefundStrategy(orderRepository, tradeOrderRepository, activityRepository, lockService);
     }
 
     /**
@@ -113,8 +115,9 @@ public class DomainServiceConfiguration {
     public PaidRefundStrategy paidRefundStrategy(
             OrderRepository orderRepository,
             TradeOrderRepository tradeOrderRepository,
-            ActivityRepository activityRepository) {
-        return new PaidRefundStrategy(orderRepository, tradeOrderRepository, activityRepository);
+            ActivityRepository activityRepository,
+            IDistributedLockService lockService) {
+        return new PaidRefundStrategy(orderRepository, tradeOrderRepository, activityRepository, lockService);
     }
 
     /**

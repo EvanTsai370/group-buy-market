@@ -19,6 +19,7 @@ import org.example.domain.model.order.Order;
 import org.example.domain.model.order.repository.OrderRepository;
 import org.example.domain.model.order.valueobject.Money;
 import org.example.domain.model.trade.TradeOrder;
+import org.example.domain.model.trade.event.TradeOrderTimeoutMessage;
 import org.example.domain.model.trade.filter.*;
 import org.example.domain.model.trade.repository.TradeOrderRepository;
 import org.example.domain.model.trade.valueobject.NotifyConfig;
@@ -27,6 +28,7 @@ import org.example.domain.service.LockOrderService;
 import org.example.domain.service.RefundService;
 import org.example.domain.service.SettlementService;
 import org.example.domain.service.discount.DiscountCalculator;
+import org.example.domain.service.timeout.ITimeoutMessageProducer;
 import org.example.domain.shared.IdGenerator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,6 +75,9 @@ public class TradeOrderService {
     // Assembler
     private final TradeOrderAssembler tradeOrderAssembler;
 
+    // 超时消息生产者
+    private final ITimeoutMessageProducer timeoutProducer;
+
     public TradeOrderService(ActivityRepository activityRepository,
             SkuRepository skuRepository,
             OrderRepository orderRepository,
@@ -83,7 +88,8 @@ public class TradeOrderService {
             LockOrderService lockOrderService,
             SettlementService settlementService,
             RefundService refundService,
-            TradeOrderAssembler tradeOrderAssembler) {
+            TradeOrderAssembler tradeOrderAssembler,
+            ITimeoutMessageProducer timeoutProducer) {
         this.activityRepository = activityRepository;
         this.skuRepository = skuRepository;
         this.orderRepository = orderRepository;
@@ -96,6 +102,7 @@ public class TradeOrderService {
         this.refundService = refundService;
         this.tradeFilterFactory = new TradeFilterFactory(activityRepository, accountRepository, tradeOrderRepository);
         this.tradeOrderAssembler = tradeOrderAssembler;
+        this.timeoutProducer = timeoutProducer;
     }
 
     /**
@@ -188,6 +195,9 @@ public class TradeOrderService {
 
             log.info("【TradeOrderService】锁单成功, tradeOrderId: {}, orderId: {}, userId: {}, payPrice: {}",
                     tradeOrderId, orderId, cmd.getUserId(), LogDesensitizer.maskPrice(priceResult.payPrice, log));
+
+            // 8. 发送超时消息（30分钟后自动退单）
+            sendTimeoutMessage(tradeOrder);
 
             return tradeOrderAssembler.toVO(tradeOrder);
 
@@ -309,6 +319,34 @@ public class TradeOrderService {
         }
 
         return context;
+    }
+
+    /**
+     * 发送超时消息
+     *
+     * <p>
+     * 用途：在用户锁单后发送延迟消息，30分钟后自动检查并退单
+     *
+     * @param tradeOrder 交易订单
+     */
+    private void sendTimeoutMessage(TradeOrder tradeOrder) {
+        try {
+            // 构建超时消息
+            TradeOrderTimeoutMessage message = new TradeOrderTimeoutMessage(
+                    tradeOrder.getTradeOrderId(),
+                    tradeOrder.getOrderId(),
+                    tradeOrder.getUserId(),
+                    tradeOrder.getActivityId(),
+                    System.currentTimeMillis());
+
+            // 发送延迟消息（默认30分钟）
+            timeoutProducer.sendDelayMessage(message);
+
+        } catch (Exception e) {
+            // 发送失败只记录日志，不影响锁单主流程
+            log.error("【TradeOrderService】发送超时消息失败, tradeOrderId={}",
+                    tradeOrder.getTradeOrderId(), e);
+        }
     }
 
     /**

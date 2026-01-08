@@ -30,6 +30,20 @@ spring:
           min-idle: 0      # 连接池最小空闲连接数
           max-wait: -1ms   # 连接池最大阻塞等待时间
 
+  # RabbitMQ 配置 (TradeOrder超时处理)
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    listener:
+      simple:
+        acknowledge-mode: manual  # 手动确认消息
+        prefetch: 1               # 每次只取1条消息
+        retry:
+          enabled: false          # 禁用自动重试（我们在代码中处理）
+
 # MyBatis Plus 全局通用配置
 mybatis-plus:
   mapper-locations: classpath:/mybatis/mapper/*.xml

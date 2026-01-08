@@ -107,7 +107,7 @@ public class RefundService {
             }
 
             // 2. 使用 TeamRefundStrategy 批量退单
-            teamRefundStrategy.execute(tradeOrders.get(0));
+            teamRefundStrategy.execute(tradeOrders.getFirst());
 
             log.info("【退单服务】拼团订单退款完成, orderId={}", orderId);
 

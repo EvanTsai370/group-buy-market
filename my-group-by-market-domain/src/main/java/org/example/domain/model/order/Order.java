@@ -198,6 +198,39 @@ public class Order {
     }
 
     /**
+     * 判断拼团是否已完成
+     *
+     * <p>
+     * 业务场景：
+     * <ul>
+     * <li>退单时判断是否需要恢复Redis库存</li>
+     * <li>已完成的拼团不需要恢复Redis库存</li>
+     * </ul>
+     *
+     * @return true=已完成, false=未完成
+     */
+    public boolean isCompleted() {
+        return this.status == OrderStatus.SUCCESS;
+    }
+
+    /**
+     * 判断是否可以退单
+     *
+     * <p>
+     * 业务规则：
+     * <ul>
+     * <li>进行中的拼团：可以退单</li>
+     * <li>已完成的拼团：可以退单（但不恢复库存）</li>
+     * <li>已失败的拼团：不可以退单</li>
+     * </ul>
+     *
+     * @return true=可以退单, false=不可以退单
+     */
+    public boolean canRefund() {
+        return this.status == OrderStatus.PENDING || this.status == OrderStatus.SUCCESS;
+    }
+
+    /**
      * 检查是否可以加入
      */
     public boolean canJoin() {
