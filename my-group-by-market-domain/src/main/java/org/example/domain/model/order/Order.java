@@ -6,11 +6,9 @@ import org.example.common.exception.BizException;
 import org.example.domain.model.order.event.OrderCompletedEvent;
 import org.example.domain.model.order.event.OrderCreatedEvent;
 import org.example.domain.model.order.event.OrderFailedEvent;
-import org.example.domain.model.order.event.UserJoinedOrderEvent;
 import org.example.domain.model.order.valueobject.Money;
 import org.example.domain.model.order.valueobject.OrderStatus;
 import org.example.domain.shared.DomainEvent;
-import org.example.domain.shared.IdGenerator;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -96,8 +94,7 @@ public class Order {
             Money price,
             LocalDateTime deadlineTime,
             String source,
-            String channel,
-            IdGenerator idGenerator) {
+            String channel) {
 
         // 参数校验
         if (targetCount == null || targetCount <= 0) {

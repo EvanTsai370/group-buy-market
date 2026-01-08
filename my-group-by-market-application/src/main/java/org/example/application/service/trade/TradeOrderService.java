@@ -1,10 +1,9 @@
 package org.example.application.service.trade;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.example.application.assembler.TradeOrderAssembler;
+import org.example.application.assembler.TradeOrderResultAssembler;
 import org.example.application.service.trade.cmd.LockOrderCmd;
-import org.example.application.service.trade.vo.TradeOrderVO;
+import org.example.application.service.trade.result.TradeOrderResult;
 import org.example.common.exception.BizException;
 import org.example.common.pattern.chain.model2.ChainExecutor;
 import org.example.common.util.LogDesensitizer;
@@ -73,7 +72,7 @@ public class TradeOrderService {
     private final TradeFilterFactory tradeFilterFactory;
 
     // Assembler
-    private final TradeOrderAssembler tradeOrderAssembler;
+    private final TradeOrderResultAssembler tradeOrderResultAssembler;
 
     // 超时消息生产者
     private final ITimeoutMessageProducer timeoutProducer;
@@ -88,7 +87,7 @@ public class TradeOrderService {
             LockOrderService lockOrderService,
             SettlementService settlementService,
             RefundService refundService,
-            TradeOrderAssembler tradeOrderAssembler,
+            TradeOrderResultAssembler tradeOrderResultAssembler,
             ITimeoutMessageProducer timeoutProducer) {
         this.activityRepository = activityRepository;
         this.skuRepository = skuRepository;
@@ -101,7 +100,7 @@ public class TradeOrderService {
         this.settlementService = settlementService;
         this.refundService = refundService;
         this.tradeFilterFactory = new TradeFilterFactory(activityRepository, accountRepository, tradeOrderRepository);
-        this.tradeOrderAssembler = tradeOrderAssembler;
+        this.tradeOrderResultAssembler = tradeOrderResultAssembler;
         this.timeoutProducer = timeoutProducer;
     }
 
@@ -132,11 +131,11 @@ public class TradeOrderService {
      * </ul>
      *
      * @param cmd 锁单命令
-     * @return 交易订单VO
+     * @return 交易订单结果
      * @throws BizException 业务异常(如参团次数已达上限、拼团已满等)
      */
     @Transactional(rollbackFor = Exception.class)
-    public TradeOrderVO lockOrder(LockOrderCmd cmd) {
+    public TradeOrderResult lockOrder(LockOrderCmd cmd) {
         log.info("【TradeOrderService】开始锁单, userId: {}, activityId: {}, orderId: {}, outTradeNo: {}",
                 cmd.getUserId(), cmd.getActivityId(), cmd.getOrderId(), cmd.getOutTradeNo());
 
@@ -149,7 +148,7 @@ public class TradeOrderService {
             if (existingTradeOrder.isPresent()) {
                 log.warn("【TradeOrderService】交易单号已存在，返回已有订单, outTradeNo: {}, tradeOrderId: {}",
                         cmd.getOutTradeNo(), existingTradeOrder.get().getTradeOrderId());
-                return tradeOrderAssembler.toVO(existingTradeOrder.get());
+                return tradeOrderResultAssembler.toResult(existingTradeOrder.get());
             }
 
             // 1. 执行交易规则过滤链（保存context用于回滚）
@@ -199,7 +198,7 @@ public class TradeOrderService {
             // 8. 发送超时消息（30分钟后自动退单）
             sendTimeoutMessage(tradeOrder);
 
-            return tradeOrderAssembler.toVO(tradeOrder);
+            return tradeOrderResultAssembler.toResult(tradeOrder);
 
         } catch (BizException e) {
             // 业务异常：回滚Redis库存
@@ -263,14 +262,14 @@ public class TradeOrderService {
      * 查询交易订单
      *
      * @param tradeOrderId 交易订单ID
-     * @return 交易订单VO
+     * @return 交易订单结果
      */
-    public TradeOrderVO queryTradeOrder(String tradeOrderId) {
+    public TradeOrderResult queryTradeOrder(String tradeOrderId) {
         Optional<TradeOrder> tradeOrderOpt = tradeOrderRepository.findByTradeOrderId(tradeOrderId);
         if (tradeOrderOpt.isEmpty()) {
             throw new BizException("交易订单不存在");
         }
-        return tradeOrderAssembler.toVO(tradeOrderOpt.get());
+        return tradeOrderResultAssembler.toResult(tradeOrderOpt.get());
     }
 
     // ==================== 私有辅助方法 ====================
@@ -521,8 +520,7 @@ public class TradeOrderService {
                 price,
                 deadlineTime,
                 cmd.getSource(),
-                cmd.getChannel(),
-                idGenerator);
+                cmd.getChannel());
 
         orderRepository.save(newOrder);
         log.info("【TradeOrderService】创建新拼团, orderId: {}, teamId: {}", orderId, teamId);

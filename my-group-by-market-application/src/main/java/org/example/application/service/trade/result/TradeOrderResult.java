@@ -1,4 +1,4 @@
-package org.example.application.service.trade.vo;
+package org.example.application.service.trade.result;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 交易订单VO
+ * 交易订单结果对象
+ *
+ * <p>
+ * 用例输出对象，表示交易订单的查询结果
  *
  * @author 开发团队
  * @since 2026-01-04
@@ -19,8 +22,8 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "交易订单视图对象")
-public class TradeOrderVO {
+@Schema(description = "交易订单结果对象")
+public class TradeOrderResult {
 
     @Schema(description = "交易订单ID")
     private String tradeOrderId;

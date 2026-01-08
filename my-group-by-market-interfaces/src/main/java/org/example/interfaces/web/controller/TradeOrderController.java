@@ -5,8 +5,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.example.application.service.trade.TradeOrderService;
-import org.example.application.service.trade.cmd.LockOrderCmd;
-import org.example.application.service.trade.vo.TradeOrderVO;
+import org.example.interfaces.web.assembler.TradeOrderAssembler;
+import org.example.interfaces.web.dto.LockOrderRequest;
+import org.example.interfaces.web.dto.TradeOrderResponse;
 import org.example.common.api.Result;
 import org.example.common.exception.BizException;
 import org.example.domain.model.payment.PaymentCallbackDTO;
@@ -31,39 +32,48 @@ import org.springframework.web.bind.annotation.*;
 public class TradeOrderController {
 
     private final TradeOrderService tradeOrderService;
+    private final TradeOrderAssembler tradeOrderAssembler;
     private final PaymentSignatureValidator paymentSignatureValidator;
     private final PaymentCallbackRecordRepository paymentCallbackRecordRepository;
     private final TradeOrderRepository tradeOrderRepository;
     private final IdGenerator idGenerator;
 
     public TradeOrderController(TradeOrderService tradeOrderService,
-                                PaymentSignatureValidator paymentSignatureValidator,
-                                PaymentCallbackRecordRepository paymentCallbackRecordRepository,
-                                TradeOrderRepository tradeOrderRepository,
-                                IdGenerator idGenerator) {
+            TradeOrderAssembler tradeOrderAssembler,
+            PaymentSignatureValidator paymentSignatureValidator,
+            PaymentCallbackRecordRepository paymentCallbackRecordRepository,
+            TradeOrderRepository tradeOrderRepository,
+            IdGenerator idGenerator) {
         this.tradeOrderService = tradeOrderService;
+        this.tradeOrderAssembler = tradeOrderAssembler;
         this.paymentSignatureValidator = paymentSignatureValidator;
         this.paymentCallbackRecordRepository = paymentCallbackRecordRepository;
         this.tradeOrderRepository = tradeOrderRepository;
-      this.idGenerator = idGenerator;
+        this.idGenerator = idGenerator;
     }
 
     /**
      * 锁单接口
      *
-     * @param cmd 锁单命令
+     * @param request 锁单请求
      * @return 交易订单信息
      */
     @PostMapping("/lock")
     @Operation(summary = "锁单", description = "用户参与拼团，锁定交易订单")
-    public Result<TradeOrderVO> lockOrder(@RequestBody LockOrderCmd cmd) {
+    public Result<TradeOrderResponse> lockOrder(@RequestBody LockOrderRequest request) {
         log.info("【TradeOrderController】锁单请求, userId: {}, activityId: {}, orderId: {}",
-                cmd.getUserId(), cmd.getActivityId(), cmd.getOrderId());
+                request.getUserId(), request.getActivityId(), request.getOrderId());
 
-        // 调用应用服务
-        TradeOrderVO vo = tradeOrderService.lockOrder(cmd);
+        // 1. 协议层 → 应用层转换
+        var cmd = tradeOrderAssembler.toCommand(request);
 
-        return Result.success(vo);
+        // 2. 调用应用服务
+        var result = tradeOrderService.lockOrder(cmd);
+
+        // 3. 应用层 → 协议层转换
+        var response = tradeOrderAssembler.toResponse(result);
+
+        return Result.success(response);
     }
 
     /**
@@ -169,11 +179,15 @@ public class TradeOrderController {
      */
     @GetMapping("/{tradeOrderId}")
     @Operation(summary = "查询交易订单", description = "根据交易订单ID查询订单详情")
-    public Result<TradeOrderVO> queryTradeOrder(@PathVariable String tradeOrderId) {
+    public Result<TradeOrderResponse> queryTradeOrder(@PathVariable String tradeOrderId) {
         log.info("【TradeOrderController】查询交易订单, tradeOrderId: {}", tradeOrderId);
 
-        TradeOrderVO vo = tradeOrderService.queryTradeOrder(tradeOrderId);
+        // 1. 调用应用服务
+        var result = tradeOrderService.queryTradeOrder(tradeOrderId);
 
-        return Result.success(vo);
+        // 2. 应用层 → 协议层转换
+        var response = tradeOrderAssembler.toResponse(result);
+
+        return Result.success(response);
     }
 }
