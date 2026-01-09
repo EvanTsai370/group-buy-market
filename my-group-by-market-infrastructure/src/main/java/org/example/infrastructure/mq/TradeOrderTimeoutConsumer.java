@@ -4,7 +4,7 @@ import com.rabbitmq.client.Channel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.domain.model.trade.TradeOrder;
-import org.example.domain.model.trade.event.TradeOrderTimeoutMessage;
+import org.example.domain.model.trade.message.TradeOrderTimeoutMessage;
 import org.example.domain.model.trade.repository.TradeOrderRepository;
 import org.example.domain.model.trade.valueobject.TradeStatus;
 import org.example.domain.service.RefundService;
@@ -92,7 +92,7 @@ public class TradeOrderTimeoutConsumer {
 
             // 3. 执行退单
             log.info("【TradeOrder超时】开始执行退单, tradeOrderId={}", message.getTradeOrderId());
-            refundService.refundTradeOrder(message.getTradeOrderId());
+            refundService.refundTradeOrder(message.getTradeOrderId(), "超时未支付自动退单");
 
             log.info("【TradeOrder超时】退单成功, tradeOrderId={}", message.getTradeOrderId());
 

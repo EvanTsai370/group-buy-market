@@ -79,13 +79,19 @@ public class DomainServiceConfiguration {
      * 处理订单失败/超时后的退款逻辑，确保锁单量正确释放
      * <p>
      * 使用策略模式处理不同场景的退单逻辑
+     * <p>
+     * 降级策略：退款失败时发送到MQ异步重试
      */
     @Bean
     public RefundService refundService(
             TradeOrderRepository tradeOrderRepository,
             RefundStrategyFactory refundStrategyFactory,
-            TeamRefundStrategy teamRefundStrategy) {
-        return new RefundService(tradeOrderRepository, refundStrategyFactory, teamRefundStrategy);
+            TeamRefundStrategy teamRefundStrategy,
+            IDistributedLockService lockService,
+            IRefundFallbackService fallbackService) {
+
+      return new RefundService(
+                tradeOrderRepository, refundStrategyFactory, teamRefundStrategy, lockService, fallbackService);
     }
 
     // ==================== 退单策略配置 ====================
@@ -151,6 +157,18 @@ public class DomainServiceConfiguration {
             PaidRefundStrategy paidRefundStrategy) {
         return new RefundStrategyFactory(
                 List.of(unpaidRefundStrategy, paidRefundStrategy));
+    }
+
+    /**
+     * 退款时间窗口验证器
+     *
+     * <p>
+     * 验证不同状态订单的退款时间规则
+     */
+    @Bean
+    public org.example.domain.service.refund.RefundTimeWindowValidator refundTimeWindowValidator(
+            OrderRepository orderRepository) {
+        return new org.example.domain.service.refund.RefundTimeWindowValidator(orderRepository);
     }
 
     // ==================== 折扣计算器配置 ====================

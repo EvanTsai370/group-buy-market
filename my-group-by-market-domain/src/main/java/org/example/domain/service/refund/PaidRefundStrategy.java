@@ -70,7 +70,7 @@ public class PaidRefundStrategy implements RefundStrategy {
                 tradeOrder.getTradeOrderId(), LogDesensitizer.maskPrice(tradeOrder.getPayPrice(), log));
 
         // 1. 标记为退单
-        tradeOrder.markAsRefund();
+        tradeOrder.markAsRefund("已支付拼团失败退款");
 
         String orderId = tradeOrder.getOrderId();
 

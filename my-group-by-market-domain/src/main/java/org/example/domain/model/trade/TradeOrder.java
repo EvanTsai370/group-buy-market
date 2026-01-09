@@ -98,6 +98,12 @@ public class TradeOrder {
     /** 更新时间 */
     private LocalDateTime updateTime;
 
+    /** 退款原因 */
+    private String refundReason;
+
+    /** 退款时间 */
+    private LocalDateTime refundTime;
+
     /** 领域事件列表 */
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 
@@ -233,16 +239,20 @@ public class TradeOrder {
 
     /**
      * 标记为退单
+     *
+     * @param reason 退款原因
      */
-    public void markAsRefund() {
+    public void markAsRefund(String reason) {
         if (!this.status.canRefund()) {
             throw new BizException("当前状态不支持退单操作，status: " + this.status);
         }
 
         this.status = TradeStatus.REFUND;
+        this.refundReason = reason;
+        this.refundTime = LocalDateTime.now();
         this.updateTime = LocalDateTime.now();
 
-        log.warn("【TradeOrder聚合】交易订单已退单, tradeOrderId: {}", tradeOrderId);
+        log.warn("【TradeOrder聚合】交易订单已退单, tradeOrderId: {}, reason: {}", tradeOrderId, reason);
     }
 
     /**

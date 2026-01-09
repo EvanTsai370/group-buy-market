@@ -77,6 +77,11 @@
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
         </dependency>
+        <!-- ✅ Spring AOP for rate limiting -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
         <!-- ✅ RabbitMQ for TradeOrder timeout handling -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

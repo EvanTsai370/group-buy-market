@@ -1,6 +1,6 @@
 package org.example.domain.service.timeout;
 
-import org.example.domain.model.trade.event.TradeOrderTimeoutMessage;
+import org.example.domain.model.trade.message.TradeOrderTimeoutMessage;
 
 /**
  * 超时消息生产者接口

@@ -1,4 +1,4 @@
-package org.example.domain.model.trade.event;
+package org.example.domain.model.trade.message;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

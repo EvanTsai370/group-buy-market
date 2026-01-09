@@ -13,7 +13,8 @@ import java.time.LocalDateTime;
 /**
  * 交易订单持久化对象
  *
- * <p>对应数据库表：trade_order
+ * <p>
+ * 对应数据库表：trade_order
  *
  * @author 开发团队
  * @since 2026-01-04
@@ -91,4 +92,10 @@ public class TradeOrderPO {
 
     /** 更新时间 */
     private LocalDateTime updateTime;
+
+    /** 退款原因 */
+    private String refundReason;
+
+    /** 退款时间 */
+    private LocalDateTime refundTime;
 }

@@ -3,6 +3,7 @@ package org.example.application.service.trade;
 import lombok.extern.slf4j.Slf4j;
 import org.example.application.assembler.TradeOrderResultAssembler;
 import org.example.application.service.trade.cmd.LockOrderCmd;
+import org.example.application.service.trade.cmd.RefundCmd;
 import org.example.application.service.trade.result.TradeOrderResult;
 import org.example.common.exception.BizException;
 import org.example.common.pattern.chain.model2.ChainExecutor;
@@ -18,7 +19,7 @@ import org.example.domain.model.order.Order;
 import org.example.domain.model.order.repository.OrderRepository;
 import org.example.domain.model.order.valueobject.Money;
 import org.example.domain.model.trade.TradeOrder;
-import org.example.domain.model.trade.event.TradeOrderTimeoutMessage;
+import org.example.domain.model.trade.message.TradeOrderTimeoutMessage;
 import org.example.domain.model.trade.filter.*;
 import org.example.domain.model.trade.repository.TradeOrderRepository;
 import org.example.domain.model.trade.valueobject.NotifyConfig;
@@ -248,6 +249,23 @@ public class TradeOrderService {
     }
 
     /**
+     * 退款（使用Cmd）
+     *
+     * <p>
+     * 用例层接口，接收RefundCmd命令对象
+     *
+     * @param cmd 退款命令
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void refund(RefundCmd cmd) {
+        log.info("【TradeOrderService】处理退款, tradeOrderId: {}, reason: {}, operator: {}",
+                cmd.getTradeOrderId(), cmd.getReason(), cmd.getOperator());
+
+        // 委托给领域服务
+        refundService.refundTradeOrder(cmd.getTradeOrderId(), cmd.getReason());
+    }
+
+    /**
      * 退单
      *
      * @param tradeOrderId 交易订单ID
@@ -255,7 +273,19 @@ public class TradeOrderService {
     @Transactional(rollbackFor = Exception.class)
     public void refundTradeOrder(String tradeOrderId) {
         log.info("【TradeOrderService】处理退单, tradeOrderId: {}", tradeOrderId);
-        refundService.refundTradeOrder(tradeOrderId);
+        refundService.refundTradeOrder(tradeOrderId, "系统退单");
+    }
+
+    /**
+     * 退单（带原因）
+     *
+     * @param tradeOrderId 交易订单ID
+     * @param reason       退款原因
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void refundTradeOrder(String tradeOrderId, String reason) {
+        log.info("【TradeOrderService】处理退单, tradeOrderId: {}, reason: {}", tradeOrderId, reason);
+        refundService.refundTradeOrder(tradeOrderId, reason);
     }
 
     /**

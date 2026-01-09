@@ -2,7 +2,7 @@ package org.example.infrastructure.mq;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.domain.model.trade.event.TradeOrderTimeoutMessage;
+import org.example.domain.model.trade.message.TradeOrderTimeoutMessage;
 import org.example.domain.service.timeout.ITimeoutMessageProducer;
 import org.example.infrastructure.config.RabbitMQDelayConfig;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
