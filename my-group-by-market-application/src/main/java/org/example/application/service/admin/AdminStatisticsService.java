@@ -2,11 +2,15 @@ package org.example.application.service.admin;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.application.assembler.UserResultAssembler;
+import org.example.application.service.admin.result.DashboardOverviewResult;
+import org.example.application.service.admin.result.GoodsStatisticsResult;
+import org.example.application.service.admin.result.SkuStatisticsInfo;
+import org.example.application.service.admin.result.UserStatisticsResult;
 import org.example.domain.model.goods.Sku;
 import org.example.domain.model.goods.Spu;
 import org.example.domain.model.goods.repository.SkuRepository;
 import org.example.domain.model.goods.repository.SpuRepository;
-import org.example.domain.model.user.User;
 import org.example.domain.model.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -26,121 +30,96 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdminStatisticsService {
 
-    private final UserRepository userRepository;
-    private final SpuRepository spuRepository;
-    private final SkuRepository skuRepository;
+        private final UserRepository userRepository;
+        private final SpuRepository spuRepository;
+        private final SkuRepository skuRepository;
+        private final UserResultAssembler userResultAssembler;
 
-    /**
-     * 获取仪表盘概览数据
-     */
-    public DashboardOverview getDashboardOverview() {
-        log.info("【AdminStatistics】获取仪表盘概览");
+        /**
+         * 获取仪表盘概览数据
+         */
+        public DashboardOverviewResult getDashboardOverview() {
+                log.info("【AdminStatistics】获取仪表盘概览");
 
-        // 用户统计
-        long totalUsers = userRepository.count();
+                // 用户统计
+                long totalUsers = userRepository.count();
 
-        // 商品统计
-        List<Spu> allSpus = spuRepository.findAll(1, 10000);
-        List<Spu> onSaleSpus = spuRepository.findAllOnSale();
-        List<Sku> allSkus = skuRepository.findAll(1, 10000);
-        List<Sku> onSaleSkus = skuRepository.findAllOnSale();
+                // 商品统计
+                List<Spu> allSpus = spuRepository.findAll(1, 10000);
+                List<Spu> onSaleSpus = spuRepository.findAllOnSale();
+                List<Sku> allSkus = skuRepository.findAll(1, 10000);
+                List<Sku> onSaleSkus = skuRepository.findAllOnSale();
 
-        // 库存预警（库存 < 10 的SKU）
-        long lowStockCount = allSkus.stream()
-                .filter(sku -> sku.getAvailableStock() < 10)
-                .count();
+                // 库存预警（库存 < 10 的SKU）
+                long lowStockCount = allSkus.stream()
+                                .filter(sku -> sku.getAvailableStock() < 10)
+                                .count();
 
-        return new DashboardOverview(
-                totalUsers,
-                allSpus.size(),
-                onSaleSpus.size(),
-                allSkus.size(),
-                onSaleSkus.size(),
-                lowStockCount,
-                LocalDateTime.now());
-    }
+                return DashboardOverviewResult.builder()
+                                .totalUsers(totalUsers)
+                                .totalSpus(allSpus.size())
+                                .onSaleSpus(onSaleSpus.size())
+                                .totalSkus(allSkus.size())
+                                .onSaleSkus(onSaleSkus.size())
+                                .lowStockCount(lowStockCount)
+                                .updateTime(LocalDateTime.now())
+                                .build();
+        }
 
-    /**
-     * 获取用户统计
-     */
-    public UserStatistics getUserStatistics() {
-        log.info("【AdminStatistics】获取用户统计");
+        /**
+         * 获取用户统计
+         */
+        public UserStatisticsResult getUserStatistics() {
+                log.info("【AdminStatistics】获取用户统计");
 
-        long totalUsers = userRepository.count();
+                long totalUsers = userRepository.count();
 
-        // 按角色统计
-        Map<String, Long> roleDistribution = new HashMap<>();
-        // TODO: 实现详细统计
+                // 按角色统计
+                Map<String, Long> roleDistribution = new HashMap<>();
+                // TODO: 实现详细统计
 
-        return new UserStatistics(totalUsers, roleDistribution);
-    }
+                return UserStatisticsResult.builder()
+                                .totalUsers(totalUsers)
+                                .roleDistribution(roleDistribution)
+                                .build();
+        }
 
-    /**
-     * 获取商品统计
-     */
-    public GoodsStatistics getGoodsStatistics() {
-        log.info("【AdminStatistics】获取商品统计");
+        /**
+         * 获取商品统计
+         */
+        public GoodsStatisticsResult getGoodsStatistics() {
+                log.info("【AdminStatistics】获取商品统计");
 
-        List<Spu> allSpus = spuRepository.findAll(1, 10000);
-        List<Spu> onSaleSpus = spuRepository.findAllOnSale();
-        List<Sku> allSkus = skuRepository.findAll(1, 10000);
+                List<Spu> allSpus = spuRepository.findAll(1, 10000);
+                List<Spu> onSaleSpus = spuRepository.findAllOnSale();
+                List<Sku> allSkus = skuRepository.findAll(1, 10000);
 
-        // 计算总库存
-        int totalStock = allSkus.stream()
-                .mapToInt(Sku::getStock)
-                .sum();
+                // 计算总库存
+                int totalStock = allSkus.stream()
+                                .mapToInt(Sku::getStock)
+                                .sum();
 
-        // 计算冻结库存
-        int frozenStock = allSkus.stream()
-                .mapToInt(Sku::getFrozenStock)
-                .sum();
+                // 计算冻结库存
+                int frozenStock = allSkus.stream()
+                                .mapToInt(Sku::getFrozenStock)
+                                .sum();
 
-        // 低库存SKU列表
-        List<Sku> lowStockSkus = allSkus.stream()
-                .filter(sku -> sku.getAvailableStock() < 10)
-                .toList();
+                // 低库存SKU列表
+                List<Sku> lowStockSkuDomains = allSkus.stream()
+                                .filter(sku -> sku.getAvailableStock() < 10)
+                                .toList();
 
-        return new GoodsStatistics(
-                allSpus.size(),
-                onSaleSpus.size(),
-                allSpus.size() - onSaleSpus.size(),
-                allSkus.size(),
-                totalStock,
-                frozenStock,
-                lowStockSkus);
-    }
+                // 转换为统计信息对象
+                List<SkuStatisticsInfo> lowStockSkus = userResultAssembler.toSkuStatisticsInfoList(lowStockSkuDomains);
 
-    /**
-     * 仪表盘概览
-     */
-    public record DashboardOverview(
-            long totalUsers,
-            int totalSpus,
-            int onSaleSpus,
-            int totalSkus,
-            int onSaleSkus,
-            long lowStockCount,
-            LocalDateTime updateTime) {
-    }
-
-    /**
-     * 用户统计
-     */
-    public record UserStatistics(
-            long totalUsers,
-            Map<String, Long> roleDistribution) {
-    }
-
-    /**
-     * 商品统计
-     */
-    public record GoodsStatistics(
-            int totalSpus,
-            int onSaleSpus,
-            int offSaleSpus,
-            int totalSkus,
-            int totalStock,
-            int frozenStock,
-            List<Sku> lowStockSkus) {
-    }
+                return GoodsStatisticsResult.builder()
+                                .totalSpus(allSpus.size())
+                                .onSaleSpus(onSaleSpus.size())
+                                .offSaleSpus(allSpus.size() - onSaleSpus.size())
+                                .totalSkus(allSkus.size())
+                                .totalStock(totalStock)
+                                .frozenStock(frozenStock)
+                                .lowStockSkus(lowStockSkus)
+                                .build();
+        }
 }

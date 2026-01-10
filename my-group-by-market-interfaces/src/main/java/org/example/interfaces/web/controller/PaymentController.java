@@ -3,14 +3,22 @@ package org.example.interfaces.web.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.application.service.payment.AlipayPaymentService;
+import org.example.application.service.payment.result.PaymentQueryResultObj;
+import org.example.application.service.payment.result.RefundQueryResultObj;
+import org.example.application.service.payment.result.RefundResultObj;
 import org.example.common.api.Result;
-import org.example.domain.gateway.PaymentGateway.*;
+import org.example.interfaces.web.assembler.PaymentAssembler;
+import org.example.interfaces.web.dto.payment.PaymentQueryResponse;
+import org.example.interfaces.web.dto.payment.RefundQueryResponse;
+import org.example.interfaces.web.dto.payment.RefundResponse;
+import org.example.interfaces.web.request.CreatePaymentRequest;
+import org.example.interfaces.web.request.PaymentRefundRequest;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,19 +36,19 @@ import java.util.Map;
 public class PaymentController {
 
     private final AlipayPaymentService alipayPaymentService;
+    private final PaymentAssembler paymentAssembler;
 
     /**
      * 创建支付页面
      */
     @PostMapping("/create")
     @Operation(summary = "创建支付", description = "创建支付宝支付页面")
-    public Result<String> createPayment(
-            @RequestParam String outTradeNo,
-            @RequestParam BigDecimal amount,
-            @RequestParam String subject) {
-        log.info("【PaymentController】创建支付, outTradeNo: {}, amount: {}", outTradeNo, amount);
+    public Result<String> createPayment(@Valid @RequestBody CreatePaymentRequest request) {
+        log.info("【PaymentController】创建支付, outTradeNo: {}, amount: {}",
+                request.getOutTradeNo(), request.getAmount());
 
-        String paymentForm = alipayPaymentService.createPaymentPage(outTradeNo, amount, subject);
+        String paymentForm = alipayPaymentService.createPaymentPage(
+                request.getOutTradeNo(), request.getAmount(), request.getSubject());
         return Result.success(paymentForm);
     }
 
@@ -49,11 +57,11 @@ public class PaymentController {
      */
     @GetMapping("/query")
     @Operation(summary = "查询支付", description = "查询支付状态")
-    public Result<PaymentQueryResult> queryPayment(@RequestParam String outTradeNo) {
+    public Result<PaymentQueryResponse> queryPayment(@RequestParam String outTradeNo) {
         log.info("【PaymentController】查询支付, outTradeNo: {}", outTradeNo);
 
-        PaymentQueryResult result = alipayPaymentService.queryPayment(outTradeNo);
-        return Result.success(result);
+        PaymentQueryResultObj result = alipayPaymentService.queryPayment(outTradeNo);
+        return Result.success(paymentAssembler.toResponse(result));
     }
 
     /**
@@ -61,15 +69,14 @@ public class PaymentController {
      */
     @PostMapping("/refund")
     @Operation(summary = "退款", description = "发起退款")
-    public Result<RefundResult> refund(
-            @RequestParam String outTradeNo,
-            @RequestParam BigDecimal refundAmount,
-            @RequestParam(required = false) String refundReason,
-            @RequestParam(required = false) String outRequestNo) {
-        log.info("【PaymentController】退款, outTradeNo: {}, refundAmount: {}", outTradeNo, refundAmount);
+    public Result<RefundResponse> refund(@Valid @RequestBody PaymentRefundRequest request) {
+        log.info("【PaymentController】退款, outTradeNo: {}, refundAmount: {}",
+                request.getOutTradeNo(), request.getRefundAmount());
 
-        RefundResult result = alipayPaymentService.refund(outTradeNo, refundAmount, refundReason, outRequestNo);
-        return Result.success(result);
+        RefundResultObj result = alipayPaymentService.refund(
+                request.getOutTradeNo(), request.getRefundAmount(),
+                request.getRefundReason(), request.getOutRequestNo());
+        return Result.success(paymentAssembler.toResponse(result));
     }
 
     /**
@@ -77,13 +84,13 @@ public class PaymentController {
      */
     @GetMapping("/refund/query")
     @Operation(summary = "查询退款", description = "查询退款状态")
-    public Result<RefundQueryResult> queryRefund(
+    public Result<RefundQueryResponse> queryRefund(
             @RequestParam String outTradeNo,
             @RequestParam String outRequestNo) {
         log.info("【PaymentController】查询退款, outTradeNo: {}, outRequestNo: {}", outTradeNo, outRequestNo);
 
-        RefundQueryResult result = alipayPaymentService.queryRefund(outTradeNo, outRequestNo);
-        return Result.success(result);
+        RefundQueryResultObj result = alipayPaymentService.queryRefund(outTradeNo, outRequestNo);
+        return Result.success(paymentAssembler.toResponse(result));
     }
 
     /**

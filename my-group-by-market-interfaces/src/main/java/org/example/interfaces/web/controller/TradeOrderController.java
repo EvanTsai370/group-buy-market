@@ -10,6 +10,7 @@ import org.example.application.service.trade.TradeOrderService;
 import org.example.application.service.trade.cmd.RefundCmd;
 import org.example.common.ratelimit.RateLimit;
 import org.example.domain.model.trade.valueobject.TradeStatus;
+import org.example.domain.service.refund.RefundTimeWindowValidator;
 import org.example.interfaces.web.assembler.TradeOrderAssembler;
 import org.example.interfaces.web.dto.LockOrderRequest;
 import org.example.interfaces.web.dto.TradeOrderResponse;
@@ -51,7 +52,7 @@ public class TradeOrderController {
             PaymentCallbackRecordRepository paymentCallbackRecordRepository,
             TradeOrderRepository tradeOrderRepository,
             IdGenerator idGenerator,
-            org.example.domain.service.refund.RefundTimeWindowValidator refundTimeWindowValidator) {
+            RefundTimeWindowValidator refundTimeWindowValidator) {
         this.tradeOrderService = tradeOrderService;
         this.tradeOrderAssembler = tradeOrderAssembler;
         this.paymentSignatureValidator = paymentSignatureValidator;

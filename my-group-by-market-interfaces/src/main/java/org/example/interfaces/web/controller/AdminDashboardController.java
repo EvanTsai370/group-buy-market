@@ -5,11 +5,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.application.service.admin.AdminStatisticsService;
-import org.example.application.service.admin.AdminStatisticsService.*;
 import org.example.application.service.admin.AdminUserService;
+import org.example.application.service.admin.result.*;
 import org.example.common.api.Result;
-import org.example.domain.model.user.User;
 import org.example.domain.model.user.valueobject.UserRole;
+import org.example.interfaces.web.assembler.AdminDashboardAssembler;
+import org.example.interfaces.web.dto.admin.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,51 +30,52 @@ public class AdminDashboardController {
 
     private final AdminStatisticsService adminStatisticsService;
     private final AdminUserService adminUserService;
+    private final AdminDashboardAssembler adminDashboardAssembler;
 
     // ============== 仪表盘 ==============
 
     @GetMapping("/dashboard")
     @Operation(summary = "仪表盘概览", description = "获取系统概览数据")
-    public Result<DashboardOverview> getDashboard() {
+    public Result<DashboardOverviewResponse> getDashboard() {
         log.info("【AdminDashboard】获取仪表盘概览");
-        DashboardOverview overview = adminStatisticsService.getDashboardOverview();
-        return Result.success(overview);
+        DashboardOverviewResult result = adminStatisticsService.getDashboardOverview();
+        return Result.success(adminDashboardAssembler.toResponse(result));
     }
 
     @GetMapping("/statistics/users")
     @Operation(summary = "用户统计", description = "获取用户统计数据")
-    public Result<UserStatistics> getUserStatistics() {
+    public Result<UserStatisticsResponse> getUserStatistics() {
         log.info("【AdminDashboard】获取用户统计");
-        UserStatistics statistics = adminStatisticsService.getUserStatistics();
-        return Result.success(statistics);
+        UserStatisticsResult result = adminStatisticsService.getUserStatistics();
+        return Result.success(adminDashboardAssembler.toResponse(result));
     }
 
     @GetMapping("/statistics/goods")
     @Operation(summary = "商品统计", description = "获取商品统计数据")
-    public Result<GoodsStatistics> getGoodsStatistics() {
+    public Result<GoodsStatisticsResponse> getGoodsStatistics() {
         log.info("【AdminDashboard】获取商品统计");
-        GoodsStatistics statistics = adminStatisticsService.getGoodsStatistics();
-        return Result.success(statistics);
+        GoodsStatisticsResult result = adminStatisticsService.getGoodsStatistics();
+        return Result.success(adminDashboardAssembler.toResponse(result));
     }
 
     // ============== 用户管理 ==============
 
     @GetMapping("/users")
     @Operation(summary = "用户列表", description = "分页查询用户列表")
-    public Result<List<User>> listUsers(
+    public Result<List<UserDetailResponse>> listUsers(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
         log.info("【AdminDashboard】查询用户列表, page: {}, size: {}", page, size);
-        List<User> users = adminUserService.listUsers(page, size);
-        return Result.success(users);
+        List<UserDetailResult> results = adminUserService.listUsers(page, size);
+        return Result.success(adminDashboardAssembler.toUserResponseList(results));
     }
 
     @GetMapping("/users/{userId}")
     @Operation(summary = "用户详情", description = "获取用户详情")
-    public Result<User> getUserDetail(@PathVariable String userId) {
+    public Result<UserDetailResponse> getUserDetail(@PathVariable String userId) {
         log.info("【AdminDashboard】查询用户详情, userId: {}", userId);
-        User user = adminUserService.getUserDetail(userId);
-        return Result.success(user);
+        UserDetailResult result = adminUserService.getUserDetail(userId);
+        return Result.success(adminDashboardAssembler.toResponse(result));
     }
 
     @PostMapping("/users/{userId}/disable")

@@ -2,6 +2,8 @@ package org.example.application.service.admin;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.application.assembler.UserResultAssembler;
+import org.example.application.service.admin.result.UserDetailResult;
 import org.example.common.exception.BizException;
 import org.example.domain.model.user.User;
 import org.example.domain.model.user.repository.UserRepository;
@@ -24,22 +26,25 @@ import java.util.List;
 public class AdminUserService {
 
     private final UserRepository userRepository;
+    private final UserResultAssembler userResultAssembler;
 
     /**
      * 获取用户列表
      */
-    public List<User> listUsers(int page, int size) {
+    public List<UserDetailResult> listUsers(int page, int size) {
         log.info("【AdminUser】查询用户列表, page: {}, size: {}", page, size);
-        return userRepository.findAll(page, size);
+        List<User> users = userRepository.findAll(page, size);
+        return userResultAssembler.toResultList(users);
     }
 
     /**
      * 获取用户详情
      */
-    public User getUserDetail(String userId) {
+    public UserDetailResult getUserDetail(String userId) {
         log.info("【AdminUser】查询用户详情, userId: {}", userId);
-        return userRepository.findByUserId(userId)
+        User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new BizException("用户不存在"));
+        return userResultAssembler.toResult(user);
     }
 
     /**

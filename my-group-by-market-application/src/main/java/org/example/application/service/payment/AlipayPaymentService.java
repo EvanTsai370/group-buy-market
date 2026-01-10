@@ -2,9 +2,12 @@ package org.example.application.service.payment;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.application.assembler.PaymentResultAssembler;
+import org.example.application.service.payment.result.PaymentQueryResultObj;
+import org.example.application.service.payment.result.RefundQueryResultObj;
+import org.example.application.service.payment.result.RefundResultObj;
 import org.example.common.exception.BizException;
 import org.example.domain.gateway.PaymentGateway;
-import org.example.domain.gateway.PaymentGateway.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +26,7 @@ import java.util.Map;
 public class AlipayPaymentService {
 
     private final PaymentGateway paymentGateway;
+    private final PaymentResultAssembler paymentResultAssembler;
 
     @Value("${alipay.return-url:http://localhost:8080/api/payment/return}")
     private String returnUrl;
@@ -54,15 +58,16 @@ public class AlipayPaymentService {
     /**
      * 查询支付状态
      */
-    public PaymentQueryResult queryPayment(String outTradeNo) {
+    public PaymentQueryResultObj queryPayment(String outTradeNo) {
         log.info("【PaymentService】查询支付状态, outTradeNo: {}", outTradeNo);
-        return paymentGateway.queryPayment(outTradeNo, null);
+        PaymentGateway.PaymentQueryResult gatewayResult = paymentGateway.queryPayment(outTradeNo, null);
+        return paymentResultAssembler.toResult(gatewayResult);
     }
 
     /**
      * 退款
      */
-    public RefundResult refund(String outTradeNo, BigDecimal refundAmount,
+    public RefundResultObj refund(String outTradeNo, BigDecimal refundAmount,
             String refundReason, String outRequestNo) {
         log.info("【PaymentService】发起退款, outTradeNo: {}, refundAmount: {}", outTradeNo, refundAmount);
 
@@ -70,15 +75,18 @@ public class AlipayPaymentService {
             outRequestNo = outTradeNo + "-RF-" + System.currentTimeMillis();
         }
 
-        return paymentGateway.refund(outTradeNo, null, refundAmount, refundReason, outRequestNo);
+        PaymentGateway.RefundResult gatewayResult = paymentGateway.refund(
+                outTradeNo, null, refundAmount, refundReason, outRequestNo);
+        return paymentResultAssembler.toResult(gatewayResult);
     }
 
     /**
      * 查询退款
      */
-    public RefundQueryResult queryRefund(String outTradeNo, String outRequestNo) {
+    public RefundQueryResultObj queryRefund(String outTradeNo, String outRequestNo) {
         log.info("【PaymentService】查询退款, outTradeNo: {}, outRequestNo: {}", outTradeNo, outRequestNo);
-        return paymentGateway.queryRefund(outTradeNo, outRequestNo);
+        PaymentGateway.RefundQueryResult gatewayResult = paymentGateway.queryRefund(outTradeNo, outRequestNo);
+        return paymentResultAssembler.toResult(gatewayResult);
     }
 
     /**

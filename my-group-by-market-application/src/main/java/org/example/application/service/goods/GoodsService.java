@@ -2,7 +2,10 @@ package org.example.application.service.goods;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.application.assembler.GoodsResultAssembler;
 import org.example.application.service.goods.cmd.*;
+import org.example.application.service.goods.result.SkuResult;
+import org.example.application.service.goods.result.SpuResult;
 import org.example.common.exception.BizException;
 import org.example.domain.model.goods.Sku;
 import org.example.domain.model.goods.Spu;
@@ -28,12 +31,13 @@ public class GoodsService {
     private final SpuRepository spuRepository;
     private final SkuRepository skuRepository;
     private final IdGenerator idGenerator;
+    private final GoodsResultAssembler goodsResultAssembler;
 
     /**
      * 创建 SPU
      */
     @Transactional
-    public Spu createSpu(CreateSpuCmd cmd) {
+    public SpuResult createSpu(CreateSpuCmd cmd) {
         log.info("【GoodsService】创建SPU, spuName: {}", cmd.getSpuName());
 
         String spuId = "SPU-" + idGenerator.nextId();
@@ -45,14 +49,14 @@ public class GoodsService {
         spuRepository.save(spu);
 
         log.info("【GoodsService】SPU创建成功, spuId: {}", spuId);
-        return spu;
+        return goodsResultAssembler.toResult(spu);
     }
 
     /**
      * 创建 SKU
      */
     @Transactional
-    public Sku createSku(CreateSkuCmd cmd) {
+    public SkuResult createSku(CreateSkuCmd cmd) {
         log.info("【GoodsService】创建SKU, goodsName: {}, spuId: {}", cmd.getGoodsName(), cmd.getSpuId());
 
         // 验证 SPU 存在
@@ -70,14 +74,14 @@ public class GoodsService {
         skuRepository.save(sku);
 
         log.info("【GoodsService】SKU创建成功, goodsId: {}", goodsId);
-        return sku;
+        return goodsResultAssembler.toResult(sku);
     }
 
     /**
      * 更新 SPU
      */
     @Transactional
-    public Spu updateSpu(UpdateSpuCmd cmd) {
+    public SpuResult updateSpu(UpdateSpuCmd cmd) {
         log.info("【GoodsService】更新SPU, spuId: {}", cmd.getSpuId());
 
         Spu spu = spuRepository.findBySpuId(cmd.getSpuId())
@@ -96,14 +100,14 @@ public class GoodsService {
         spuRepository.update(spu);
 
         log.info("【GoodsService】SPU更新成功, spuId: {}", cmd.getSpuId());
-        return spu;
+        return goodsResultAssembler.toResult(spu);
     }
 
     /**
      * 更新 SKU
      */
     @Transactional
-    public Sku updateSku(UpdateSkuCmd cmd) {
+    public SkuResult updateSku(UpdateSkuCmd cmd) {
         log.info("【GoodsService】更新SKU, goodsId: {}", cmd.getGoodsId());
 
         Sku sku = skuRepository.findByGoodsId(cmd.getGoodsId())
@@ -125,7 +129,7 @@ public class GoodsService {
         skuRepository.update(sku);
 
         log.info("【GoodsService】SKU更新成功, goodsId: {}", cmd.getGoodsId());
-        return sku;
+        return goodsResultAssembler.toResult(sku);
     }
 
     /**
@@ -168,48 +172,53 @@ public class GoodsService {
     /**
      * 查询 SPU
      */
-    public Spu getSpuDetail(String spuId) {
+    public SpuResult getSpuDetail(String spuId) {
         Spu spu = spuRepository.findBySpuId(spuId)
                 .orElseThrow(() -> new BizException("SPU不存在"));
         // 加载 SKU 列表
         List<Sku> skuList = skuRepository.findBySpuId(spuId);
         spu.setSkuList(skuList);
-        return spu;
+        return goodsResultAssembler.toResult(spu);
     }
 
     /**
      * 查询 SKU
      */
-    public Sku getSkuDetail(String goodsId) {
-        return skuRepository.findByGoodsId(goodsId)
+    public SkuResult getSkuDetail(String goodsId) {
+        Sku sku = skuRepository.findByGoodsId(goodsId)
                 .orElseThrow(() -> new BizException("SKU不存在"));
+        return goodsResultAssembler.toResult(sku);
     }
 
     /**
      * 查询所有在售 SPU
      */
-    public List<Spu> listOnSaleSpus() {
-        return spuRepository.findAllOnSale();
+    public List<SpuResult> listOnSaleSpus() {
+        List<Spu> spus = spuRepository.findAllOnSale();
+        return goodsResultAssembler.toSpuResultList(spus);
     }
 
     /**
      * 查询所有在售 SKU
      */
-    public List<Sku> listOnSaleSkus() {
-        return skuRepository.findAllOnSale();
+    public List<SkuResult> listOnSaleSkus() {
+        List<Sku> skus = skuRepository.findAllOnSale();
+        return goodsResultAssembler.toSkuResultList(skus);
     }
 
     /**
      * 分页查询 SPU
      */
-    public List<Spu> listSpus(int page, int size) {
-        return spuRepository.findAll(page, size);
+    public List<SpuResult> listSpus(int page, int size) {
+        List<Spu> spus = spuRepository.findAll(page, size);
+        return goodsResultAssembler.toSpuResultList(spus);
     }
 
     /**
      * 分页查询 SKU
      */
-    public List<Sku> listSkus(int page, int size) {
-        return skuRepository.findAll(page, size);
+    public List<SkuResult> listSkus(int page, int size) {
+        List<Sku> skus = skuRepository.findAll(page, size);
+        return goodsResultAssembler.toSkuResultList(skus);
     }
 }
