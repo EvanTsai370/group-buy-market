@@ -1,4 +1,3 @@
-// ============ 文件: SkuPO.java ============
 package org.example.infrastructure.persistence.po;
 
 import com.baomidou.mybatisplus.annotation.*;
@@ -24,8 +23,14 @@ public class SkuPO {
     private Long id;
 
     private String goodsId;
+    private String spuId;
     private String goodsName;
+    private String specInfo;
     private BigDecimal originalPrice;
+    private Integer stock;
+    private Integer frozenStock;
+    private String skuImage;
+    private String status;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;

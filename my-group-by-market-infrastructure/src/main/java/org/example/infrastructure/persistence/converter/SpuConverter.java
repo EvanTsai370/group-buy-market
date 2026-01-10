@@ -1,8 +1,8 @@
 package org.example.infrastructure.persistence.converter;
 
-import org.example.domain.model.goods.Sku;
+import org.example.domain.model.goods.Spu;
 import org.example.domain.model.goods.valueobject.GoodsStatus;
-import org.example.infrastructure.persistence.po.SkuPO;
+import org.example.infrastructure.persistence.po.SpuPO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -10,24 +10,24 @@ import org.mapstruct.Named;
 import java.util.List;
 
 /**
- * SKU 转换器
+ * SPU 转换器
  */
 @Mapper(componentModel = "spring")
-public interface SkuConverter {
+public interface SpuConverter {
 
     @Mapping(target = "status", source = "status", qualifiedByName = "stringToStatus")
-    Sku toDomain(SkuPO po);
+    Spu toDomain(SpuPO po);
 
-    List<Sku> toDomainList(List<SkuPO> poList);
+    List<Spu> toDomainList(List<SpuPO> poList);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", source = "status", qualifiedByName = "statusToString")
-    SkuPO toPO(Sku sku);
+    SpuPO toPO(Spu spu);
 
     @Named("stringToStatus")
     default GoodsStatus stringToStatus(String status) {
         if (status == null) {
-            return GoodsStatus.ON_SALE;
+            return GoodsStatus.OFF_SALE;
         }
         return GoodsStatus.valueOf(status);
     }
@@ -35,7 +35,7 @@ public interface SkuConverter {
     @Named("statusToString")
     default String statusToString(GoodsStatus status) {
         if (status == null) {
-            return GoodsStatus.ON_SALE.name();
+            return GoodsStatus.OFF_SALE.name();
         }
         return status.name();
     }

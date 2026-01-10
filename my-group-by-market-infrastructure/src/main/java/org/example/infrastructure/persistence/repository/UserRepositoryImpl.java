@@ -8,6 +8,7 @@ import org.example.infrastructure.persistence.mapper.UserMapper;
 import org.example.infrastructure.persistence.po.UserPO;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -73,5 +74,19 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public boolean existsByEmail(String email) {
         return userMapper.existsByEmail(email);
+    }
+
+    @Override
+    public long count() {
+        return userMapper.selectCount(null);
+    }
+
+    @Override
+    public List<User> findAll(int page, int size) {
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<UserPO> pageResult = userMapper
+                .selectPage(new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(page, size), null);
+        return pageResult.getRecords().stream()
+                .map(userConverter::toDomain)
+                .toList();
     }
 }

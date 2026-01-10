@@ -2,6 +2,7 @@ package org.example.domain.model.user.repository;
 
 import org.example.domain.model.user.User;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -56,4 +57,14 @@ public interface UserRepository {
      * 判断邮箱是否已存在
      */
     boolean existsByEmail(String email);
+
+    /**
+     * 统计用户数量
+     */
+    long count();
+
+    /**
+     * 分页查询用户
+     */
+    List<User> findAll(int page, int size);
 }
