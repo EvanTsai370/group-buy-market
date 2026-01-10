@@ -12,7 +12,6 @@ import org.example.domain.model.trade.repository.TradeOrderRepository;
 import org.example.domain.model.trade.valueobject.TradeStatus;
 import org.example.domain.service.lock.IDistributedLockService;
 
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**

@@ -18,6 +18,8 @@
     <slf4j-api.version>2.0.9</slf4j-api.version>
     <commons-lang3.version>3.14.0</commons-lang3.version>
     <redisson.version>3.26.0</redisson.version>
+    <amqp.version>3.2.0</amqp.version>
+    <jjwt.version>0.12.5</jjwt.version>
   </properties>
 
   <dependencies>
@@ -83,6 +85,27 @@
         <groupId>org.redisson</groupId>
         <artifactId>redisson-spring-boot-starter</artifactId>
         <version>${redisson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-amqp</artifactId>
+        <version>${amqp.version}</version>
+      </dependency>
+      <!-- JWT -->
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-api</artifactId>
+        <version>${jjwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-impl</artifactId>
+        <version>${jjwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-jackson</artifactId>
+        <version>${jjwt.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

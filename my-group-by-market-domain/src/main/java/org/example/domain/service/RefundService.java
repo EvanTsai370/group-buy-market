@@ -55,7 +55,7 @@ public class RefundService {
     private final TeamRefundStrategy teamRefundStrategy;
     private final IDistributedLockService lockService;
     // 降级策略：注入IRefundFallbackService接口（可选）
-    private IRefundFallbackService fallbackService;
+    private final IRefundFallbackService fallbackService;
 
     public RefundService(TradeOrderRepository tradeOrderRepository,
             RefundStrategyFactory refundStrategyFactory,
