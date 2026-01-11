@@ -5,8 +5,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.application.service.admin.AdminSettingsService;
-import org.example.application.service.admin.AdminSettingsService.SystemInfo;
+import org.example.application.service.admin.result.SystemInfoResult;
 import org.example.common.api.Result;
+import org.example.interfaces.web.assembler.AdminOrderAssembler;
+import org.example.interfaces.web.dto.admin.SystemInfoResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -25,13 +27,14 @@ import java.util.Map;
 public class AdminSettingsController {
 
     private final AdminSettingsService adminSettingsService;
+    private final AdminOrderAssembler adminOrderAssembler;
 
     @GetMapping("/system")
     @Operation(summary = "系统信息", description = "获取系统运行信息")
-    public Result<SystemInfo> getSystemInfo() {
+    public Result<SystemInfoResponse> getSystemInfo() {
         log.info("【AdminSettings】获取系统信息");
-        SystemInfo info = adminSettingsService.getSystemInfo();
-        return Result.success(info);
+        SystemInfoResult result = adminSettingsService.getSystemInfo();
+        return Result.success(adminOrderAssembler.toResponse(result));
     }
 
     @GetMapping("/config")

@@ -1,8 +1,8 @@
 package org.example.application.service.admin;
 
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.application.service.admin.result.SystemInfoResult;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -36,22 +36,21 @@ public class AdminSettingsService {
     /**
      * 获取系统信息
      */
-    public SystemInfo getSystemInfo() {
+    public SystemInfoResult getSystemInfo() {
         log.info("【AdminSettings】获取系统信息");
 
-        SystemInfo info = new SystemInfo();
-        info.setApplicationName(applicationName);
-        info.setActiveProfile(activeProfile);
-        info.setServerPort(serverPort);
-        info.setJavaVersion(System.getProperty("java.version"));
-        info.setOsName(System.getProperty("os.name"));
-        info.setOsVersion(System.getProperty("os.version"));
-        info.setStartTime(LocalDateTime.now()); // 简化：实际应记录应用启动时间
-        info.setMaxMemory(Runtime.getRuntime().maxMemory() / 1024 / 1024 + " MB");
-        info.setTotalMemory(Runtime.getRuntime().totalMemory() / 1024 / 1024 + " MB");
-        info.setFreeMemory(Runtime.getRuntime().freeMemory() / 1024 / 1024 + " MB");
-
-        return info;
+        return SystemInfoResult.builder()
+                .applicationName(applicationName)
+                .activeProfile(activeProfile)
+                .serverPort(serverPort)
+                .javaVersion(System.getProperty("java.version"))
+                .osName(System.getProperty("os.name"))
+                .osVersion(System.getProperty("os.version"))
+                .startTime(LocalDateTime.now()) // 简化：实际应记录应用启动时间
+                .maxMemory(Runtime.getRuntime().maxMemory() / 1024 / 1024 + " MB")
+                .totalMemory(Runtime.getRuntime().totalMemory() / 1024 / 1024 + " MB")
+                .freeMemory(Runtime.getRuntime().freeMemory() / 1024 / 1024 + " MB")
+                .build();
     }
 
     /**
@@ -108,22 +107,5 @@ public class AdminSettingsService {
             return "****";
         }
         return value;
-    }
-
-    /**
-     * 系统信息
-     */
-    @Data
-    public static class SystemInfo {
-        private String applicationName;
-        private String activeProfile;
-        private int serverPort;
-        private String javaVersion;
-        private String osName;
-        private String osVersion;
-        private LocalDateTime startTime;
-        private String maxMemory;
-        private String totalMemory;
-        private String freeMemory;
     }
 }
