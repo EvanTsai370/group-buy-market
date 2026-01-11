@@ -90,7 +90,7 @@ public class DomainServiceConfiguration {
             IDistributedLockService lockService,
             IRefundFallbackService fallbackService) {
 
-      return new RefundService(
+        return new RefundService(
                 tradeOrderRepository, refundStrategyFactory, teamRefundStrategy, lockService, fallbackService);
     }
 
@@ -122,8 +122,10 @@ public class DomainServiceConfiguration {
             OrderRepository orderRepository,
             TradeOrderRepository tradeOrderRepository,
             ActivityRepository activityRepository,
-            IDistributedLockService lockService) {
-        return new PaidRefundStrategy(orderRepository, tradeOrderRepository, activityRepository, lockService);
+            IDistributedLockService lockService,
+            org.example.domain.gateway.IPaymentRefundGateway paymentRefundGateway) {
+        return new PaidRefundStrategy(orderRepository, tradeOrderRepository,
+                activityRepository, lockService, paymentRefundGateway);
     }
 
     /**

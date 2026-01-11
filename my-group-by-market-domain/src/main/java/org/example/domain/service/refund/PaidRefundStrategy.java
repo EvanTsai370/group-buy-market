@@ -2,7 +2,9 @@ package org.example.domain.service.refund;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.cache.RedisKeyManager;
+import org.example.common.exception.BizException;
 import org.example.common.util.LogDesensitizer;
+import org.example.domain.gateway.IPaymentRefundGateway;
 import org.example.domain.model.activity.Activity;
 import org.example.domain.model.activity.repository.ActivityRepository;
 import org.example.domain.model.order.Order;
@@ -38,9 +40,6 @@ import java.util.concurrent.TimeUnit;
  * <li>退款失败时应记录日志并触发告警，人工介入处理</li>
  * </ul>
  *
- * <p>
- * TODO：集成真实支付网关（当前为模拟实现）
- *
  * @author 开发团队
  * @since 2026-01-06
  */
@@ -51,16 +50,19 @@ public class PaidRefundStrategy implements RefundStrategy {
     private final TradeOrderRepository tradeOrderRepository;
     private final ActivityRepository activityRepository;
     private final IDistributedLockService lockService;
+    private final IPaymentRefundGateway paymentRefundGateway;
 
     public PaidRefundStrategy(
             OrderRepository orderRepository,
             TradeOrderRepository tradeOrderRepository,
             ActivityRepository activityRepository,
-            IDistributedLockService lockService) {
+            IDistributedLockService lockService,
+            IPaymentRefundGateway paymentRefundGateway) {
         this.orderRepository = orderRepository;
         this.tradeOrderRepository = tradeOrderRepository;
         this.activityRepository = activityRepository;
         this.lockService = lockService;
+        this.paymentRefundGateway = paymentRefundGateway;
     }
 
     @Override
@@ -108,37 +110,35 @@ public class PaidRefundStrategy implements RefundStrategy {
     }
 
     /**
-     * 调用支付网关退款接口（模拟实现）
+     * 调用支付网关退款接口
      *
      * <p>
-     * 真实实现需要：
-     * <ul>
-     * <li>根据 outTradeNo 调用支付宝/微信退款 API</li>
-     * <li>处理退款结果（同步/异步）</li>
-     * <li>记录退款流水到数据库</li>
-     * <li>处理退款失败的补偿逻辑</li>
-     * </ul>
+     * 通过 IPaymentRefundGateway 接口调用真实支付网关
      *
      * @param tradeOrder 交易订单
      */
     private void callPaymentGatewayRefund(TradeOrder tradeOrder) {
-        log.info("【支付网关退款】模拟调用退款接口, tradeOrderId={}, outTradeNo={}, amount={}",
+        log.info("【支付网关退款】调用退款接口, tradeOrderId={}, outTradeNo={}, amount={}",
                 tradeOrder.getTradeOrderId(),
                 tradeOrder.getOutTradeNo(),
                 LogDesensitizer.maskPrice(tradeOrder.getPayPrice(), log));
 
-        // TODO: 集成真实支付网关
-        // 示例：
-        // RefundRequest request = new RefundRequest();
-        // request.setOutTradeNo(tradeOrder.getOutTradeNo());
-        // request.setRefundAmount(tradeOrder.getPayPrice());
-        // RefundResponse response = paymentGateway.refund(request);
-        //
-        // if (!response.isSuccess()) {
-        // throw new BizException("支付网关退款失败: " + response.getErrorMsg());
-        // }
+        String outRequestNo = tradeOrder.getTradeOrderId() + "-RF-" + System.currentTimeMillis();
 
-        log.info("【支付网关退款】退款成功（模拟）, tradeOrderId={}", tradeOrder.getTradeOrderId());
+        IPaymentRefundGateway.RefundResult result = paymentRefundGateway.refund(
+                tradeOrder.getOutTradeNo(),
+                tradeOrder.getPayPrice(),
+                tradeOrder.getRefundReason() != null ? tradeOrder.getRefundReason() : "拼团退款",
+                outRequestNo);
+
+        if (result.success()) {
+            log.info("【支付网关退款】退款成功, tradeOrderId={}, refundId={}",
+                    tradeOrder.getTradeOrderId(), result.refundId());
+        } else {
+            log.error("【支付网关退款】退款失败, tradeOrderId={}, errorCode={}, errorMsg={}",
+                    tradeOrder.getTradeOrderId(), result.errorCode(), result.errorMsg());
+            throw new BizException("支付网关退款失败: " + result.errorMsg());
+        }
     }
 
     /**
