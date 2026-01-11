@@ -9,7 +9,8 @@ import org.example.domain.model.activity.Activity;
 /**
  * 交易规则过滤上下文对象
  *
- * <p>封装过滤链执行过程中需要的共享数据
+ * <p>
+ * 封装过滤链执行过程中需要的共享数据
  *
  * @author 开发团队
  * @since 2026-01-04
@@ -26,6 +27,6 @@ public class TradeFilterContext {
     /** 用户在该活动下的已参与次数（懒加载） */
     private Integer userParticipationCount;
 
-    /** 库存恢复key（用于失败回滚时恢复Redis库存） */
-    private String recoveryTeamStockKey;
+    /** 名额恢复key（用于失败回滚时恢复Redis名额） */
+    private String recoveryTeamSlotKey;
 }

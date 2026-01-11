@@ -160,6 +160,7 @@ public class PaymentController {
                 // 调用结算服务（内置幂等性检查和金额校验）
                 settlementService.handlePaymentSuccessByOutTradeNo(outTradeNo, callbackAmount);
             }
+            // TODO：支付失败释放锁定的名额以及库存
 
             return "success";
 

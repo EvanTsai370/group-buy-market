@@ -25,15 +25,15 @@ package org.example.common.cache;
  */
 public class RedisKeyManager {
 
-    // ==================== 拼团库存相关 ====================
+    // ==================== 拼团名额相关 ====================
 
     /**
-     * 拼团库存Key前缀
+     * 拼团名额Key前缀
      */
-    private static final String TEAM_STOCK_PREFIX = "team_stock";
+    private static final String TEAM_SLOT_PREFIX = "team_slot";
 
     /**
-     * 可用库存后缀
+     * 可用名额后缀
      */
     private static final String AVAILABLE_SUFFIX = "available";
 
@@ -43,42 +43,42 @@ public class RedisKeyManager {
     private static final String LOCKED_SUFFIX = "locked";
 
     /**
-     * 生成拼团库存的基础Key
+     * 生成拼团名额的基础Key
      *
      * <p>
-     * 格式：team_stock:{orderId}
+     * 格式：team_slot:{orderId}
      *
      * @param orderId 拼团订单ID
-     * @return 拼团库存基础Key
+     * @return 拼团名额基础Key
      */
-    public static String teamStockKey(String orderId) {
-        return TEAM_STOCK_PREFIX + ":" + orderId;
+    public static String teamSlotKey(String orderId) {
+        return TEAM_SLOT_PREFIX + ":" + orderId;
     }
 
     /**
-     * 生成拼团可用库存Key
+     * 生成拼团可用名额Key
      *
      * <p>
-     * 格式：team_stock:{orderId}:available
+     * 格式：team_slot:{orderId}:available
      *
      * @param orderId 拼团订单ID
-     * @return 可用库存Key
+     * @return 可用名额Key
      */
-    public static String teamStockAvailableKey(String orderId) {
-        return teamStockKey(orderId) + ":" + AVAILABLE_SUFFIX;
+    public static String teamSlotAvailableKey(String orderId) {
+        return teamSlotKey(orderId) + ":" + AVAILABLE_SUFFIX;
     }
 
     /**
      * 生成拼团已锁定量Key
      *
      * <p>
-     * 格式：team_stock:{orderId}:locked
+     * 格式：team_slot:{orderId}:locked
      *
      * @param orderId 拼团订单ID
      * @return 已锁定量Key
      */
-    public static String teamStockLockedKey(String orderId) {
-        return teamStockKey(orderId) + ":" + LOCKED_SUFFIX;
+    public static String teamSlotLockedKey(String orderId) {
+        return teamSlotKey(orderId) + ":" + LOCKED_SUFFIX;
     }
 
     // ==================== 人群标签相关 ====================
@@ -125,19 +125,19 @@ public class RedisKeyManager {
     // ==================== 工具方法 ====================
 
     /**
-     * 从完整的库存Key中提取orderId
+     * 从完整的名额Key中提取orderId
      *
      * <p>
-     * 用于回滚场景，从teamStockKey反向解析orderId
+     * 用于回滚场景，从teamSlotKey反向解析orderId
      *
-     * @param teamStockKey 完整的库存Key（如：team_stock:ORDER123）
+     * @param teamSlotKey 完整的名额Key（如：team_slot:ORDER123）
      * @return orderId
      */
-    public static String extractOrderIdFromTeamStockKey(String teamStockKey) {
-        if (teamStockKey == null || !teamStockKey.startsWith(TEAM_STOCK_PREFIX + ":")) {
-            throw new IllegalArgumentException("Invalid team stock key: " + teamStockKey);
+    public static String extractOrderIdFromTeamSlotKey(String teamSlotKey) {
+        if (teamSlotKey == null || !teamSlotKey.startsWith(TEAM_SLOT_PREFIX + ":")) {
+            throw new IllegalArgumentException("Invalid team slot key: " + teamSlotKey);
         }
-        return teamStockKey.substring((TEAM_STOCK_PREFIX + ":").length());
+        return teamSlotKey.substring((TEAM_SLOT_PREFIX + ":").length());
     }
 
     /**

@@ -129,39 +129,6 @@ public class Order {
     }
 
     /**
-     * 校验是否可以加入拼团（业务规则校验）
-     *
-     * 设计说明：
-     * - 领域模型负责业务规则的表达和校验
-     * - 并发安全由 Repository 层通过数据库原子操作保证
-     * - 这种设计既保持了 DDD 的富领域模型，又解决了高并发下的误杀问题
-     *
-     * @param userId 用户ID
-     * @throws BizException 如果不满足业务规则
-     */
-    public void validateJoin(String userId) {
-        // 业务规则1：检查状态
-        if (this.status != OrderStatus.PENDING) {
-            throw new BizException("拼团已结束，当前状态: " + this.status);
-        }
-
-        // 业务规则2：检查是否已满
-        if (this.completeCount >= this.targetCount) {
-            throw new BizException("拼团已满");
-        }
-
-        // 业务规则3：检查是否已过期
-        if (LocalDateTime.now().isAfter(this.deadlineTime)) {
-            throw new BizException("拼团已过期");
-        }
-
-        // 业务规则4：防止重复加入
-        // 注意：重复加入的检查现在由 TradeOrder 的 outTradeNo 唯一索引保证
-
-        log.debug("【Order聚合】用户加入校验通过, orderId: {}, userId: {}", orderId, userId);
-    }
-
-    /**
      * 标记为已成团
      */
     private void markAsCompleted() {
@@ -334,40 +301,6 @@ public class Order {
         }
 
         log.debug("【Order聚合】释放锁单校验通过, orderId: {}, lockCount: {}", orderId, lockCount);
-    }
-
-    /**
-     * 释放名额成功后的回调（由Repository层调用）
-     *
-     * @param newLockCount 新的锁单量
-     */
-    public void onReleaseLockSuccess(Integer newLockCount) {
-        this.lockCount = newLockCount;
-        log.info("【Order聚合】释放锁单成功, orderId: {}, lockCount: {}/{}", orderId, lockCount, targetCount);
-    }
-
-    /**
-     * 支付成功后更新完成人数
-     *
-     * <p>
-     * 业务流程：
-     * <ol>
-     * <li>用户锁单 → lockCount++</li>
-     * <li>用户支付 → completeCount++</li>
-     * <li>判断是否成团 → completeCount >= targetCount</li>
-     * </ol>
-     *
-     * @param newCompleteCount 新的完成人数
-     */
-    public void onPaymentSuccess(Integer newCompleteCount) {
-        this.completeCount = newCompleteCount;
-
-        log.info("【Order聚合】支付成功, orderId: {}, completeCount: {}/{}", orderId, completeCount, targetCount);
-
-        // 判断是否成团
-        if (this.completeCount >= this.targetCount) {
-            this.markAsCompleted();
-        }
     }
 
     /**

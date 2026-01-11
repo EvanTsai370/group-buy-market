@@ -7,7 +7,7 @@ import org.example.domain.model.trade.TradeOrder;
  *
  * <p>使用策略模式处理不同场景的退单逻辑：
  * <ul>
- *   <li>UnpaidRefundStrategy - 未支付退单（释放 Redis 库存）</li>
+ *   <li>UnpaidRefundStrategy - 未支付退单（释放 Redis 名额）</li>
  *   <li>PaidRefundStrategy - 已支付退单（调用支付网关退款）</li>
  *   <li>TeamRefundStrategy - 拼团退单（影响团队状态）</li>
  * </ul>

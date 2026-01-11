@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * <ul>
  *   <li>定时扫描超时未成团的拼团订单</li>
  *   <li>批量退款给已支付的用户</li>
- *   <li>释放锁定的库存名额</li>
+ *   <li>释放锁定的组队名额</li>
  *   <li>更新订单状态为 FAILED</li>
  * </ul>
  *

@@ -128,20 +128,20 @@ public interface TradeOrderRepository {
     List<TradeOrder> findByUserId(String userId, int page, int size);
 
     /**
-     * 占用组队库存（Redis库存扣减模式）
+     * 占用组队名额（Redis名额扣减模式）
      *
      * <p>
      * 业务场景：
      * <ul>
-     * <li>用户加入已有拼团时,需要抢占库存位</li>
-     * <li>通过Redis DECR原子操作扣减库存,保证并发安全</li>
-     * <li>支持退款恢复机制（退款时增加可用库存）</li>
+     * <li>用户加入已有拼团时,需要抢占名额位</li>
+     * <li>通过Redis DECR原子操作扣减名额,保证并发安全</li>
+     * <li>支持退款恢复机制（退款时增加可用名额）</li>
      * </ul>
      *
      * <p>
-     * 实现逻辑（库存扣减模式）：
+     * 实现逻辑（名额扣减模式）：
      * <ol>
-     * <li>初始化：available = target（可用库存 = 目标人数）</li>
+     * <li>初始化：available = target（可用名额 = 目标人数）</li>
      * <li>占用时：DECR available，判断是否 &lt; 0</li>
      * <li>如果 &lt; 0，回滚（INCR available）并返回失败</li>
      * <li>成功则增加 locked 计数器（用于审计）</li>
@@ -151,44 +151,44 @@ public interface TradeOrderRepository {
      * Redis Key设计：
      * 
      * <pre>
-     * 可用库存: team_stock:{orderId}:available  - 剩余可用名额（可增可减）
-     * 已锁定量: team_stock:{orderId}:locked     - 累计锁定次数（只增不减，用于审计）
+     * 可用名额: team_slot:{orderId}:available  - 剩余可用名额（可增可减）
+     * 已锁定量: team_slot:{orderId}:locked     - 累计锁定次数（只增不减，用于审计）
      * </pre>
      *
      * <p>
      * 优势：
      * <ul>
-     * <li>语义清晰：available 直接代表剩余库存</li>
+     * <li>语义清晰：available 直接代表剩余名额</li>
      * <li>易于监控：运维可以直接查看 available 值</li>
      * <li>简单可靠：不需要双计数器配合</li>
      * </ul>
      *
-     * @param teamStockKey 组队库存key（例如：team_stock:order123）
-     * @param target       目标人数
-     * @param validTime    有效时间（分钟）
-     * @return true=抢占成功，false=抢占失败（库存不足）
+     * @param teamSlotKey 组队名额key（例如：team_slot:order123）
+     * @param target      目标人数
+     * @param validTime   有效时间（分钟）
+     * @return true=抢占成功，false=抢占失败（名额不足）
      */
-    boolean occupyTeamStock(String teamStockKey, Integer target, Integer validTime);
+    boolean occupyTeamSlot(String teamSlotKey, Integer target, Integer validTime);
 
     /**
-     * 恢复组队库存（退款场景）
+     * 恢复组队名额（退款场景）
      *
      * <p>
      * 业务场景：
      * <ul>
-     * <li>用户退款时,需要释放已占用的库存</li>
-     * <li>通过增加可用库存,让其他用户可以继续加入</li>
+     * <li>用户退款时,需要释放已占用的名额</li>
+     * <li>通过增加可用名额,让其他用户可以继续加入</li>
      * </ul>
      *
      * <p>
-     * 实现逻辑（库存扣减模式）：
+     * 实现逻辑（名额扣减模式）：
      * 
      * <pre>
-     * Redis INCR {teamStockKey}:available
+     * Redis INCR {teamSlotKey}:available
      * </pre>
      *
-     * @param teamStockKey 组队库存key（例如：team_stock:order123）
-     * @param validTime    有效时间（分钟）
+     * @param teamSlotKey 组队名额key（例如：team_slot:order123）
+     * @param validTime   有效时间（分钟）
      */
-    void recoveryTeamStock(String teamStockKey, Integer validTime);
+    void recoveryTeamSlot(String teamSlotKey, Integer validTime);
 }

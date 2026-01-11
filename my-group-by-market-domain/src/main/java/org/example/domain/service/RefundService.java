@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * 设计模式：策略模式
  * <ul>
- * <li>UnpaidRefundStrategy - 未支付退单（释放 Redis 库存）</li>
+ * <li>UnpaidRefundStrategy - 未支付退单（释放 Redis 名额）</li>
  * <li>PaidRefundStrategy - 已支付退单（调用支付网关退款）</li>
  * <li>TeamRefundStrategy - 拼团退单（批量退单）</li>
  * </ul>

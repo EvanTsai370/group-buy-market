@@ -198,16 +198,16 @@ public class TradeOrderService {
             return tradeOrderResultAssembler.toResult(tradeOrder);
 
         } catch (BizException e) {
-            // 业务异常：回滚Redis库存
-            rollbackTeamStock(filterContext, cmd);
+            // 业务异常：回滚Redis名额
+            rollbackTeamSlot(filterContext, cmd);
 
             log.warn("【TradeOrderService】锁单失败(业务异常), userId: {}, activityId: {}, outTradeNo: {}, reason: {}",
                     cmd.getUserId(), cmd.getActivityId(), cmd.getOutTradeNo(), e.getMessage());
             throw e;
 
         } catch (Exception e) {
-            // 系统异常：回滚Redis库存
-            rollbackTeamStock(filterContext, cmd);
+            // 系统异常：回滚Redis名额
+            rollbackTeamSlot(filterContext, cmd);
 
             log.error("【TradeOrderService】锁单失败(系统异常), userId: {}, activityId: {}, outTradeNo: {}",
                     cmd.getUserId(), cmd.getActivityId(), cmd.getOutTradeNo(), e);
@@ -278,7 +278,7 @@ public class TradeOrderService {
      * 设计说明：
      * <ul>
      * <li>返回整个context而不是只返回Activity，用于后续回滚</li>
-     * <li>context中包含recoveryTeamStockKey，用于失败时恢复Redis库存</li>
+     * <li>context中包含recoveryTeamSlotKey，用于失败时恢复Redis名额</li>
      * </ul>
      *
      * @param cmd 锁单命令
@@ -346,14 +346,14 @@ public class TradeOrderService {
     }
 
     /**
-     * 回滚Redis库存
+     * 回滚Redis名额
      *
      * <p>
      * 业务场景：
      * <ul>
-     * <li>TeamStockOccupyHandler已经扣减了Redis库存</li>
+     * <li>TeamSlotOccupyHandler已经扣减了Redis名额</li>
      * <li>后续步骤（如Account扣减、TradeOrder创建）失败</li>
-     * <li>需要恢复Redis库存，防止"幽灵库存"问题</li>
+     * <li>需要恢复Redis名额，防止"幽灵名额"问题</li>
      * </ul>
      *
      * <p>
@@ -367,14 +367,14 @@ public class TradeOrderService {
      * @param filterContext 过滤链上下文
      * @param cmd           锁单命令
      */
-    private void rollbackTeamStock(TradeFilterContext filterContext, LockOrderCmd cmd) {
+    private void rollbackTeamSlot(TradeFilterContext filterContext, LockOrderCmd cmd) {
         if (filterContext == null) {
             return;
         }
 
-        String recoveryKey = filterContext.getRecoveryTeamStockKey();
+        String recoveryKey = filterContext.getRecoveryTeamSlotKey();
         if (recoveryKey == null || recoveryKey.isEmpty()) {
-            // 没有占用库存（首次开团），无需回滚
+            // 没有占用名额（首次开团），无需回滚
             return;
         }
 
@@ -383,13 +383,13 @@ public class TradeOrderService {
             Activity activity = filterContext.getActivity();
             Integer validTime = activity != null ? activity.getValidTime() : 1200; // 默认20分钟
 
-            tradeOrderRepository.recoveryTeamStock(recoveryKey, validTime);
-            log.info("【TradeOrderService】回滚Redis库存成功, teamStockKey: {}, userId: {}, orderId: {}",
+            tradeOrderRepository.recoveryTeamSlot(recoveryKey, validTime);
+            log.info("【TradeOrderService】回滚Redis名额成功, teamSlotKey: {}, userId: {}, orderId: {}",
                     recoveryKey, cmd.getUserId(), cmd.getOrderId());
         } catch (Exception ex) {
             // 回滚失败只记录日志，不影响主流程异常抛出
             // 运维可以通过日志发现问题，手动修复Redis数据
-            log.error("【TradeOrderService】回滚Redis库存失败, teamStockKey: {}, userId: {}, orderId: {}",
+            log.error("【TradeOrderService】回滚Redis名额失败, teamSlotKey: {}, userId: {}, orderId: {}",
                     recoveryKey, cmd.getUserId(), cmd.getOrderId(), ex);
         }
     }

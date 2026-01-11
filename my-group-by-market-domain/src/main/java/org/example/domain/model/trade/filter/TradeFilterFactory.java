@@ -20,7 +20,7 @@ import org.example.domain.model.trade.repository.TradeOrderRepository;
  * <ol>
  * <li>ActivityAvailabilityHandler - 活动可用性校验（加载Activity到上下文）</li>
  * <li>UserParticipationLimitHandler - 用户参与限制校验（依赖Activity信息）</li>
- * <li>TeamStockOccupyHandler - 组队库存占用校验（防止超卖）</li>
+ * <li>TeamSlotOccupyHandler - 组队名额占用校验（防止超卖）</li>
  * </ol>
  *
  * @author 开发团队
@@ -52,7 +52,7 @@ public class TradeFilterFactory {
         // 按顺序添加handler
         executor.addHandler(new ActivityAvailabilityHandler(activityRepository))
                 .addHandler(new UserParticipationLimitHandler(accountRepository))
-                .addHandler(new TeamStockOccupyHandler(tradeOrderRepository));
+                .addHandler(new TeamSlotOccupyHandler(tradeOrderRepository));
 
         return executor;
     }

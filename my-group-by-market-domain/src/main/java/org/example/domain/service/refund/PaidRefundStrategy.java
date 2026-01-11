@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * <ol>
  * <li>标记 TradeOrder 为 REFUND 状态</li>
  * <li>原子递减 Order 的 lockCount（释放锁定名额）</li>
- * <li>恢复 Redis 库存（与锁单失败回滚保持对称）</li>
+ * <li>恢复 Redis 名额（与锁单失败回滚保持对称）</li>
  * <li>调用支付网关退款接口（同步/异步）</li>
  * <li>记录退款流水（用于对账）</li>
  * </ol>
@@ -79,10 +79,10 @@ public class PaidRefundStrategy implements RefundStrategy {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("拼团订单不存在"));
 
-        // 3. 根据成团状态决定是否恢复库存和更新Order状态
+        // 3. 根据成团状态决定是否恢复名额和更新Order状态
         if (order.isCompleted()) {
-            // 已成团：不更新Order状态，不恢复Redis库存
-            log.info("【已支付退单策略】已成团，不更新Order状态，不恢复Redis库存, orderId: {}", orderId);
+            // 已成团：不更新Order状态，不恢复Redis名额
+            log.info("【已支付退单策略】已成团，不更新Order状态，不恢复Redis名额, orderId: {}", orderId);
         } else {
             // 未成团：释放Order的锁定名额
             boolean success = orderRepository.decrementLockCount(orderId);
@@ -90,10 +90,10 @@ public class PaidRefundStrategy implements RefundStrategy {
                 log.warn("【已支付退单策略】释放锁定名额失败，可能 lockCount 已为 0, orderId={}", orderId);
             }
 
-            // 恢复 Redis 库存
-            String teamStockKey = RedisKeyManager.teamStockKey(orderId);
+            // 恢复 Redis 名额
+            String teamSlotKey = RedisKeyManager.teamSlotKey(orderId);
             Integer validTime = getValidTime(tradeOrder.getActivityId());
-            recoveryRedisStock(teamStockKey, validTime, tradeOrder.getTradeOrderId());
+            recoveryRedisSlot(teamSlotKey, validTime, tradeOrder.getTradeOrderId());
         }
 
         // 4. 调用支付网关退款（无论是否已成团都需要退款）
@@ -157,28 +157,28 @@ public class PaidRefundStrategy implements RefundStrategy {
     }
 
     /**
-     * 恢复Redis库存
+     * 恢复Redis名额
      *
      * <p>
      * 业务场景：
      * <ul>
-     * <li>用户已支付但拼团失败，需要释放Redis库存</li>
-     * <li>与 TradeOrderService.rollbackTeamStock() 保持对称</li>
+     * <li>用户已支付但拼团失败，需要释放Redis名额</li>
+     * <li>与 TradeOrderService.rollbackTeamSlot() 保持对称</li>
      * </ul>
      *
      * <p>
      * 设计说明：
      * <ul>
      * <li>使用分布式锁防止重复恢复（基于tradeOrderId）</li>
-     * <li>使用 INCR 原子操作恢复库存</li>
+     * <li>使用 INCR 原子操作恢复名额</li>
      * <li>恢复失败只记录日志，不影响主流程（MySQL已释放）</li>
      * </ul>
      *
-     * @param teamStockKey Redis库存Key
+     * @param teamSlotKey  Redis名额Key
      * @param validTime    有效期（秒）
      * @param tradeOrderId 交易订单ID（用于分布式锁）
      */
-    private void recoveryRedisStock(String teamStockKey, Integer validTime, String tradeOrderId) {
+    private void recoveryRedisSlot(String teamSlotKey, Integer validTime, String tradeOrderId) {
         // 使用RedisKeyManager生成分布式锁key
         String lockKey = RedisKeyManager.lockKey("refund", tradeOrderId);
 
@@ -187,20 +187,20 @@ public class PaidRefundStrategy implements RefundStrategy {
             Boolean lockAcquired = lockService.setNx(lockKey, 30 * 24 * 60, TimeUnit.MINUTES);
 
             if (Boolean.FALSE.equals(lockAcquired)) {
-                log.warn("【已支付退单策略】库存恢复操作已在进行中，跳过重复操作, tradeOrderId: {}", tradeOrderId);
+                log.warn("【已支付退单策略】名额恢复操作已在进行中，跳过重复操作, tradeOrderId: {}", tradeOrderId);
                 return;
             }
 
-            // 在锁保护下执行库存恢复
-            tradeOrderRepository.recoveryTeamStock(teamStockKey, validTime);
-            log.info("【已支付退单策略】恢复Redis库存成功, teamStockKey: {}, tradeOrderId: {}",
-                    teamStockKey, tradeOrderId);
+            // 在锁保护下执行名额恢复
+            tradeOrderRepository.recoveryTeamSlot(teamSlotKey, validTime);
+            log.info("【已支付退单策略】恢复Redis名额成功, teamSlotKey: {}, tradeOrderId: {}",
+                    teamSlotKey, tradeOrderId);
 
         } catch (Exception ex) {
             // 恢复失败：释放锁，允许重试
             lockService.delete(lockKey);
-            log.error("【已支付退单策略】恢复Redis库存失败, teamStockKey: {}, tradeOrderId: {}",
-                    teamStockKey, tradeOrderId, ex);
+            log.error("【已支付退单策略】恢复Redis名额失败, teamSlotKey: {}, tradeOrderId: {}",
+                    teamSlotKey, tradeOrderId, ex);
             // 不抛异常，避免影响主流程（MySQL已释放）
         }
     }
