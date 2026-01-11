@@ -1,7 +1,6 @@
 package org.example.infrastructure.persistence.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.domain.model.activity.Activity;
@@ -20,9 +19,7 @@ import org.example.infrastructure.persistence.po.DiscountPO;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Activity 仓储实现
@@ -54,22 +51,6 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     }
 
     @Override
-    public void update(Activity activity) {
-        LambdaQueryWrapper<ActivityPO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ActivityPO::getActivityId, activity.getActivityId());
-
-        ActivityPO existingPo = activityMapper.selectOne(wrapper);
-        if (existingPo == null) {
-            throw new RuntimeException("活动不存在: " + activity.getActivityId());
-        }
-
-        ActivityPO po = ActivityConverter.INSTANCE.toPO(activity);
-        po.setId(existingPo.getId());
-        activityMapper.updateById(po);
-        log.info("【ActivityRepository】更新活动, activityId: {}", activity.getActivityId());
-    }
-
-    @Override
     public Optional<Activity> findById(String activityId) {
         LambdaQueryWrapper<ActivityPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ActivityPO::getActivityId, activityId);
@@ -81,16 +62,6 @@ public class ActivityRepositoryImpl implements ActivityRepository {
 
         Activity activity = ActivityConverter.INSTANCE.toDomain(po);
         return Optional.of(activity);
-    }
-
-    @Override
-    public List<Activity> findAll(int page, int size) {
-        Page<ActivityPO> pageParam = new Page<>(page, size);
-        Page<ActivityPO> resultPage = activityMapper.selectPage(pageParam, null);
-
-        return resultPage.getRecords().stream()
-                .map(ActivityConverter.INSTANCE::toDomain)
-                .collect(Collectors.toList());
     }
 
     @Override
@@ -139,38 +110,6 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     }
 
     @Override
-    public void saveDiscount(Discount discount) {
-        DiscountPO po = DiscountConverter.INSTANCE.toPO(discount);
-
-        LambdaQueryWrapper<DiscountPO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(DiscountPO::getDiscountId, discount.getDiscountId());
-        DiscountPO existingPo = discountMapper.selectOne(wrapper);
-
-        if (existingPo == null) {
-            discountMapper.insert(po);
-            log.info("【ActivityRepository】新增折扣配置, discountId: {}", discount.getDiscountId());
-        } else {
-            po.setId(existingPo.getId());
-            discountMapper.updateById(po);
-            log.info("【ActivityRepository】更新折扣配置, discountId: {}", discount.getDiscountId());
-        }
-    }
-
-    @Override
-    public void saveActivityGoods(ActivityGoods activityGoods) {
-        ActivityGoodsPO po = new ActivityGoodsPO();
-        po.setActivityId(activityGoods.getActivityId());
-        po.setGoodsId(activityGoods.getGoodsId());
-        po.setSource(activityGoods.getSource());
-        po.setChannel(activityGoods.getChannel());
-        po.setDiscountId(activityGoods.getDiscountId());
-
-        activityGoodsMapper.insert(po);
-        log.info("【ActivityRepository】新增活动商品关联, activityId: {}, goodsId: {}",
-                activityGoods.getActivityId(), activityGoods.getGoodsId());
-    }
-
-    @Override
     public boolean isDowngraded() {
         // 使用动态配置读取降级开关
         boolean isDowngraded = environment.getProperty("activity.downgrade.switch", Boolean.class, false);
@@ -193,10 +132,5 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     @Override
     public String nextId() {
         return "ACT" + idGenerator.nextId();
-    }
-
-    @Override
-    public String nextDiscountId() {
-        return "DSC" + idGenerator.nextId();
     }
 }

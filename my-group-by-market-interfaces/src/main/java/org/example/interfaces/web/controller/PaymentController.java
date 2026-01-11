@@ -11,6 +11,8 @@ import org.example.application.service.payment.result.PaymentQueryResultObj;
 import org.example.application.service.payment.result.RefundQueryResultObj;
 import org.example.application.service.payment.result.RefundResultObj;
 import org.example.common.api.Result;
+import org.example.common.exception.BizException;
+import org.example.domain.service.SettlementService;
 import org.example.interfaces.web.assembler.PaymentAssembler;
 import org.example.interfaces.web.dto.payment.PaymentQueryResponse;
 import org.example.interfaces.web.dto.payment.RefundQueryResponse;
@@ -19,6 +21,7 @@ import org.example.interfaces.web.request.CreatePaymentRequest;
 import org.example.interfaces.web.request.PaymentRefundRequest;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,6 +40,7 @@ public class PaymentController {
 
     private final AlipayPaymentService alipayPaymentService;
     private final PaymentAssembler paymentAssembler;
+    private final SettlementService settlementService;
 
     /**
      * 创建支付页面
@@ -107,31 +111,67 @@ public class PaymentController {
 
     /**
      * 支付宝异步回调
+     * 
+     * <p>
+     * 核心流程：
+     * <ol>
+     * <li>解析支付宝回调参数</li>
+     * <li>验证签名（SDK验签）</li>
+     * <li>调用结算服务处理支付成功（内置幂等性和金额校验）</li>
+     * </ol>
      */
     @PostMapping("/callback/alipay")
     @Operation(summary = "支付回调", description = "支付宝异步通知接口")
     public String alipayCallback(HttpServletRequest request) {
         log.info("【PaymentController】收到支付宝回调");
 
-        // 获取所有参数
-        Map<String, String> params = new HashMap<>();
-        Map<String, String[]> requestParams = request.getParameterMap();
-        for (String name : requestParams.keySet()) {
-            String[] values = requestParams.get(name);
-            StringBuilder valueStr = new StringBuilder();
-            for (int i = 0; i < values.length; i++) {
-                valueStr.append((i == values.length - 1) ? values[i] : values[i] + ",");
+        try {
+            // 1. 获取所有参数
+            Map<String, String> params = new HashMap<>();
+            Map<String, String[]> requestParams = request.getParameterMap();
+            for (String name : requestParams.keySet()) {
+                String[] values = requestParams.get(name);
+                StringBuilder valueStr = new StringBuilder();
+                for (int i = 0; i < values.length; i++) {
+                    valueStr.append((i == values.length - 1) ? values[i] : values[i] + ",");
+                }
+                params.put(name, valueStr.toString());
             }
-            params.put(name, valueStr.toString());
+
+            log.info("【PaymentController】回调参数: {}", params);
+
+            // 2. 验证签名
+            if (!alipayPaymentService.verifyCallback(params)) {
+                log.error("【PaymentController】验签失败");
+                return "fail";
+            }
+
+            // 3. 解析交易状态
+            String outTradeNo = params.get("out_trade_no");
+            String tradeStatus = params.get("trade_status");
+            String totalAmount = params.get("total_amount");
+
+            log.info("【PaymentController】回调详情: outTradeNo={}, tradeStatus={}, totalAmount={}",
+                    outTradeNo, tradeStatus, totalAmount);
+
+            // 4. 只处理成功状态
+            if ("TRADE_SUCCESS".equals(tradeStatus) || "TRADE_FINISHED".equals(tradeStatus)) {
+                BigDecimal callbackAmount = totalAmount != null ? new BigDecimal(totalAmount) : null;
+                // 调用结算服务（内置幂等性检查和金额校验）
+                settlementService.handlePaymentSuccessByOutTradeNo(outTradeNo, callbackAmount);
+            }
+
+            return "success";
+
+        } catch (BizException e) {
+            // 业务异常（如订单不存在）→ 返回 fail，支付宝会重试
+            log.error("【PaymentController】支付回调业务异常: {}", e.getMessage());
+            return "fail";
+        } catch (Exception e) {
+            // 系统异常 → 返回 fail，支付宝会重试
+            log.error("【PaymentController】支付回调系统异常", e);
+            return "fail";
         }
-
-        log.info("【PaymentController】回调参数: {}", params);
-
-        // 处理回调
-        boolean success = alipayPaymentService.handlePaymentCallback(params);
-
-        // 返回处理结果
-        return success ? "success" : "fail";
     }
 
     /**

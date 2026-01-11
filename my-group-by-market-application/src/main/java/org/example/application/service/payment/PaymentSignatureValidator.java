@@ -2,9 +2,11 @@ package org.example.application.service.payment;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.HmacUtils;
-import org.example.domain.model.payment.PaymentCallbackDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * 支付签名验证服务
@@ -18,12 +20,7 @@ import org.springframework.stereotype.Service;
  * </ul>
  *
  * <p>
- * 签名规则：
- * <ol>
- * <li>按字段名ASCII排序拼接：amount=100.00&channel=alipay&paymentNo=xxx&payTime=xxx&timestamp=xxx&tradeOrderId=xxx</li>
- * <li>使用渠道密钥计算 HMAC-SHA256</li>
- * <li>比对计算结果与传入的签名</li>
- * </ol>
+ * 注意：支付宝回调使用SDK内置验签，此类主要用于其他渠道或自定义验签场景。
  *
  * @author 开发团队
  * @since 2026-01-07
@@ -42,16 +39,16 @@ public class PaymentSignatureValidator {
     private String unionpaySecret;
 
     /**
-     * 验证签名
+     * 验证签名（基于参数Map）
      *
-     * @param callback  回调数据
+     * @param params    回调参数
      * @param sign      签名
      * @param timestamp 时间戳
      * @param channel   支付渠道
      * @return true=验证通过，false=验证失败
      */
-    public boolean validate(PaymentCallbackDTO callback, String sign,
-                            Long timestamp, String channel) {
+    public boolean validate(Map<String, String> params, String sign,
+            Long timestamp, String channel) {
         try {
             // 1. 获取密钥
             String secret = getSecretByChannel(channel);
@@ -61,9 +58,10 @@ public class PaymentSignatureValidator {
             }
 
             // 2. 构建签名字符串（按字段名ASCII排序）
-            String signStr = buildSignString(callback, timestamp);
+            String signStr = buildSignString(params, timestamp);
 
             // 3. 计算 HMAC-SHA256
+            @SuppressWarnings("deprecation")
             String expectedSign = HmacUtils.hmacSha256Hex(secret, signStr);
 
             // 4. 比对签名
@@ -100,15 +98,21 @@ public class PaymentSignatureValidator {
     /**
      * 构建签名字符串
      * <p>
-     * 格式：amount=100.00&channel=alipay&paymentNo=xxx&payTime=xxx&timestamp=xxx&tradeOrderId=xxx
+     * 按参数名ASCII排序拼接
      */
-    private String buildSignString(PaymentCallbackDTO callback, Long timestamp) {
-        // 按字段名ASCII排序拼接
-        return "amount=" + callback.getAmount() +
-                "&channel=" + callback.getChannel() +
-                "&paymentNo=" + callback.getPaymentNo() +
-                "&payTime=" + callback.getPayTime() +
-                "&timestamp=" + timestamp +
-                "&tradeOrderId=" + callback.getTradeOrderId();
+    private String buildSignString(Map<String, String> params, Long timestamp) {
+        // 使用TreeMap确保按key排序
+        TreeMap<String, String> sortedParams = new TreeMap<>(params);
+        sortedParams.put("timestamp", String.valueOf(timestamp));
+
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : sortedParams.entrySet()) {
+            if (sb.length() > 0) {
+                sb.append("&");
+            }
+            sb.append(entry.getKey()).append("=").append(entry.getValue());
+        }
+
+        return sb.toString();
     }
 }

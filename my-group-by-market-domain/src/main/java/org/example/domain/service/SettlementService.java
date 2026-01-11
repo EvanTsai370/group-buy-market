@@ -11,6 +11,7 @@ import org.example.domain.model.trade.TradeOrder;
 import org.example.domain.model.trade.repository.TradeOrderRepository;
 import org.example.domain.shared.IdGenerator;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +57,43 @@ public class SettlementService {
     }
 
     /**
+     * 处理支付成功（通过外部交易单号）
+     *
+     * <p>
+     * 供支付宝回调使用，包含幂等性检查和金额校验
+     *
+     * @param outTradeNo     外部交易单号
+     * @param callbackAmount 回调金额（用于防御性校验）
+     */
+    public void handlePaymentSuccessByOutTradeNo(String outTradeNo, BigDecimal callbackAmount) {
+        log.info("【结算服务】处理支付成功（外部单号）, outTradeNo: {}, callbackAmount: {}", outTradeNo, callbackAmount);
+
+        // 1. 根据outTradeNo查找交易订单
+        Optional<TradeOrder> tradeOrderOpt = tradeOrderRepository.findByOutTradeNo(outTradeNo);
+        if (tradeOrderOpt.isEmpty()) {
+            throw new BizException("交易订单不存在, outTradeNo: " + outTradeNo);
+        }
+        TradeOrder tradeOrder = tradeOrderOpt.get();
+
+        // 2. 幂等性检查：已支付或已结算则静默返回（不是错误，是正常重复回调）
+        if (tradeOrder.isPaid() || tradeOrder.isSettled()) {
+            log.info("【结算服务】订单已处理，跳过重复回调, outTradeNo: {}, status: {}",
+                    outTradeNo, tradeOrder.getStatus());
+            return;
+        }
+
+        // 3. 金额校验（防御性编程，告警但不阻断）
+        if (callbackAmount != null && callbackAmount.compareTo(tradeOrder.getPayPrice()) != 0) {
+            log.error("【结算服务】金额不匹配！expected: {}, actual: {}, outTradeNo: {}",
+                    tradeOrder.getPayPrice(), callbackAmount, outTradeNo);
+            // 继续处理，但记录告警（可接入监控系统）
+        }
+
+        // 4. 调用核心结算逻辑
+        handlePaymentSuccess(tradeOrder.getTradeOrderId());
+    }
+
+    /**
      * 处理支付成功
      *
      * <p>
@@ -89,7 +127,14 @@ public class SettlementService {
         }
         TradeOrder tradeOrder = tradeOrderOpt.get();
 
-        // 2. 加载Order（用于时间校验）
+        // 2. 幂等性检查：已支付或已结算则静默返回
+        if (tradeOrder.isPaid() || tradeOrder.isSettled()) {
+            log.info("【结算服务】订单已处理，跳过重复处理, tradeOrderId: {}, status: {}",
+                    tradeOrderId, tradeOrder.getStatus());
+            return;
+        }
+
+        // 3. 加载Order（用于时间校验）
         String orderId = tradeOrder.getOrderId();
         Optional<Order> orderOpt = orderRepository.findById(orderId);
         if (orderOpt.isEmpty()) {
@@ -97,19 +142,18 @@ public class SettlementService {
         }
         Order order = orderOpt.get();
 
-        // 3. 获取渠道黑名单（TODO: 可以从配置中心或数据库加载）
-        // Set<String> blacklistedChannels = loadBlacklistedChannels();
+        // 4. 获取渠道黑名单（TODO: 可以从配置中心或数据库加载）
         // 目前暂不启用渠道黑名单，传空集合
         Set<String> blacklistedChannels = Set.of();
 
-        // 4. 校验是否可以支付（增强版：状态+渠道+时间）
+        // 5. 校验是否可以支付（增强版：状态+渠道+时间）
         tradeOrder.validatePayment(order, blacklistedChannels);
 
-        // 5. 标记为已支付
+        // 6. 标记为已支付
         tradeOrder.markAsPaid(LocalDateTime.now());
         tradeOrderRepository.update(tradeOrder);
 
-        // 6. 原子增加Order的completeCount（数据库层并发控制）
+        // 7. 原子增加Order的completeCount（数据库层并发控制）
         int newCompleteCount = orderRepository.tryIncrementCompleteCount(orderId);
         if (newCompleteCount == -1) {
             throw new BizException("拼团订单状态异常或已超时");
@@ -118,16 +162,14 @@ public class SettlementService {
         log.info("【结算服务】支付成功，拼团进度更新, tradeOrderId: {}, orderId: {}, completeCount: {}",
                 tradeOrderId, orderId, newCompleteCount);
 
-        // 7. 重新加载Order以同步最新状态（关键！遵循CONCURRENCY.md）
-        // 原因：tryIncrementCompleteCount 在数据库层修改了 completeCount 和 status
-        // 必须重新加载以确保内存对象与数据库一致
+        // 8. 重新加载Order以同步最新状态（关键！遵循CONCURRENCY.md）
         order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new BizException("拼团订单不存在"));
 
         log.debug("【结算服务】重新加载Order, orderId: {}, status: {}, completeCount: {}/{}",
                 orderId, order.getStatus(), order.getCompleteCount(), order.getTargetCount());
 
-        // 8. 基于最新状态触发结算流程
+        // 9. 基于最新状态触发结算流程
         if (order.getStatus() == OrderStatus.SUCCESS) {
             log.info("【结算服务】拼团成功，开始结算, orderId: {}", orderId);
             settleCompletedOrder(orderId);

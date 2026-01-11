@@ -26,7 +26,6 @@ import org.example.domain.model.trade.valueobject.NotifyConfig;
 import org.example.domain.model.trade.valueobject.NotifyType;
 import org.example.domain.service.LockOrderService;
 import org.example.domain.service.RefundService;
-import org.example.domain.service.SettlementService;
 import org.example.domain.service.discount.DiscountCalculator;
 import org.example.domain.service.timeout.ITimeoutMessageProducer;
 import org.example.domain.shared.IdGenerator;
@@ -66,7 +65,6 @@ public class TradeOrderService {
 
     // 领域服务
     private final LockOrderService lockOrderService;
-    private final SettlementService settlementService;
     private final RefundService refundService;
 
     // 责任链工厂
@@ -86,7 +84,6 @@ public class TradeOrderService {
             IdGenerator idGenerator,
             Map<String, DiscountCalculator> discountCalculatorMap,
             LockOrderService lockOrderService,
-            SettlementService settlementService,
             RefundService refundService,
             TradeOrderResultAssembler tradeOrderResultAssembler,
             ITimeoutMessageProducer timeoutProducer) {
@@ -98,7 +95,6 @@ public class TradeOrderService {
         this.idGenerator = idGenerator;
         this.discountCalculatorMap = discountCalculatorMap;
         this.lockOrderService = lockOrderService;
-        this.settlementService = settlementService;
         this.refundService = refundService;
         this.tradeFilterFactory = new TradeFilterFactory(activityRepository, accountRepository, tradeOrderRepository);
         this.tradeOrderResultAssembler = tradeOrderResultAssembler;
@@ -217,35 +213,6 @@ public class TradeOrderService {
                     cmd.getUserId(), cmd.getActivityId(), cmd.getOutTradeNo(), e);
             throw new BizException("锁单失败: " + e.getMessage());
         }
-    }
-
-    /**
-     * 支付成功回调
-     *
-     * <p>
-     * 业务流程：
-     * <ol>
-     * <li>调用结算领域服务完成结算</li>
-     * </ol>
-     *
-     * <p>
-     * 设计说明：
-     * <ul>
-     * <li>移除了贫血的结算过滤链，业务逻辑现在封装在聚合内部</li>
-     * <li>SettlementService 会加载 TradeOrder 并调用其 validatePayment() 方法</li>
-     * <li>保持应用服务的简洁性，只做编排不做业务逻辑</li>
-     * </ul>
-     *
-     * @param tradeOrderId 交易订单ID
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public void handlePaymentSuccess(String tradeOrderId) {
-        log.info("【TradeOrderService】处理支付成功, tradeOrderId: {}", tradeOrderId);
-
-        // 直接调用结算领域服务
-        settlementService.handlePaymentSuccess(tradeOrderId);
-
-        log.info("【TradeOrderService】支付成功处理完成, tradeOrderId: {}", tradeOrderId);
     }
 
     /**

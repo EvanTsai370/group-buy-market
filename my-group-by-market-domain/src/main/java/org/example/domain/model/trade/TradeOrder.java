@@ -270,6 +270,24 @@ public class TradeOrder {
     }
 
     /**
+     * 判断是否已支付
+     * 
+     * @return true=已支付或更高状态, false=未支付
+     */
+    public boolean isPaid() {
+        return this.status == TradeStatus.PAID || this.status == TradeStatus.SETTLED;
+    }
+
+    /**
+     * 判断是否已结算
+     * 
+     * @return true=已结算, false=未结算
+     */
+    public boolean isSettled() {
+        return this.status == TradeStatus.SETTLED;
+    }
+
+    /**
      * 校验是否可以支付（CREATE → PAID 的前置校验）
      *
      * <p>
@@ -277,9 +295,7 @@ public class TradeOrder {
      * <p>
      * 业务规则：
      * <ul>
-     * <li>允许 CREATE 状态：正常支付流程</li>
-     * <li>允许 PAID 状态：幂等性保证（重复支付回调）</li>
-     * <li>拒绝已结算、超时、退款的订单</li>
+     * <li>只允许 CREATE 状态（PAID/SETTLED 已在幂等性检查中静默返回）</li>
      * <li>渠道不能在黑名单中（下架渠道）</li>
      * <li>支付时间必须在拼团有效期内</li>
      * </ul>
@@ -290,45 +306,35 @@ public class TradeOrder {
      */
     public void validatePayment(Order order,
             Set<String> blacklistedChannels) {
-        // 1. 状态校验
-        if (this.status == TradeStatus.CREATE || this.status == TradeStatus.PAID) {
-            log.debug("【TradeOrder聚合】订单状态验证通过, tradeOrderId: {}, status: {}",
+        // 1. 状态校验 - 只允许 CREATE 状态
+        // 注意：PAID/SETTLED 状态已在 SettlementService 的幂等性检查中静默返回
+        if (this.status != TradeStatus.CREATE) {
+            log.warn("【TradeOrder聚合】订单状态不允许支付, tradeOrderId: {}, status: {}",
                     tradeOrderId, status);
-        } else if (this.status == TradeStatus.SETTLED) {
-            log.warn("【TradeOrder聚合】订单已结算，不能重复结算, tradeOrderId: {}", tradeOrderId);
-            throw new BizException("订单已结算，不能重复结算");
-        } else if (this.status == TradeStatus.TIMEOUT) {
-            log.warn("【TradeOrder聚合】订单已超时，不能结算, tradeOrderId: {}", tradeOrderId);
-            throw new BizException("订单已超时，不能结算");
-        } else if (this.status == TradeStatus.REFUND) {
-            log.warn("【TradeOrder聚合】订单已退款，不能结算, tradeOrderId: {}", tradeOrderId);
-            throw new BizException("订单已退款，不能结算");
-        } else {
-            log.error("【TradeOrder聚合】订单状态异常, tradeOrderId: {}, status: {}", tradeOrderId, status);
-            throw new BizException("订单状态异常");
+            throw new BizException("订单状态不允许支付，status: " + this.status);
         }
 
         // 2. 渠道黑名单校验（可选）
         if (blacklistedChannels != null && !blacklistedChannels.isEmpty()) {
             String channelKey = this.source + ":" + this.channel;
             if (blacklistedChannels.contains(channelKey)) {
-                log.warn("【TradeOrder聚合】渠道已下架，不可结算, tradeOrderId: {}, channel: {}",
+                log.warn("【TradeOrder聚合】渠道已下架，不可支付, tradeOrderId: {}, channel: {}",
                         tradeOrderId, channelKey);
-                throw new BizException("渠道已下架，不可结算");
+                throw new BizException("渠道已下架，不可支付");
             }
         }
 
-        // 3. 支付时间校验（可选，只有PAID状态才有payTime）
-        if (this.status == TradeStatus.PAID && this.payTime != null && order != null) {
+        // 3. 拼团有效期校验
+        if (order != null) {
             LocalDateTime deadlineTime = order.getDeadlineTime();
-            if (deadlineTime != null && this.payTime.isAfter(deadlineTime)) {
-                log.warn("【TradeOrder聚合】支付时间超过拼团有效期，不可结算, tradeOrderId: {}, payTime: {}, deadlineTime: {}",
-                        tradeOrderId, payTime, deadlineTime);
-                throw new BizException("支付时间超过拼团有效期，不可结算");
+            if (deadlineTime != null && LocalDateTime.now().isAfter(deadlineTime)) {
+                log.warn("【TradeOrder聚合】拼团已过期，不可支付, tradeOrderId: {}, deadlineTime: {}",
+                        tradeOrderId, deadlineTime);
+                throw new BizException("拼团已过期，不可支付");
             }
         }
 
-        log.debug("【TradeOrder聚合】结算校验全部通过, tradeOrderId: {}", tradeOrderId);
+        log.debug("【TradeOrder聚合】支付校验通过, tradeOrderId: {}", tradeOrderId);
     }
 
     /**
