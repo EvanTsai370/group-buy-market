@@ -110,6 +110,15 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
     }
 
     @Override
+    public List<TradeOrder> findByUserId(String userId, int page, int size) {
+        int offset = (page - 1) * size;
+        List<TradeOrderPO> poList = tradeOrderMapper.selectByUserId(userId, offset, size);
+        return poList.stream()
+                .map(tradeOrderConverter::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public boolean occupyTeamStock(String teamStockKey, Integer target, Integer validTime) {
         log.debug("【TradeOrderRepository】占用队伍库存, teamStockKey: {}, target: {}", teamStockKey, target);
 

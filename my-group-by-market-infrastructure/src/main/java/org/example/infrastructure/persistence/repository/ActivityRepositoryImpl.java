@@ -199,4 +199,34 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     public String nextDiscountId() {
         return "DSC" + idGenerator.nextId();
     }
+
+    @Override
+    public Optional<Activity> findActiveByGoodsId(String goodsId) {
+        // 1. 通过商品ID查询关联的活动ID列表
+        List<String> activityIds = activityGoodsMapper.selectActiveActivityIdsByGoodsId(goodsId);
+        if (activityIds == null || activityIds.isEmpty()) {
+            log.debug("【ActivityRepository】商品无关联活动，goodsId: {}", goodsId);
+            return Optional.empty();
+        }
+
+        // 2. 遍历活动ID，找到第一个有效的活动（状态为ACTIVE且在有效期内）
+        for (String activityId : activityIds) {
+            LambdaQueryWrapper<ActivityPO> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(ActivityPO::getActivityId, activityId)
+                    .eq(ActivityPO::getStatus, "ACTIVE")
+                    .le(ActivityPO::getStartTime, java.time.LocalDateTime.now())
+                    .ge(ActivityPO::getEndTime, java.time.LocalDateTime.now());
+
+            ActivityPO po = activityMapper.selectOne(wrapper);
+            if (po != null) {
+                Activity activity = ActivityConverter.INSTANCE.toDomain(po);
+                log.info("【ActivityRepository】查询商品关联活动，goodsId: {}, activityId: {}",
+                        goodsId, activityId);
+                return Optional.of(activity);
+            }
+        }
+
+        log.debug("【ActivityRepository】商品无有效活动，goodsId: {}", goodsId);
+        return Optional.empty();
+    }
 }

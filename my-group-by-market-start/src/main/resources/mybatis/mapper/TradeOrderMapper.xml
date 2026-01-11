@@ -95,4 +95,23 @@
           AND activity_id = #{activityId}
     </select>
 
+    <!--
+    根据用户ID分页查询交易订单列表
+
+    业务场景：
+    - 用户中心订单列表展示
+    - 按时间倒序排列，最新订单在前
+
+    性能说明：
+    - user_id 字段有索引
+    - 使用分页避免大数据量返回
+    -->
+    <select id="selectByUserId" resultType="org.example.infrastructure.persistence.po.TradeOrderPO">
+        SELECT *
+        FROM trade_order
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
 </mapper>

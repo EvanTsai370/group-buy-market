@@ -115,4 +115,13 @@ public interface ActivityRepository {
      * @return 折扣ID
      */
     String nextDiscountId();
+
+    /**
+     * 根据商品ID查找当前有效的活动
+     * 用于 C 端商品详情页：展示商品关联的拼团活动
+     *
+     * @param goodsId 商品ID
+     * @return 有效的活动（可能为空）
+     */
+    Optional<Activity> findActiveByGoodsId(String goodsId);
 }
