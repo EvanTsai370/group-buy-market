@@ -4,6 +4,7 @@ import org.example.domain.model.activity.Activity;
 import org.example.domain.model.activity.ActivityGoods;
 import org.example.domain.model.activity.Discount;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -19,12 +20,28 @@ public interface ActivityRepository {
     void save(Activity activity);
 
     /**
+     * 更新活动
+     *
+     * @param activity 活动聚合
+     */
+    void update(Activity activity);
+
+    /**
      * 根据ID查找活动
      *
      * @param activityId 活动ID
      * @return 活动聚合
      */
     Optional<Activity> findById(String activityId);
+
+    /**
+     * 分页查询活动列表
+     *
+     * @param page 页码（从1开始）
+     * @param size 每页数量
+     * @return 活动列表
+     */
+    List<Activity> findAll(int page, int size);
 
     /**
      * 根据商品ID、来源、渠道查询活动ID
@@ -57,6 +74,20 @@ public interface ActivityRepository {
     Discount queryDiscountById(String discountId);
 
     /**
+     * 保存折扣配置
+     *
+     * @param discount 折扣配置
+     */
+    void saveDiscount(Discount discount);
+
+    /**
+     * 保存活动商品关联
+     *
+     * @param activityGoods 活动商品关联
+     */
+    void saveActivityGoods(ActivityGoods activityGoods);
+
+    /**
      * 判断是否在降级开关范围内
      *
      * @return true-降级，false-正常
@@ -77,4 +108,11 @@ public interface ActivityRepository {
      * @return 活动ID
      */
     String nextId();
+
+    /**
+     * 生成下一个折扣ID
+     *
+     * @return 折扣ID
+     */
+    String nextDiscountId();
 }
