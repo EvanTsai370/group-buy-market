@@ -113,12 +113,23 @@ public class PaymentController {
      * 支付宝异步回调
      * 
      * <p>
-     * 核心流程：
+     * 核心流程（按支付宝文档要求）：
      * <ol>
      * <li>解析支付宝回调参数</li>
      * <li>验证签名（SDK验签）</li>
-     * <li>调用结算服务处理支付成功（内置幂等性和金额校验）</li>
+     * <li>校验 app_id 是否为本商户</li>
+     * <li>校验 seller_id 是否匹配</li>
+     * <li>根据 trade_status 处理业务逻辑</li>
      * </ol>
+     * 
+     * <p>
+     * 支付宝文档要求：
+     * <ul>
+     * <li>验证 app_id 是否为该商家本身</li>
+     * <li>校验 seller_id 是否为对应操作方</li>
+     * <li>校验 out_trade_no 和 total_amount 是否正确</li>
+     * <li>只有 TRADE_SUCCESS 或 TRADE_FINISHED 才认定为付款成功</li>
+     * </ul>
      */
     @PostMapping("/callback/alipay")
     @Operation(summary = "支付回调", description = "支付宝异步通知接口")
@@ -146,7 +157,23 @@ public class PaymentController {
                 return "fail";
             }
 
-            // 3. 解析交易状态
+            // 3. 校验 app_id（支付宝文档明确要求）
+            String callbackAppId = params.get("app_id");
+            String configAppId = alipayPaymentService.getAppId();
+            if (configAppId != null && !configAppId.isEmpty() && !configAppId.equals(callbackAppId)) {
+                log.error("【PaymentController】app_id 校验失败, 回调: {}, 配置: {}", callbackAppId, configAppId);
+                return "fail";
+            }
+
+            // 4. 校验 seller_id（支付宝文档明确要求）
+            String callbackSellerId = params.get("seller_id");
+            String configSellerId = alipayPaymentService.getSellerId();
+            if (configSellerId != null && !configSellerId.isEmpty() && !configSellerId.equals(callbackSellerId)) {
+                log.error("【PaymentController】seller_id 校验失败, 回调: {}, 配置: {}", callbackSellerId, configSellerId);
+                return "fail";
+            }
+
+            // 5. 解析交易状态
             String outTradeNo = params.get("out_trade_no");
             String tradeStatus = params.get("trade_status");
             String totalAmount = params.get("total_amount");
@@ -154,13 +181,23 @@ public class PaymentController {
             log.info("【PaymentController】回调详情: outTradeNo={}, tradeStatus={}, totalAmount={}",
                     outTradeNo, tradeStatus, totalAmount);
 
-            // 4. 只处理成功状态
+            // 6. 根据交易状态处理业务
             if ("TRADE_SUCCESS".equals(tradeStatus) || "TRADE_FINISHED".equals(tradeStatus)) {
+                // 支付成功：调用结算服务（内置幂等性检查和金额校验）
                 BigDecimal callbackAmount = totalAmount != null ? new BigDecimal(totalAmount) : null;
-                // 调用结算服务（内置幂等性检查和金额校验）
                 settlementService.handlePaymentSuccessByOutTradeNo(outTradeNo, callbackAmount);
+
+            } else if ("TRADE_CLOSED".equals(tradeStatus)) {
+                // 交易关闭：释放锁定的名额和库存
+                log.info("【PaymentController】交易关闭，触发退单流程, outTradeNo={}", outTradeNo);
+                try {
+                    settlementService.handlePaymentFailedByOutTradeNo(outTradeNo);
+                } catch (Exception ex) {
+                    // 退单失败只记录日志，不影响返回 success（避免重复通知）
+                    log.error("【PaymentController】交易关闭处理失败, outTradeNo={}", outTradeNo, ex);
+                }
             }
-            // TODO：支付失败释放锁定的名额以及商品库存
+            // WAIT_BUYER_PAY 状态无需处理
 
             return "success";
 

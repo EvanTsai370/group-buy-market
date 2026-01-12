@@ -26,6 +26,7 @@ import org.example.domain.model.trade.valueobject.NotifyConfig;
 import org.example.domain.model.trade.valueobject.NotifyType;
 import org.example.domain.service.LockOrderService;
 import org.example.domain.service.RefundService;
+import org.example.domain.service.ResourceReleaseService;
 import org.example.domain.service.discount.DiscountCalculator;
 import org.example.domain.service.timeout.ITimeoutMessageProducer;
 import org.example.domain.shared.IdGenerator;
@@ -66,6 +67,7 @@ public class TradeOrderService {
     // 领域服务
     private final LockOrderService lockOrderService;
     private final RefundService refundService;
+    private final ResourceReleaseService resourceReleaseService;
 
     // 责任链工厂
     private final TradeFilterFactory tradeFilterFactory;
@@ -85,6 +87,7 @@ public class TradeOrderService {
             Map<String, DiscountCalculator> discountCalculatorMap,
             LockOrderService lockOrderService,
             RefundService refundService,
+            ResourceReleaseService resourceReleaseService,
             TradeOrderResultAssembler tradeOrderResultAssembler,
             ITimeoutMessageProducer timeoutProducer) {
         this.activityRepository = activityRepository;
@@ -96,6 +99,7 @@ public class TradeOrderService {
         this.discountCalculatorMap = discountCalculatorMap;
         this.lockOrderService = lockOrderService;
         this.refundService = refundService;
+        this.resourceReleaseService = resourceReleaseService;
         this.tradeFilterFactory = new TradeFilterFactory(activityRepository, accountRepository, tradeOrderRepository,
                 skuRepository);
         this.tradeOrderResultAssembler = tradeOrderResultAssembler;
@@ -347,24 +351,19 @@ public class TradeOrderService {
     }
 
     /**
-     * 回滚预占资源（Redis名额 + 库存）
+     * 回滚预占资源（名额槽位 + 库存）
      *
      * <p>
      * 业务场景：
      * <ul>
-     * <li>TeamSlotOccupyHandler已经扣减了Redis名额</li>
+     * <li>TeamSlotOccupyHandler已经扣减了名额</li>
      * <li>InventoryOccupyHandler已经冻结了库存</li>
      * <li>后续步骤（如Account扣减、TradeOrder创建）失败</li>
-     * <li>需要恢复Redis名额和库存，防止"幽灵名额"和"幽灵库存"问题</li>
+     * <li>需要恢复名额和库存，防止"幽灵名额"和"幽灵库存"问题</li>
      * </ul>
      *
      * <p>
-     * 设计说明：
-     * <ul>
-     * <li>只在有recovery信息时才执行回滚</li>
-     * <li>回滚失败只记录日志，不影响主流程异常抛出</li>
-     * <li>使用原子操作，多次回滚不会有副作用</li>
-     * </ul>
+     * 注意：此场景不需要释放 Order.lockCount（因为锁单还未成功，lockCount 未增加）
      *
      * @param filterContext 过滤链上下文
      * @param cmd           锁单命令
@@ -374,34 +373,18 @@ public class TradeOrderService {
             return;
         }
 
-        // 1. 回滚Redis名额
-        String recoveryKey = filterContext.getRecoveryTeamSlotKey();
-        if (recoveryKey != null && !recoveryKey.isEmpty()) {
-            try {
-                Activity activity = filterContext.getActivity();
-                Integer validTime = activity != null ? activity.getValidTime() : 1200; // 默认20分钟
-
-                tradeOrderRepository.recoveryTeamSlot(recoveryKey, validTime);
-                log.info("【TradeOrderService】回滚Redis名额成功, teamSlotKey: {}, userId: {}, orderId: {}",
-                        recoveryKey, cmd.getUserId(), cmd.getOrderId());
-            } catch (Exception ex) {
-                log.error("【TradeOrderService】回滚Redis名额失败, teamSlotKey: {}, userId: {}, orderId: {}",
-                        recoveryKey, cmd.getUserId(), cmd.getOrderId(), ex);
-            }
-        }
-
-        // 2. 回滚库存
         String recoveryGoodsId = filterContext.getRecoveryGoodsId();
-        if (recoveryGoodsId != null && !recoveryGoodsId.isEmpty()) {
-            try {
-                skuRepository.unfreezeStock(recoveryGoodsId, 1);
-                log.info("【TradeOrderService】回滚库存成功, goodsId: {}, userId: {}",
-                        recoveryGoodsId, cmd.getUserId());
-            } catch (Exception ex) {
-                log.error("【TradeOrderService】回滚库存失败, goodsId: {}, userId: {}",
-                        recoveryGoodsId, cmd.getUserId(), ex);
-            }
-        }
+        Activity activity = filterContext.getActivity();
+        String activityId = activity != null ? activity.getActivityId() : null;
+
+        // 使用 ResourceReleaseService 统一释放资源
+        // 锁单失败时 Order.lockCount 还未增加，只需释放槽位和库存
+        resourceReleaseService.releaseSlotAndInventory(
+                cmd.getOrderId(),
+                activityId,
+                recoveryGoodsId,
+                null, // tradeOrderId 还未生成
+                "锁单失败回滚");
     }
 
     /**

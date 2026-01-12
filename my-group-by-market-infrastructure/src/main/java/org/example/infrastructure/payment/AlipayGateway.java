@@ -35,6 +35,9 @@ public class AlipayGateway implements PaymentGateway {
     @Value("${alipay.app-id:}")
     private String appId;
 
+    @Value("${alipay.seller-id:}")
+    private String sellerId;
+
     @Value("${alipay.private-key:}")
     private String privateKey;
 
@@ -276,5 +279,15 @@ public class AlipayGateway implements PaymentGateway {
             log.error("【AlipayGateway】签名验证异常", e);
             return false;
         }
+    }
+
+    @Override
+    public String getAppId() {
+        return appId;
+    }
+
+    @Override
+    public String getSellerId() {
+        return sellerId;
     }
 }

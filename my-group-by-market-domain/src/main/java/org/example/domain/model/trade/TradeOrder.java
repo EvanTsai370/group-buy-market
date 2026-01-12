@@ -288,6 +288,33 @@ public class TradeOrder {
     }
 
     /**
+     * 判断是否已超时
+     * 
+     * @return true=已超时, false=未超时
+     */
+    public boolean isTimeout() {
+        return this.status == TradeStatus.TIMEOUT;
+    }
+
+    /**
+     * 判断是否已退款
+     * 
+     * @return true=已退款, false=未退款
+     */
+    public boolean isRefunded() {
+        return this.status == TradeStatus.REFUND;
+    }
+
+    /**
+     * 判断是否是初始状态（可支付）
+     * 
+     * @return true=初始状态, false=非初始状态
+     */
+    public boolean isCreated() {
+        return this.status == TradeStatus.CREATE;
+    }
+
+    /**
      * 校验是否可以支付（CREATE → PAID 的前置校验）
      *
      * <p>

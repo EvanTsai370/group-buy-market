@@ -66,6 +66,16 @@ public interface PaymentGateway {
     boolean verifyCallback(java.util.Map<String, String> params);
 
     /**
+     * 获取商户 AppId（用于回调校验）
+     */
+    String getAppId();
+
+    /**
+     * 获取商户 SellerId（用于回调校验）
+     */
+    String getSellerId();
+
+    /**
      * 支付查询结果
      */
     record PaymentQueryResult(

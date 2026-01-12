@@ -45,15 +45,18 @@ public class SettlementService {
     private final TradeOrderRepository tradeOrderRepository;
     private final NotificationTaskRepository notificationTaskRepository;
     private final IdGenerator idGenerator;
+    private final ResourceReleaseService resourceReleaseService;
 
     public SettlementService(OrderRepository orderRepository,
             TradeOrderRepository tradeOrderRepository,
             NotificationTaskRepository notificationTaskRepository,
-            IdGenerator idGenerator) {
+            IdGenerator idGenerator,
+            ResourceReleaseService resourceReleaseService) {
         this.orderRepository = orderRepository;
         this.tradeOrderRepository = tradeOrderRepository;
         this.notificationTaskRepository = notificationTaskRepository;
         this.idGenerator = idGenerator;
+        this.resourceReleaseService = resourceReleaseService;
     }
 
     /**
@@ -91,6 +94,67 @@ public class SettlementService {
 
         // 4. 调用核心结算逻辑
         handlePaymentSuccess(tradeOrder.getTradeOrderId());
+    }
+
+    /**
+     * 处理支付失败/交易关闭（通过外部交易单号）
+     *
+     * <p>
+     * 供支付宝回调使用（TRADE_CLOSED 状态）
+     * 
+     * <p>
+     * 业务场景：
+     * <ul>
+     * <li>用户未支付，交易超时关闭</li>
+     * <li>用户支付后全额退款，交易关闭</li>
+     * </ul>
+     * 
+     * <p>
+     * 处理逻辑：
+     * <ol>
+     * <li>查找交易订单</li>
+     * <li>幂等性检查：已超时/已退款则静默返回</li>
+     * <li>标记为超时并释放资源（名额+库存）</li>
+     * </ol>
+     *
+     * @param outTradeNo 外部交易单号
+     */
+    public void handlePaymentFailedByOutTradeNo(String outTradeNo) {
+        log.info("【结算服务】处理支付失败/交易关闭（外部单号）, outTradeNo: {}", outTradeNo);
+
+        // 1. 根据outTradeNo查找交易订单
+        Optional<TradeOrder> tradeOrderOpt = tradeOrderRepository.findByOutTradeNo(outTradeNo);
+        if (tradeOrderOpt.isEmpty()) {
+            log.warn("【结算服务】交易订单不存在，可能已手动处理, outTradeNo: {}", outTradeNo);
+            return;
+        }
+        TradeOrder tradeOrder = tradeOrderOpt.get();
+
+        // 2. 幂等性检查：如果已是终态则静默返回
+        if (tradeOrder.isTimeout() || tradeOrder.isRefunded()) {
+            log.info("【结算服务】订单已处理（超时/退款），跳过重复处理, outTradeNo: {}, status: {}",
+                    outTradeNo, tradeOrder.getStatus());
+            return;
+        }
+
+        // 3. 只处理 CREATE 状态的订单（未支付）
+        // 已支付订单的 TRADE_CLOSED 需要走退款流程，这里只处理未支付情况
+        if (tradeOrder.isCreated()) {
+            log.info("【结算服务】未支付订单交易关闭，标记为超时并释放资源, outTradeNo: {}", outTradeNo);
+            tradeOrder.markAsTimeout();
+            tradeOrderRepository.update(tradeOrder);
+
+            // 4. 释放全部预占资源（委托给 ResourceReleaseService）
+            resourceReleaseService.releaseAllResources(
+                    tradeOrder.getOrderId(),
+                    tradeOrder.getActivityId(),
+                    tradeOrder.getGoodsId(),
+                    tradeOrder.getTradeOrderId(),
+                    "交易关闭回调");
+        } else {
+            log.warn("【结算服务】非 CREATE 状态的订单收到 TRADE_CLOSED，需人工检查, outTradeNo: {}, status: {}",
+                    outTradeNo, tradeOrder.getStatus());
+        }
     }
 
     /**

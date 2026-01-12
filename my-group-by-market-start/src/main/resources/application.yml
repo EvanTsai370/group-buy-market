@@ -92,6 +92,8 @@ alipay:
   gateway-url: https://openapi-sandbox.dl.alipaydev.com/gateway.do
   # 沙箱应用ID（请替换为您的沙箱AppID）
   app-id: ${ALIPAY_APP_ID:}
+  # 商户PID
+  seller-id: ${ALIPAY_SELLER_ID:}
   # 应用私钥（请替换为您的应用私钥）
   private-key: ${ALIPAY_PRIVATE_KEY:}
   # 支付宝公钥（请替换为您的支付宝公钥）

@@ -1,21 +1,14 @@
 package org.example.domain.service.refund;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.common.cache.RedisKeyManager;
 import org.example.common.exception.BizException;
 import org.example.common.util.LogDesensitizer;
 import org.example.domain.gateway.IPaymentRefundGateway;
-import org.example.domain.model.activity.Activity;
-import org.example.domain.model.activity.repository.ActivityRepository;
-import org.example.domain.model.goods.repository.SkuRepository;
 import org.example.domain.model.order.Order;
 import org.example.domain.model.order.repository.OrderRepository;
 import org.example.domain.model.trade.TradeOrder;
-import org.example.domain.model.trade.repository.TradeOrderRepository;
 import org.example.domain.model.trade.valueobject.TradeStatus;
-import org.example.domain.service.lock.IDistributedLockService;
-
-import java.util.concurrent.TimeUnit;
+import org.example.domain.service.ResourceReleaseService;
 
 /**
  * 已支付退单策略
@@ -27,20 +20,10 @@ import java.util.concurrent.TimeUnit;
  * 处理逻辑：
  * <ol>
  * <li>标记 TradeOrder 为 REFUND 状态</li>
- * <li>原子递减 Order 的 lockCount（释放锁定名额）</li>
- * <li>恢复 Redis 名额（与锁单失败回滚保持对称）</li>
- * <li>释放冻结库存（与锁单预占保持对称）</li>
- * <li>调用支付网关退款接口（同步/异步）</li>
- * <li>记录退款流水（用于对账）</li>
+ * <li>根据成团状态决定是否释放名额</li>
+ * <li>释放库存</li>
+ * <li>调用支付网关退款接口</li>
  * </ol>
- *
- * <p>
- * 注意事项：
- * <ul>
- * <li>退款操作应保证幂等性（基于 tradeOrderId 去重）</li>
- * <li>支付网关可能返回异步结果，需处理回调</li>
- * <li>退款失败时应记录日志并触发告警，人工介入处理</li>
- * </ul>
  *
  * @author 开发团队
  * @since 2026-01-06
@@ -48,29 +31,17 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class PaidRefundStrategy implements RefundStrategy {
 
-    /** 每次释放的库存数量（与锁单预占保持对称） */
-    private static final int UNFREEZE_QUANTITY = 1;
-
     private final OrderRepository orderRepository;
-    private final TradeOrderRepository tradeOrderRepository;
-    private final ActivityRepository activityRepository;
-    private final IDistributedLockService lockService;
     private final IPaymentRefundGateway paymentRefundGateway;
-    private final SkuRepository skuRepository;
+    private final ResourceReleaseService resourceReleaseService;
 
     public PaidRefundStrategy(
             OrderRepository orderRepository,
-            TradeOrderRepository tradeOrderRepository,
-            ActivityRepository activityRepository,
-            IDistributedLockService lockService,
             IPaymentRefundGateway paymentRefundGateway,
-            SkuRepository skuRepository) {
+            ResourceReleaseService resourceReleaseService) {
         this.orderRepository = orderRepository;
-        this.tradeOrderRepository = tradeOrderRepository;
-        this.activityRepository = activityRepository;
-        this.lockService = lockService;
         this.paymentRefundGateway = paymentRefundGateway;
-        this.skuRepository = skuRepository;
+        this.resourceReleaseService = resourceReleaseService;
     }
 
     @Override
@@ -85,29 +56,27 @@ public class PaidRefundStrategy implements RefundStrategy {
 
         // 2. 加载Order，判断是否已成团
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("拼团订单不存在"));
+                .orElseThrow(() -> new BizException("拼团订单不存在"));
 
-        // 3. 根据成团状态决定是否恢复名额和更新Order状态
+        // 3. 根据成团状态决定是否恢复名额
         if (order.isCompleted()) {
-            // 已成团：不更新Order状态，不恢复Redis名额
-            log.info("【已支付退单策略】已成团，不更新Order状态，不恢复Redis名额, orderId: {}", orderId);
+            // 已成团：只释放库存
+            log.info("【已支付退单策略】已成团，不恢复名额，仅释放库存, orderId: {}", orderId);
+            resourceReleaseService.releaseInventory(
+                    tradeOrder.getGoodsId(),
+                    tradeOrder.getTradeOrderId(),
+                    "已支付退单-已成团");
         } else {
-            // 未成团：释放Order的锁定名额
-            boolean success = orderRepository.decrementLockCount(orderId);
-            if (!success) {
-                log.warn("【已支付退单策略】释放锁定名额失败，可能 lockCount 已为 0, orderId={}", orderId);
-            }
-
-            // 恢复 Redis 名额
-            String teamSlotKey = RedisKeyManager.teamSlotKey(orderId);
-            Integer validTime = getValidTime(tradeOrder.getActivityId());
-            recoveryRedisSlot(teamSlotKey, validTime, tradeOrder.getTradeOrderId());
+            // 未成团：释放全部资源（lockCount + 槽位 + 库存）
+            resourceReleaseService.releaseAllResources(
+                    orderId,
+                    tradeOrder.getActivityId(),
+                    tradeOrder.getGoodsId(),
+                    tradeOrder.getTradeOrderId(),
+                    "已支付退单-未成团");
         }
 
-        // 4. 释放冻结库存（无论是否已成团都需要释放）
-        releaseInventory(tradeOrder.getGoodsId(), tradeOrder.getTradeOrderId());
-
-        // 5. 调用支付网关退款（无论是否已成团都需要退款）
+        // 4. 调用支付网关退款（无论是否已成团都需要退款）
         callPaymentGatewayRefund(tradeOrder);
 
         log.info("【已支付退单策略】执行成功, tradeOrderId={}, orderId={}",
@@ -121,130 +90,40 @@ public class PaidRefundStrategy implements RefundStrategy {
     }
 
     /**
-     * 释放冻结库存
+     * 调用支付网关退款
      *
      * <p>
-     * 业务场景：
-     * <ul>
-     * <li>用户已支付但拼团失败，需要释放冻结库存</li>
-     * <li>与 InventoryOccupyHandler.freezeStock() 保持对称</li>
-     * </ul>
-     *
-     * @param goodsId      商品ID
-     * @param tradeOrderId 交易订单ID（用于日志追踪）
-     */
-    private void releaseInventory(String goodsId, String tradeOrderId) {
-        if (goodsId == null || goodsId.isEmpty()) {
-            log.warn("【已支付退单策略】商品ID为空，跳过库存释放, tradeOrderId={}", tradeOrderId);
-            return;
-        }
-
-        try {
-            int result = skuRepository.unfreezeStock(goodsId, UNFREEZE_QUANTITY);
-            if (result > 0) {
-                log.info("【已支付退单策略】库存释放成功, goodsId={}, tradeOrderId={}", goodsId, tradeOrderId);
-            } else {
-                log.warn("【已支付退单策略】库存释放失败（可能已释放）, goodsId={}, tradeOrderId={}", goodsId, tradeOrderId);
-            }
-        } catch (Exception e) {
-            // 释放失败只记录日志，不影响主流程
-            log.error("【已支付退单策略】库存释放异常, goodsId={}, tradeOrderId={}", goodsId, tradeOrderId, e);
-        }
-    }
-
-    /**
-     * 调用支付网关退款接口
-     *
-     * <p>
-     * 通过 IPaymentRefundGateway 接口调用真实支付网关
+     * 当前实现：同步调用支付网关
+     * TODO：后续可改为异步处理，支持重试
      *
      * @param tradeOrder 交易订单
      */
     private void callPaymentGatewayRefund(TradeOrder tradeOrder) {
-        log.info("【支付网关退款】调用退款接口, tradeOrderId={}, outTradeNo={}, amount={}",
-                tradeOrder.getTradeOrderId(),
-                tradeOrder.getOutTradeNo(),
-                LogDesensitizer.maskPrice(tradeOrder.getPayPrice(), log));
-
-        String outRequestNo = tradeOrder.getTradeOrderId() + "-RF-" + System.currentTimeMillis();
-
-        IPaymentRefundGateway.RefundResult result = paymentRefundGateway.refund(
-                tradeOrder.getOutTradeNo(),
-                tradeOrder.getPayPrice(),
-                tradeOrder.getRefundReason() != null ? tradeOrder.getRefundReason() : "拼团退款",
-                outRequestNo);
-
-        if (result.success()) {
-            log.info("【支付网关退款】退款成功, tradeOrderId={}, refundId={}",
-                    tradeOrder.getTradeOrderId(), result.refundId());
-        } else {
-            log.error("【支付网关退款】退款失败, tradeOrderId={}, errorCode={}, errorMsg={}",
-                    tradeOrder.getTradeOrderId(), result.errorCode(), result.errorMsg());
-            throw new BizException("支付网关退款失败: " + result.errorMsg());
-        }
-    }
-
-    /**
-     * 获取活动有效期
-     *
-     * <p>
-     * 用于设置Redis Key的过期时间
-     *
-     * @param activityId 活动ID
-     * @return 有效期（秒），默认1200秒（20分钟）
-     */
-    private Integer getValidTime(String activityId) {
-        return activityRepository.findById(activityId)
-                .map(Activity::getValidTime)
-                .orElse(1200); // 默认20分钟
-    }
-
-    /**
-     * 恢复Redis名额
-     *
-     * <p>
-     * 业务场景：
-     * <ul>
-     * <li>用户已支付但拼团失败，需要释放Redis名额</li>
-     * <li>与 TradeOrderService.rollbackTeamSlot() 保持对称</li>
-     * </ul>
-     *
-     * <p>
-     * 设计说明：
-     * <ul>
-     * <li>使用分布式锁防止重复恢复（基于tradeOrderId）</li>
-     * <li>使用 INCR 原子操作恢复名额</li>
-     * <li>恢复失败只记录日志，不影响主流程（MySQL已释放）</li>
-     * </ul>
-     *
-     * @param teamSlotKey  Redis名额Key
-     * @param validTime    有效期（秒）
-     * @param tradeOrderId 交易订单ID（用于分布式锁）
-     */
-    private void recoveryRedisSlot(String teamSlotKey, Integer validTime, String tradeOrderId) {
-        // 使用RedisKeyManager生成分布式锁key
-        String lockKey = RedisKeyManager.lockKey("refund", tradeOrderId);
-
         try {
-            // 尝试获取锁（30天过期，防止锁永久占用）
-            Boolean lockAcquired = lockService.setNx(lockKey, 30 * 24 * 60, TimeUnit.MINUTES);
+            String refundReason = "团购活动退款-" + tradeOrder.getTradeOrderId();
+            String outRequestNo = "REFUND-" + tradeOrder.getTradeOrderId();
 
-            if (Boolean.FALSE.equals(lockAcquired)) {
-                log.warn("【已支付退单策略】名额恢复操作已在进行中，跳过重复操作, tradeOrderId: {}", tradeOrderId);
-                return;
+            IPaymentRefundGateway.RefundResult result = paymentRefundGateway.refund(
+                    tradeOrder.getOutTradeNo(),
+                    tradeOrder.getPayPrice(),
+                    refundReason,
+                    outRequestNo);
+
+            if (result.success()) {
+                log.info("【已支付退单策略】支付网关退款成功, tradeOrderId={}, refundId={}",
+                        tradeOrder.getTradeOrderId(), result.refundId());
+            } else {
+                log.error("【已支付退单策略】支付网关退款失败, tradeOrderId={}, errorCode={}, errorMsg={}",
+                        tradeOrder.getTradeOrderId(), result.errorCode(), result.errorMsg());
+                throw new BizException("支付网关退款失败: " + result.errorMsg());
             }
 
-            // 在锁保护下执行名额恢复
-            tradeOrderRepository.recoveryTeamSlot(teamSlotKey, validTime);
-            log.info("【已支付退单策略】恢复Redis名额成功, teamSlotKey: {}, tradeOrderId: {}",
-                    teamSlotKey, tradeOrderId);
-
-        } catch (Exception ex) {
-            // 恢复失败：释放锁，允许重试
-            lockService.delete(lockKey);
-            log.error("【已支付退单策略】恢复Redis名额失败, teamSlotKey: {}, tradeOrderId: {}",
-                    teamSlotKey, tradeOrderId, ex);
-            // 不抛异常，避免影响主流程（MySQL已释放）
+        } catch (BizException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("【已支付退单策略】支付网关退款异常, tradeOrderId={}",
+                    tradeOrder.getTradeOrderId(), e);
+            throw new RuntimeException("支付网关退款异常: " + e.getMessage(), e);
         }
     }
 }

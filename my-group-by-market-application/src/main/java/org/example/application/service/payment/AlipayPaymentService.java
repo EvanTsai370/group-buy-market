@@ -105,6 +105,20 @@ public class AlipayPaymentService {
     }
 
     /**
+     * 获取商户 AppId（用于回调校验）
+     */
+    public String getAppId() {
+        return paymentGateway.getAppId();
+    }
+
+    /**
+     * 获取商户 SellerId（用于回调校验）
+     */
+    public String getSellerId() {
+        return paymentGateway.getSellerId();
+    }
+
+    /**
      * 处理支付回调
      * 
      * @return 是否处理成功

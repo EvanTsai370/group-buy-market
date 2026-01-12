@@ -10,6 +10,7 @@ import org.example.domain.service.lock.IDistributedLockService;
 import org.example.domain.service.LockOrderService;
 import org.example.domain.service.RefundService;
 import org.example.domain.service.SettlementService;
+import org.example.domain.service.ResourceReleaseService;
 import org.example.domain.service.discount.*;
 import org.example.domain.service.refund.*;
 import org.example.domain.shared.IdGenerator;
@@ -58,6 +59,23 @@ public class DomainServiceConfiguration {
     }
 
     /**
+     * 资源释放领域服务
+     *
+     * <p>
+     * 统一管理预占资源的释放，包括 Order.lockCount、名额槽位、冻结库存
+     */
+    @Bean
+    public ResourceReleaseService resourceReleaseService(
+            OrderRepository orderRepository,
+            TradeOrderRepository tradeOrderRepository,
+            SkuRepository skuRepository,
+            IDistributedLockService lockService,
+            ActivityRepository activityRepository) {
+        return new ResourceReleaseService(orderRepository, tradeOrderRepository,
+                skuRepository, lockService, activityRepository);
+    }
+
+    /**
      * 结算领域服务
      *
      * <p>
@@ -68,9 +86,10 @@ public class DomainServiceConfiguration {
             OrderRepository orderRepository,
             TradeOrderRepository tradeOrderRepository,
             NotificationTaskRepository notificationTaskRepository,
-            IdGenerator idGenerator) {
+            IdGenerator idGenerator,
+            ResourceReleaseService resourceReleaseService) {
         return new SettlementService(orderRepository, tradeOrderRepository,
-                notificationTaskRepository, idGenerator);
+                notificationTaskRepository, idGenerator, resourceReleaseService);
     }
 
     /**
@@ -101,35 +120,25 @@ public class DomainServiceConfiguration {
      * 未支付退单策略
      *
      * <p>
-     * 处理未支付订单的退单逻辑，释放锁定的拼团名额并恢复Redis库存和商品库存
+     * 处理未支付订单的退单逻辑，释放锁定的拼团名额和商品库存
      */
     @Bean
-    public UnpaidRefundStrategy unpaidRefundStrategy(
-            OrderRepository orderRepository,
-            TradeOrderRepository tradeOrderRepository,
-            ActivityRepository activityRepository,
-            IDistributedLockService lockService,
-            SkuRepository skuRepository) {
-        return new UnpaidRefundStrategy(orderRepository, tradeOrderRepository, activityRepository, lockService,
-                skuRepository);
+    public UnpaidRefundStrategy unpaidRefundStrategy(ResourceReleaseService resourceReleaseService) {
+        return new UnpaidRefundStrategy(resourceReleaseService);
     }
 
     /**
      * 已支付退单策略
      *
      * <p>
-     * 处理已支付订单的退单逻辑，调用支付网关退款并恢复Redis库存和商品库存
+     * 处理已支付订单的退单逻辑，调用支付网关退款并释放资源
      */
     @Bean
     public PaidRefundStrategy paidRefundStrategy(
             OrderRepository orderRepository,
-            TradeOrderRepository tradeOrderRepository,
-            ActivityRepository activityRepository,
-            IDistributedLockService lockService,
             org.example.domain.gateway.IPaymentRefundGateway paymentRefundGateway,
-            SkuRepository skuRepository) {
-        return new PaidRefundStrategy(orderRepository, tradeOrderRepository,
-                activityRepository, lockService, paymentRefundGateway, skuRepository);
+            ResourceReleaseService resourceReleaseService) {
+        return new PaidRefundStrategy(orderRepository, paymentRefundGateway, resourceReleaseService);
     }
 
     /**

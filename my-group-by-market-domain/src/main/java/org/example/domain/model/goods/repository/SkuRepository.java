@@ -74,4 +74,19 @@ public interface SkuRepository {
      * 删除
      */
     void deleteByGoodsId(String goodsId);
+
+    // ==================== TODO: 发货与退货库存操作 ====================
+    //
+    // 以下方法待与 InventoryGateway 微服务集成后实现：
+    //
+    // 1. shipStock(goodsId, quantity) - 发货时调用
+    // 操作：frozenStock - quantity, stock - quantity
+    // 场景：拼团成功后发货
+    //
+    // 2. returnStock(goodsId, quantity) - 退货时调用
+    // 操作：stock + quantity
+    // 场景：已发货订单退货
+    //
+    // 当前 unfreezeStock() 仅适用于未发货订单的退款场景
+    // =================================================================
 }
