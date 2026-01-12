@@ -4,7 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.common.cache.RedisKeyManager;
 import org.example.domain.model.activity.Activity;
 import org.example.domain.model.activity.repository.ActivityRepository;
+import org.example.domain.model.account.Account;
+import org.example.domain.model.account.repository.AccountRepository;
 import org.example.domain.model.goods.repository.SkuRepository;
+import org.example.domain.model.order.Order;
 import org.example.domain.model.order.repository.OrderRepository;
 import org.example.domain.model.trade.repository.TradeOrderRepository;
 import org.example.domain.service.lock.IDistributedLockService;
@@ -48,34 +51,38 @@ public class ResourceReleaseService {
     private final SkuRepository skuRepository;
     private final IDistributedLockService lockService;
     private final ActivityRepository activityRepository;
+    private final AccountRepository accountRepository;
 
     public ResourceReleaseService(
             OrderRepository orderRepository,
             TradeOrderRepository tradeOrderRepository,
             SkuRepository skuRepository,
             IDistributedLockService lockService,
-            ActivityRepository activityRepository) {
+            ActivityRepository activityRepository,
+            AccountRepository accountRepository) {
         this.orderRepository = orderRepository;
         this.tradeOrderRepository = tradeOrderRepository;
         this.skuRepository = skuRepository;
         this.lockService = lockService;
         this.activityRepository = activityRepository;
+        this.accountRepository = accountRepository;
     }
 
     /**
      * 释放全部预占资源
      *
      * <p>
-     * 包括：Order.lockCount、名额槽位、冻结库存
+     * 包括：Order.lockCount、名额槽位、冻结库存、参团次数
      *
      * @param orderId      订单ID
      * @param activityId   活动ID
      * @param goodsId      商品ID
+     * @param userId       用户ID
      * @param tradeOrderId 交易订单ID（用于分布式锁）
      * @param scene        场景标识（用于日志区分）
      */
     public void releaseAllResources(String orderId, String activityId,
-            String goodsId, String tradeOrderId, String scene) {
+            String goodsId, String userId, String tradeOrderId, String scene) {
         log.info("【{}】开始释放全部预占资源, orderId={}, tradeOrderId={}", scene, orderId, tradeOrderId);
 
         // 1. 释放 Order.lockCount
@@ -86,6 +93,9 @@ public class ResourceReleaseService {
 
         // 3. 释放冻结库存
         releaseInventory(goodsId, tradeOrderId, scene);
+
+        // 4. 释放参团次数
+        releaseParticipationCount(userId, activityId, scene);
 
         log.info("【{}】全部预占资源释放完成, orderId={}, tradeOrderId={}", scene, orderId, tradeOrderId);
     }
@@ -118,6 +128,14 @@ public class ResourceReleaseService {
     /**
      * 释放 Order.lockCount
      *
+     * <p>
+     * 执行流程：
+     * <ol>
+     * <li>加载 Order 聚合</li>
+     * <li>调用 Order.validateReleaseLock() 进行业务校验</li>
+     * <li>调用 Repository 原子递减 lockCount</li>
+     * </ol>
+     *
      * @param orderId 订单ID
      * @param scene   场景标识
      * @return true=成功, false=失败（可能已释放或lockCount为0）
@@ -129,6 +147,17 @@ public class ResourceReleaseService {
         }
 
         try {
+            // 1. 加载 Order 聚合
+            Order order = orderRepository.findById(orderId).orElse(null);
+            if (order == null) {
+                log.warn("【{}】Order不存在，跳过lockCount释放, orderId={}", scene, orderId);
+                return false;
+            }
+
+            // 2. 业务校验
+            order.validateReleaseLock();
+
+            // 3. 原子递减 lockCount
             boolean success = orderRepository.decrementLockCount(orderId);
             if (success) {
                 log.info("【{}】Order.lockCount释放成功, orderId={}", scene, orderId);
@@ -233,5 +262,41 @@ public class ResourceReleaseService {
             log.warn("【ResourceReleaseService】获取活动有效期失败，使用默认值, activityId={}", activityId);
         }
         return DEFAULT_VALID_TIME;
+    }
+
+    /**
+     * 释放参团次数
+     *
+     * <p>
+     * 与 Account.deductCount() 保持对称，调用 compensateCount() 恢复
+     *
+     * @param userId     用户ID
+     * @param activityId 活动ID
+     * @param scene      场景标识
+     */
+    public void releaseParticipationCount(String userId, String activityId, String scene) {
+        if (userId == null || userId.isEmpty() || activityId == null || activityId.isEmpty()) {
+            log.warn("【{}】用户ID或活动ID为空，跳过参团次数释放", scene);
+            return;
+        }
+
+        try {
+            // 1. 加载 Account 聚合
+            Account account = accountRepository.findByUserAndActivity(userId, activityId).orElse(null);
+            if (account == null) {
+                log.warn("【{}】Account不存在，跳过参团次数释放, userId={}, activityId={}", scene, userId, activityId);
+                return;
+            }
+
+            // 2. 调用聚合根方法补偿
+            account.compensateCount();
+
+            // 3. 持久化
+            accountRepository.save(account);
+
+            log.info("【{}】参团次数释放成功, userId={}, activityId={}", scene, userId, activityId);
+        } catch (Exception e) {
+            log.error("【{}】参团次数释放异常, userId={}, activityId={}", scene, userId, activityId, e);
+        }
     }
 }

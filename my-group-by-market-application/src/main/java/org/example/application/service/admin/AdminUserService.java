@@ -3,16 +3,18 @@ package org.example.application.service.admin;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.application.assembler.UserResultAssembler;
+import org.example.application.service.admin.cmd.CreateAdminCmd;
 import org.example.application.service.admin.result.UserDetailResult;
 import org.example.common.exception.BizException;
 import org.example.domain.model.user.User;
 import org.example.domain.model.user.repository.UserRepository;
 import org.example.domain.model.user.valueobject.UserRole;
-import org.example.domain.model.user.valueobject.UserStatus;
+import org.example.domain.shared.PasswordEncoderService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 用户管理服务（管理后台）
@@ -27,6 +29,51 @@ public class AdminUserService {
 
     private final UserRepository userRepository;
     private final UserResultAssembler userResultAssembler;
+    private final PasswordEncoderService passwordEncoderService;
+
+    /**
+     * 创建管理员
+     */
+    @Transactional
+    public UserDetailResult createAdmin(CreateAdminCmd cmd) {
+        log.info("【AdminUser】创建管理员, username: {}", cmd.getUsername());
+
+        // 校验用户名
+        if (cmd.getUsername() == null || cmd.getUsername().trim().isEmpty()) {
+            throw new BizException("用户名不能为空");
+        }
+
+        // 校验密码
+        if (cmd.getPassword() == null || cmd.getPassword().trim().isEmpty()) {
+            throw new BizException("密码不能为空");
+        }
+
+        // 校验用户名唯一性
+        if (userRepository.existsByUsername(cmd.getUsername())) {
+            throw new BizException("用户名已存在");
+        }
+
+        // 生成用户ID
+        String userId = UUID.randomUUID().toString();
+
+        // 加密密码
+        String encodedPassword = passwordEncoderService.encode(cmd.getPassword());
+
+        // 创建管理员（使用领域层工厂方法）
+        User admin = User.createAdmin(userId, cmd.getUsername(), encodedPassword);
+
+        // 设置昵称（如果提供）
+        if (cmd.getNickname() != null && !cmd.getNickname().trim().isEmpty()) {
+            admin.setNickname(cmd.getNickname());
+        }
+
+        // 保存
+        userRepository.save(admin);
+
+        log.info("【AdminUser】管理员已创建, userId: {}, username: {}", userId, cmd.getUsername());
+
+        return userResultAssembler.toResult(admin);
+    }
 
     /**
      * 获取用户列表
@@ -57,7 +104,7 @@ public class AdminUserService {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new BizException("用户不存在"));
 
-        user.setStatus(UserStatus.DISABLED);
+        user.disable();
         userRepository.update(user);
 
         log.info("【AdminUser】用户已禁用, userId: {}", userId);
@@ -73,7 +120,7 @@ public class AdminUserService {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new BizException("用户不存在"));
 
-        user.setStatus(UserStatus.ACTIVE);
+        user.enable();
         userRepository.update(user);
 
         log.info("【AdminUser】用户已启用, userId: {}", userId);
@@ -105,9 +152,7 @@ public class AdminUserService {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new BizException("用户不存在"));
 
-        // 注意：这里应该调用 PasswordEncoderService 加密
-        // 为简化示例，暂时不加密
-        user.updatePassword(newPassword);
+        user.updatePassword(passwordEncoderService.encode(newPassword));
         userRepository.update(user);
 
         log.info("【AdminUser】用户密码已重置, userId: {}", userId);

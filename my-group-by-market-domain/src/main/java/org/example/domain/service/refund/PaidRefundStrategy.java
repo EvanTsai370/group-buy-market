@@ -67,11 +67,12 @@ public class PaidRefundStrategy implements RefundStrategy {
                     tradeOrder.getTradeOrderId(),
                     "已支付退单-已成团");
         } else {
-            // 未成团：释放全部资源（lockCount + 槽位 + 库存）
+            // 未成团：释放全部资源（lockCount + 槽位 + 库存 + 参团次数）
             resourceReleaseService.releaseAllResources(
                     orderId,
                     tradeOrder.getActivityId(),
                     tradeOrder.getGoodsId(),
+                    tradeOrder.getUserId(),
                     tradeOrder.getTradeOrderId(),
                     "已支付退单-未成团");
         }

@@ -177,32 +177,6 @@ public class Order {
         return this.status == OrderStatus.SUCCESS;
     }
 
-    /**
-     * 判断是否可以退单
-     *
-     * <p>
-     * 业务规则：
-     * <ul>
-     * <li>进行中的拼团：可以退单</li>
-     * <li>已完成的拼团：可以退单（但不恢复库存）</li>
-     * <li>已失败的拼团：不可以退单</li>
-     * </ul>
-     *
-     * @return true=可以退单, false=不可以退单
-     */
-    public boolean canRefund() {
-        return this.status == OrderStatus.PENDING || this.status == OrderStatus.SUCCESS;
-    }
-
-    /**
-     * 检查是否可以加入
-     */
-    public boolean canJoin() {
-        return this.status == OrderStatus.PENDING
-                && this.completeCount < this.targetCount
-                && LocalDateTime.now().isBefore(this.deadlineTime);
-    }
-
     // ==================== 锁单相关业务逻辑 ====================
 
     /**

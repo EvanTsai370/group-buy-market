@@ -1,5 +1,6 @@
 package org.example.infrastructure.config;
 
+import org.example.domain.model.account.repository.AccountRepository;
 import org.example.domain.model.activity.repository.ActivityRepository;
 import org.example.domain.model.goods.repository.SkuRepository;
 import org.example.domain.model.notification.repository.NotificationTaskRepository;
@@ -62,7 +63,7 @@ public class DomainServiceConfiguration {
      * 资源释放领域服务
      *
      * <p>
-     * 统一管理预占资源的释放，包括 Order.lockCount、名额槽位、冻结库存
+     * 统一管理预占资源的释放，包括 Order.lockCount、名额槽位、冻结库存、参团次数
      */
     @Bean
     public ResourceReleaseService resourceReleaseService(
@@ -70,9 +71,10 @@ public class DomainServiceConfiguration {
             TradeOrderRepository tradeOrderRepository,
             SkuRepository skuRepository,
             IDistributedLockService lockService,
-            ActivityRepository activityRepository) {
+            ActivityRepository activityRepository,
+            AccountRepository accountRepository) {
         return new ResourceReleaseService(orderRepository, tradeOrderRepository,
-                skuRepository, lockService, activityRepository);
+                skuRepository, lockService, activityRepository, accountRepository);
     }
 
     /**

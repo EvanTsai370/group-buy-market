@@ -149,6 +149,7 @@ public class SettlementService {
                     tradeOrder.getOrderId(),
                     tradeOrder.getActivityId(),
                     tradeOrder.getGoodsId(),
+                    tradeOrder.getUserId(),
                     tradeOrder.getTradeOrderId(),
                     "交易关闭回调");
         } else {
