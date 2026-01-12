@@ -29,4 +29,7 @@ public class TradeFilterContext {
 
     /** 名额恢复key（用于失败回滚时恢复Redis名额） */
     private String recoveryTeamSlotKey;
+
+    /** 库存恢复商品ID（用于失败回滚时释放库存） */
+    private String recoveryGoodsId;
 }

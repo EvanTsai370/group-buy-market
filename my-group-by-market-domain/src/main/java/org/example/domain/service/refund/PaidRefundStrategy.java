@@ -7,6 +7,7 @@ import org.example.common.util.LogDesensitizer;
 import org.example.domain.gateway.IPaymentRefundGateway;
 import org.example.domain.model.activity.Activity;
 import org.example.domain.model.activity.repository.ActivityRepository;
+import org.example.domain.model.goods.repository.SkuRepository;
 import org.example.domain.model.order.Order;
 import org.example.domain.model.order.repository.OrderRepository;
 import org.example.domain.model.trade.TradeOrder;
@@ -28,6 +29,7 @@ import java.util.concurrent.TimeUnit;
  * <li>标记 TradeOrder 为 REFUND 状态</li>
  * <li>原子递减 Order 的 lockCount（释放锁定名额）</li>
  * <li>恢复 Redis 名额（与锁单失败回滚保持对称）</li>
+ * <li>释放冻结库存（与锁单预占保持对称）</li>
  * <li>调用支付网关退款接口（同步/异步）</li>
  * <li>记录退款流水（用于对账）</li>
  * </ol>
@@ -46,23 +48,29 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class PaidRefundStrategy implements RefundStrategy {
 
+    /** 每次释放的库存数量（与锁单预占保持对称） */
+    private static final int UNFREEZE_QUANTITY = 1;
+
     private final OrderRepository orderRepository;
     private final TradeOrderRepository tradeOrderRepository;
     private final ActivityRepository activityRepository;
     private final IDistributedLockService lockService;
     private final IPaymentRefundGateway paymentRefundGateway;
+    private final SkuRepository skuRepository;
 
     public PaidRefundStrategy(
             OrderRepository orderRepository,
             TradeOrderRepository tradeOrderRepository,
             ActivityRepository activityRepository,
             IDistributedLockService lockService,
-            IPaymentRefundGateway paymentRefundGateway) {
+            IPaymentRefundGateway paymentRefundGateway,
+            SkuRepository skuRepository) {
         this.orderRepository = orderRepository;
         this.tradeOrderRepository = tradeOrderRepository;
         this.activityRepository = activityRepository;
         this.lockService = lockService;
         this.paymentRefundGateway = paymentRefundGateway;
+        this.skuRepository = skuRepository;
     }
 
     @Override
@@ -96,7 +104,10 @@ public class PaidRefundStrategy implements RefundStrategy {
             recoveryRedisSlot(teamSlotKey, validTime, tradeOrder.getTradeOrderId());
         }
 
-        // 4. 调用支付网关退款（无论是否已成团都需要退款）
+        // 4. 释放冻结库存（无论是否已成团都需要释放）
+        releaseInventory(tradeOrder.getGoodsId(), tradeOrder.getTradeOrderId());
+
+        // 5. 调用支付网关退款（无论是否已成团都需要退款）
         callPaymentGatewayRefund(tradeOrder);
 
         log.info("【已支付退单策略】执行成功, tradeOrderId={}, orderId={}",
@@ -107,6 +118,38 @@ public class PaidRefundStrategy implements RefundStrategy {
     public boolean supports(TradeOrder tradeOrder) {
         // 仅支持 PAID 状态的订单（已支付）
         return tradeOrder.getStatus() == TradeStatus.PAID;
+    }
+
+    /**
+     * 释放冻结库存
+     *
+     * <p>
+     * 业务场景：
+     * <ul>
+     * <li>用户已支付但拼团失败，需要释放冻结库存</li>
+     * <li>与 InventoryOccupyHandler.freezeStock() 保持对称</li>
+     * </ul>
+     *
+     * @param goodsId      商品ID
+     * @param tradeOrderId 交易订单ID（用于日志追踪）
+     */
+    private void releaseInventory(String goodsId, String tradeOrderId) {
+        if (goodsId == null || goodsId.isEmpty()) {
+            log.warn("【已支付退单策略】商品ID为空，跳过库存释放, tradeOrderId={}", tradeOrderId);
+            return;
+        }
+
+        try {
+            int result = skuRepository.unfreezeStock(goodsId, UNFREEZE_QUANTITY);
+            if (result > 0) {
+                log.info("【已支付退单策略】库存释放成功, goodsId={}, tradeOrderId={}", goodsId, tradeOrderId);
+            } else {
+                log.warn("【已支付退单策略】库存释放失败（可能已释放）, goodsId={}, tradeOrderId={}", goodsId, tradeOrderId);
+            }
+        } catch (Exception e) {
+            // 释放失败只记录日志，不影响主流程
+            log.error("【已支付退单策略】库存释放异常, goodsId={}, tradeOrderId={}", goodsId, tradeOrderId, e);
+        }
     }
 
     /**

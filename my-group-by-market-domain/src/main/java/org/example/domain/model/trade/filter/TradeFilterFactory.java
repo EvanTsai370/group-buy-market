@@ -3,6 +3,7 @@ package org.example.domain.model.trade.filter;
 import org.example.common.pattern.chain.model2.ChainExecutor;
 import org.example.domain.model.account.repository.AccountRepository;
 import org.example.domain.model.activity.repository.ActivityRepository;
+import org.example.domain.model.goods.repository.SkuRepository;
 import org.example.domain.model.trade.repository.TradeOrderRepository;
 
 /**
@@ -21,6 +22,7 @@ import org.example.domain.model.trade.repository.TradeOrderRepository;
  * <li>ActivityAvailabilityHandler - 活动可用性校验（加载Activity到上下文）</li>
  * <li>UserParticipationLimitHandler - 用户参与限制校验（依赖Activity信息）</li>
  * <li>TeamSlotOccupyHandler - 组队名额占用校验（防止超卖）</li>
+ * <li>InventoryOccupyHandler - 商品库存预占校验（防止库存超卖）</li>
  * </ol>
  *
  * @author 开发团队
@@ -31,13 +33,16 @@ public class TradeFilterFactory {
     private final ActivityRepository activityRepository;
     private final AccountRepository accountRepository;
     private final TradeOrderRepository tradeOrderRepository;
+    private final SkuRepository skuRepository;
 
     public TradeFilterFactory(ActivityRepository activityRepository,
             AccountRepository accountRepository,
-            TradeOrderRepository tradeOrderRepository) {
+            TradeOrderRepository tradeOrderRepository,
+            SkuRepository skuRepository) {
         this.activityRepository = activityRepository;
         this.accountRepository = accountRepository;
         this.tradeOrderRepository = tradeOrderRepository;
+        this.skuRepository = skuRepository;
     }
 
     /**
@@ -52,7 +57,8 @@ public class TradeFilterFactory {
         // 按顺序添加handler
         executor.addHandler(new ActivityAvailabilityHandler(activityRepository))
                 .addHandler(new UserParticipationLimitHandler(accountRepository))
-                .addHandler(new TeamSlotOccupyHandler(tradeOrderRepository));
+                .addHandler(new TeamSlotOccupyHandler(tradeOrderRepository))
+                .addHandler(new InventoryOccupyHandler(skuRepository));
 
         return executor;
     }

@@ -96,7 +96,8 @@ public class TradeOrderService {
         this.discountCalculatorMap = discountCalculatorMap;
         this.lockOrderService = lockOrderService;
         this.refundService = refundService;
-        this.tradeFilterFactory = new TradeFilterFactory(activityRepository, accountRepository, tradeOrderRepository);
+        this.tradeFilterFactory = new TradeFilterFactory(activityRepository, accountRepository, tradeOrderRepository,
+                skuRepository);
         this.tradeOrderResultAssembler = tradeOrderResultAssembler;
         this.timeoutProducer = timeoutProducer;
     }
@@ -198,16 +199,16 @@ public class TradeOrderService {
             return tradeOrderResultAssembler.toResult(tradeOrder);
 
         } catch (BizException e) {
-            // 业务异常：回滚Redis名额
-            rollbackTeamSlot(filterContext, cmd);
+            // 业务异常：回滚预占资源（Redis名额 + 库存）
+            rollbackResources(filterContext, cmd);
 
             log.warn("【TradeOrderService】锁单失败(业务异常), userId: {}, activityId: {}, outTradeNo: {}, reason: {}",
                     cmd.getUserId(), cmd.getActivityId(), cmd.getOutTradeNo(), e.getMessage());
             throw e;
 
         } catch (Exception e) {
-            // 系统异常：回滚Redis名额
-            rollbackTeamSlot(filterContext, cmd);
+            // 系统异常：回滚预占资源（Redis名额 + 库存）
+            rollbackResources(filterContext, cmd);
 
             log.error("【TradeOrderService】锁单失败(系统异常), userId: {}, activityId: {}, outTradeNo: {}",
                     cmd.getUserId(), cmd.getActivityId(), cmd.getOutTradeNo(), e);
@@ -278,7 +279,7 @@ public class TradeOrderService {
      * 设计说明：
      * <ul>
      * <li>返回整个context而不是只返回Activity，用于后续回滚</li>
-     * <li>context中包含recoveryTeamSlotKey，用于失败时恢复Redis名额</li>
+     * <li>context中包含recoveryTeamSlotKey和recoveryGoodsId，用于失败时恢复资源</li>
      * </ul>
      *
      * @param cmd 锁单命令
@@ -346,51 +347,60 @@ public class TradeOrderService {
     }
 
     /**
-     * 回滚Redis名额
+     * 回滚预占资源（Redis名额 + 库存）
      *
      * <p>
      * 业务场景：
      * <ul>
      * <li>TeamSlotOccupyHandler已经扣减了Redis名额</li>
+     * <li>InventoryOccupyHandler已经冻结了库存</li>
      * <li>后续步骤（如Account扣减、TradeOrder创建）失败</li>
-     * <li>需要恢复Redis名额，防止"幽灵名额"问题</li>
+     * <li>需要恢复Redis名额和库存，防止"幽灵名额"和"幽灵库存"问题</li>
      * </ul>
      *
      * <p>
      * 设计说明：
      * <ul>
-     * <li>只在有recoveryKey时才执行回滚</li>
+     * <li>只在有recovery信息时才执行回滚</li>
      * <li>回滚失败只记录日志，不影响主流程异常抛出</li>
-     * <li>使用INCR原子操作，多次回滚不会有副作用</li>
+     * <li>使用原子操作，多次回滚不会有副作用</li>
      * </ul>
      *
      * @param filterContext 过滤链上下文
      * @param cmd           锁单命令
      */
-    private void rollbackTeamSlot(TradeFilterContext filterContext, LockOrderCmd cmd) {
+    private void rollbackResources(TradeFilterContext filterContext, LockOrderCmd cmd) {
         if (filterContext == null) {
             return;
         }
 
+        // 1. 回滚Redis名额
         String recoveryKey = filterContext.getRecoveryTeamSlotKey();
-        if (recoveryKey == null || recoveryKey.isEmpty()) {
-            // 没有占用名额（首次开团），无需回滚
-            return;
+        if (recoveryKey != null && !recoveryKey.isEmpty()) {
+            try {
+                Activity activity = filterContext.getActivity();
+                Integer validTime = activity != null ? activity.getValidTime() : 1200; // 默认20分钟
+
+                tradeOrderRepository.recoveryTeamSlot(recoveryKey, validTime);
+                log.info("【TradeOrderService】回滚Redis名额成功, teamSlotKey: {}, userId: {}, orderId: {}",
+                        recoveryKey, cmd.getUserId(), cmd.getOrderId());
+            } catch (Exception ex) {
+                log.error("【TradeOrderService】回滚Redis名额失败, teamSlotKey: {}, userId: {}, orderId: {}",
+                        recoveryKey, cmd.getUserId(), cmd.getOrderId(), ex);
+            }
         }
 
-        try {
-            // 从Activity获取validTime
-            Activity activity = filterContext.getActivity();
-            Integer validTime = activity != null ? activity.getValidTime() : 1200; // 默认20分钟
-
-            tradeOrderRepository.recoveryTeamSlot(recoveryKey, validTime);
-            log.info("【TradeOrderService】回滚Redis名额成功, teamSlotKey: {}, userId: {}, orderId: {}",
-                    recoveryKey, cmd.getUserId(), cmd.getOrderId());
-        } catch (Exception ex) {
-            // 回滚失败只记录日志，不影响主流程异常抛出
-            // 运维可以通过日志发现问题，手动修复Redis数据
-            log.error("【TradeOrderService】回滚Redis名额失败, teamSlotKey: {}, userId: {}, orderId: {}",
-                    recoveryKey, cmd.getUserId(), cmd.getOrderId(), ex);
+        // 2. 回滚库存
+        String recoveryGoodsId = filterContext.getRecoveryGoodsId();
+        if (recoveryGoodsId != null && !recoveryGoodsId.isEmpty()) {
+            try {
+                skuRepository.unfreezeStock(recoveryGoodsId, 1);
+                log.info("【TradeOrderService】回滚库存成功, goodsId: {}, userId: {}",
+                        recoveryGoodsId, cmd.getUserId());
+            } catch (Exception ex) {
+                log.error("【TradeOrderService】回滚库存失败, goodsId: {}, userId: {}",
+                        recoveryGoodsId, cmd.getUserId(), ex);
+            }
         }
     }
 
