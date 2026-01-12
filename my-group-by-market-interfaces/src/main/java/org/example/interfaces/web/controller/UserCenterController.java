@@ -8,6 +8,7 @@ import org.example.application.service.customer.UserCenterService;
 import org.example.application.service.customer.result.UserOrderResult;
 import org.example.application.service.customer.result.UserProfileResult;
 import org.example.common.api.Result;
+import org.example.domain.shared.AuthContextService;
 import org.example.interfaces.web.assembler.UserCenterAssembler;
 import org.example.interfaces.web.dto.customer.UserOrderResponse;
 import org.example.interfaces.web.dto.customer.UserProfileResponse;
@@ -32,13 +33,17 @@ public class UserCenterController {
 
     private final UserCenterService userCenterService;
     private final UserCenterAssembler userCenterAssembler;
+    private final AuthContextService authContextService;
 
     /**
      * 获取用户资料
      */
     @GetMapping("/profile")
     @Operation(summary = "用户资料", description = "获取当前用户的资料信息")
-    public Result<UserProfileResponse> getProfile(@RequestHeader("X-User-Id") String userId) {
+    public Result<UserProfileResponse> getProfile() {
+        // 从认证上下文获取当前用户ID
+        String userId = authContextService.getCurrentUserId();
+
         log.info("【UserCenterController】获取用户资料, userId: {}", userId);
 
         UserProfileResult result = userCenterService.getUserProfile(userId);
@@ -53,9 +58,11 @@ public class UserCenterController {
     @GetMapping("/orders")
     @Operation(summary = "订单列表", description = "获取当前用户的订单列表（分页）")
     public Result<List<UserOrderResponse>> getOrders(
-            @RequestHeader("X-User-Id") String userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+
+        // 从认证上下文获取当前用户ID
+        String userId = authContextService.getCurrentUserId();
 
         log.info("【UserCenterController】获取用户订单, userId: {}, page: {}, size: {}", userId, page, size);
 

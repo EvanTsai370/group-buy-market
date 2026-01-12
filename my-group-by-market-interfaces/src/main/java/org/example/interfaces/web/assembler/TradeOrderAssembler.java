@@ -5,6 +5,7 @@ import org.example.application.service.trade.result.TradeOrderResult;
 import org.example.interfaces.web.dto.LockOrderRequest;
 import org.example.interfaces.web.dto.TradeOrderResponse;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 /**
  * 交易订单转换器（Interfaces 层）
@@ -31,12 +32,14 @@ import org.mapstruct.Mapper;
 public interface TradeOrderAssembler {
 
     /**
-     * Request → Command 转换
+     * Request → Command 转换（使用认证上下文的 userId）
      *
      * @param request 锁单请求
+     * @param userId  当前认证用户ID（从 SecurityContextUtils 获取）
      * @return 锁单命令
      */
-    LockOrderCmd toCommand(LockOrderRequest request);
+    @Mapping(target = "userId", source = "userId")
+    LockOrderCmd toCommand(LockOrderRequest request, String userId);
 
     /**
      * Result → Response 转换

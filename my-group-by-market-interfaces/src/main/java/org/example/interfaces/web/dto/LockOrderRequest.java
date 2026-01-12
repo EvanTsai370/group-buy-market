@@ -20,6 +20,7 @@ import java.math.BigDecimal;
  * <li>这是 Interfaces 层的 Request，包含 HTTP 协议相关字段</li>
  * <li>与 Application 层的 LockOrderCmd 隔离，避免协议层污染业务层</li>
  * <li>通过 Assembler 转换为 LockOrderCmd</li>
+ * <li>userId 字段已移除，从认证上下文 SecurityContextUtils 获取</li>
  * </ul>
  *
  * @author 开发团队
@@ -37,10 +38,6 @@ public class LockOrderRequest {
 
     @Schema(description = "活动ID", requiredMode = Schema.RequiredMode.REQUIRED)
     private String activityId;
-
-    /** 实际项目中userId应该从jwt/session中获取 */
-    @Schema(description = "用户ID", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String userId;
 
     @Schema(description = "商品ID", requiredMode = Schema.RequiredMode.REQUIRED)
     private String goodsId;

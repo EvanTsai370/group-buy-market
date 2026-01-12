@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.application.service.trade.TradeOrderService;
 import org.example.application.service.trade.cmd.RefundCmd;
 import org.example.common.ratelimit.RateLimit;
+import org.example.domain.shared.AuthContextService;
 import org.example.domain.model.trade.valueobject.TradeStatus;
 import org.example.domain.service.refund.RefundTimeWindowValidator;
 import org.example.interfaces.web.assembler.TradeOrderAssembler;
@@ -39,6 +40,7 @@ public class TradeOrderController {
     private final TradeOrderAssembler tradeOrderAssembler;
     private final TradeOrderRepository tradeOrderRepository;
     private final RefundTimeWindowValidator refundTimeWindowValidator;
+    private final AuthContextService authContextService;
 
     /**
      * 锁单接口
@@ -49,11 +51,14 @@ public class TradeOrderController {
     @PostMapping("/lock")
     @Operation(summary = "锁单", description = "用户参与拼团，锁定交易订单")
     public Result<TradeOrderResponse> lockOrder(@RequestBody LockOrderRequest request) {
-        log.info("【TradeOrderController】锁单请求, userId: {}, activityId: {}, orderId: {}",
-                request.getUserId(), request.getActivityId(), request.getOrderId());
+        // 从认证上下文获取当前用户ID
+        String currentUserId = authContextService.getCurrentUserId();
 
-        // 1. 协议层 → 应用层转换
-        var cmd = tradeOrderAssembler.toCommand(request);
+        log.info("【TradeOrderController】锁单请求, userId: {}, activityId: {}, orderId: {}",
+                currentUserId, request.getActivityId(), request.getOrderId());
+
+        // 1. 协议层 → 应用层转换（使用认证上下文的 userId）
+        var cmd = tradeOrderAssembler.toCommand(request, currentUserId);
 
         // 2. 调用应用服务
         var result = tradeOrderService.lockOrder(cmd);
@@ -77,18 +82,19 @@ public class TradeOrderController {
      * <li>频率限制：每用户每分钟最多3次退款请求</li>
      * </ol>
      *
-     * @param tradeOrderId  交易订单ID
-     * @param currentUserId 当前用户ID（从认证上下文获取）
-     * @param request       退款请求
+     * @param tradeOrderId 交易订单ID
+     * @param request      退款请求
      * @return 处理结果
      */
     @PostMapping("/refund/{tradeOrderId}")
     @Operation(summary = "退单", description = "用户申请退单")
-    @RateLimit(key = "#currentUserId", message = "退款操作过于频繁，请稍后再试")
+    @RateLimit(key = "#tradeOrderId", message = "退款操作过于频繁，请稍后再试")
     public Result<Void> refundOrder(
             @PathVariable @Pattern(regexp = "^TRD\\d+$", message = "交易订单ID格式错误") String tradeOrderId,
-            @RequestHeader(value = "X-User-Id", required = false) String currentUserId,
             @RequestBody @Valid RefundRequest request) {
+
+        // 从认证上下文获取当前用户ID
+        String currentUserId = authContextService.getCurrentUserId();
 
         log.info("【TradeOrderController】退单请求, tradeOrderId: {}, userId: {}, reason: {}",
                 tradeOrderId, currentUserId, request.getReason());
@@ -98,10 +104,6 @@ public class TradeOrderController {
                 .orElseThrow(() -> new BizException("交易订单不存在"));
 
         // 2. 权限校验
-        if (currentUserId == null || currentUserId.isEmpty()) {
-            log.warn("【权限校验】缺少用户身份信息, tradeOrderId: {}", tradeOrderId);
-            throw new BizException("缺少用户身份信息");
-        }
         if (!tradeOrder.getUserId().equals(currentUserId)) {
             log.warn("【权限校验】用户无权退单, currentUserId: {}, orderUserId: {}",
                     currentUserId, tradeOrder.getUserId());
@@ -166,14 +168,19 @@ public class TradeOrderController {
     @Operation(summary = "退款", description = "对交易订单进行退款操作")
     public Result<Void> refund(@Valid @RequestBody RefundRequest request,
             HttpServletRequest httpRequest) {
-        log.info("【TradeOrderController】退款请求, tradeOrderId: {}, reason: {}",
-                request.getTradeOrderId(), request.getReason());
+
+        // 从认证上下文获取当前用户
+        String operator = authContextService.getCurrentUserIdOptional()
+                .orElse("SYSTEM");
+
+        log.info("【TradeOrderController】退款请求, tradeOrderId: {}, reason: {}, operator: {}",
+                request.getTradeOrderId(), request.getReason(), operator);
 
         // 1. 协议层 → 用例层转换
         RefundCmd cmd = RefundCmd.builder()
                 .tradeOrderId(request.getTradeOrderId())
                 .reason(request.getReason())
-                .operator("SYSTEM") // TODO: 从认证上下文获取当前用户
+                .operator(operator)
                 .clientIp(httpRequest.getRemoteAddr())
                 .build();
 
