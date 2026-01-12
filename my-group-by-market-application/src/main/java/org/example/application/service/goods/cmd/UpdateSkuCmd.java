@@ -8,7 +8,7 @@ import java.math.BigDecimal;
  */
 @Data
 public class UpdateSkuCmd {
-    private String goodsId;
+    private String skuId;
     private String goodsName;
     private String specInfo;
     private BigDecimal originalPrice;

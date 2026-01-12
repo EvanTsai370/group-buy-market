@@ -24,5 +24,5 @@ public interface ActivityMapper extends BaseMapper<ActivityPO> {
      */
     String selectActivityIdBySourceChannelGoods(@Param("source") String source,
                                                  @Param("channel") String channel,
-                                                 @Param("goodsId") String goodsId);
+                                                 @Param("skuId") String skuId);
 }

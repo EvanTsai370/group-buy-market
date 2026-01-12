@@ -104,30 +104,30 @@ public class AdminGoodsController {
         return Result.success(adminGoodsAssembler.toResponse(result));
     }
 
-    @PutMapping("/sku/{goodsId}")
+    @PutMapping("/sku/{skuId}")
     @Operation(summary = "更新SKU", description = "更新商品SKU信息")
-    public Result<SkuResponse> updateSku(@PathVariable String goodsId,
+    public Result<SkuResponse> updateSku(@PathVariable String skuId,
             @Valid @RequestBody UpdateSkuRequest request) {
-        log.info("【AdminGoods】更新SKU, goodsId: {}", goodsId);
+        log.info("【AdminGoods】更新SKU, skuId: {}", skuId);
         UpdateSkuCmd cmd = adminGoodsAssembler.toCommand(request);
-        cmd.setGoodsId(goodsId);
+        cmd.setSkuId(skuId);
         SkuResult result = goodsService.updateSku(cmd);
         return Result.success(adminGoodsAssembler.toResponse(result));
     }
 
-    @PostMapping("/sku/{goodsId}/add-stock")
+    @PostMapping("/sku/{skuId}/add-stock")
     @Operation(summary = "增加库存", description = "增加SKU库存")
-    public Result<Void> addStock(@PathVariable String goodsId,
+    public Result<Void> addStock(@PathVariable String skuId,
             @RequestParam int quantity) {
-        log.info("【AdminGoods】增加库存, goodsId: {}, quantity: {}", goodsId, quantity);
-        goodsService.addStock(goodsId, quantity);
+        log.info("【AdminGoods】增加库存, skuId: {}, quantity: {}", skuId, quantity);
+        goodsService.addStock(skuId, quantity);
         return Result.success();
     }
 
-    @GetMapping("/sku/{goodsId}")
+    @GetMapping("/sku/{skuId}")
     @Operation(summary = "查询SKU详情", description = "查询商品SKU详情")
-    public Result<SkuResponse> getSkuDetail(@PathVariable String goodsId) {
-        SkuResult result = goodsService.getSkuDetail(goodsId);
+    public Result<SkuResponse> getSkuDetail(@PathVariable String skuId) {
+        SkuResult result = goodsService.getSkuDetail(skuId);
         return Result.success(adminGoodsAssembler.toResponse(result));
     }
 

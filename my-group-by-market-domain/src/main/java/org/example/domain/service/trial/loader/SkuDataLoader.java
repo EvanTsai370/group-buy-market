@@ -19,22 +19,22 @@ public class SkuDataLoader implements DataLoader<TrialBalanceRequest, TrialBalan
 
     @Override
     public void loadData(TrialBalanceRequest request, TrialBalanceContext context) {
-        log.info("【数据加载器】开始加载商品信息，goodsId: {}", request.getGoodsId());
+        log.info("【数据加载器】开始加载商品信息，skuId: {}", request.getSkuId());
 
         try {
-            Sku sku = skuRepository.findByGoodsId(request.getGoodsId())
+            Sku sku = skuRepository.findBySkuId(request.getSkuId())
                 .orElse(null);
 
             if (sku != null) {
                 context.setSku(sku);
-                log.info("【数据加载器】商品信息加载完成，goodsId: {}, goodsName: {}",
-                         sku.getGoodsId(), sku.getGoodsName());
+                log.info("【数据加载器】商品信息加载完成，skuId: {}, goodsName: {}",
+                         sku.getSkuId(), sku.getGoodsName());
             } else {
-                log.warn("【数据加载器】未找到商品信息，goodsId: {}", request.getGoodsId());
+                log.warn("【数据加载器】未找到商品信息，skuId: {}", request.getSkuId());
             }
 
         } catch (Exception e) {
-            log.error("【数据加载器】商品信息加载失败，goodsId: {}", request.getGoodsId(), e);
+            log.error("【数据加载器】商品信息加载失败，skuId: {}", request.getSkuId(), e);
             throw new RuntimeException("商品信息加载失败", e);
         }
     }

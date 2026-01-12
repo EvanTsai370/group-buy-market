@@ -158,7 +158,7 @@ public class TradeOrderService {
             Activity activity = filterContext.getActivity();
 
             // 2. 加载Sku
-            Sku sku = loadSku(cmd.getGoodsId());
+            Sku sku = loadSku(cmd.getSkuId());
 
             // 3. 计算并校验价格
             PriceValidationResult priceResult = calculateAndValidatePrice(cmd, activity, sku);
@@ -184,7 +184,8 @@ public class TradeOrderService {
                     orderId,
                     cmd.getActivityId(),
                     cmd.getUserId(),
-                    cmd.getGoodsId(),
+                    cmd.getSkuId(),
+                    sku.getSpuId(), // 传入 spuId 进行校验
                     sku.getGoodsName(),
                     priceResult.originalPrice,
                     priceResult.deductionPrice,
@@ -283,7 +284,7 @@ public class TradeOrderService {
      * 设计说明：
      * <ul>
      * <li>返回整个context而不是只返回Activity，用于后续回滚</li>
-     * <li>context中包含recoveryTeamSlotKey和recoveryGoodsId，用于失败时恢复资源</li>
+     * <li>context中包含recoveryTeamSlotKey和recoverySkuId，用于失败时恢复资源</li>
      * </ul>
      *
      * @param cmd 锁单命令
@@ -296,7 +297,7 @@ public class TradeOrderService {
         TradeFilterRequest request = TradeFilterRequest.builder()
                 .userId(cmd.getUserId())
                 .activityId(cmd.getActivityId())
-                .goodsId(cmd.getGoodsId())
+                .skuId(cmd.getSkuId())
                 .orderId(cmd.getOrderId())
                 .build();
 
@@ -373,7 +374,7 @@ public class TradeOrderService {
             return;
         }
 
-        String recoveryGoodsId = filterContext.getRecoveryGoodsId();
+        String recoverySkuId = filterContext.getRecoverySkuId();
         Activity activity = filterContext.getActivity();
         String activityId = activity != null ? activity.getActivityId() : null;
 
@@ -382,7 +383,7 @@ public class TradeOrderService {
         resourceReleaseService.releaseSlotAndInventory(
                 cmd.getOrderId(),
                 activityId,
-                recoveryGoodsId,
+                recoverySkuId,
                 null, // tradeOrderId 还未生成
                 "锁单失败回滚");
     }
@@ -390,11 +391,11 @@ public class TradeOrderService {
     /**
      * 加载商品信息
      *
-     * @param goodsId 商品ID
+     * @param skuId 商品ID
      * @return Sku商品
      */
-    private Sku loadSku(String goodsId) {
-        return skuRepository.findByGoodsId(goodsId)
+    private Sku loadSku(String skuId) {
+        return skuRepository.findBySkuId(skuId)
                 .orElseThrow(() -> new BizException("商品不存在"));
     }
 
@@ -504,7 +505,7 @@ public class TradeOrderService {
                 orderId,
                 teamId,
                 cmd.getActivityId(),
-                cmd.getGoodsId(),
+                cmd.getSkuId(),
                 cmd.getUserId(),
                 activity.getTarget(),
                 price,

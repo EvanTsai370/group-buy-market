@@ -32,8 +32,8 @@ public class Order {
     /** 活动ID（外部引用） */
     private String activityId;
 
-    /** 商品ID（外部引用） */
-    private String goodsId;
+    /** 商品SPU ID（外部引用，拼团绑定的商品大类） */
+    private String spuId;
 
     /** 团长用户ID */
     private String leaderUserId;
@@ -88,7 +88,7 @@ public class Order {
             String orderId,
             String teamId,
             String activityId,
-            String goodsId,
+            String spuId,
             String leaderUserId,
             Integer targetCount,
             Money price,
@@ -105,7 +105,7 @@ public class Order {
         order.orderId = orderId;
         order.teamId = teamId;
         order.activityId = activityId;
-        order.goodsId = goodsId;
+        order.spuId = spuId;
         order.leaderUserId = leaderUserId;
         order.targetCount = targetCount;
         order.completeCount = 1; // 团长算一人

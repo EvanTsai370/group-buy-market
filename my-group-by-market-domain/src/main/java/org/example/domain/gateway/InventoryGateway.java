@@ -17,40 +17,40 @@ public interface InventoryGateway {
     /**
      * 冻结库存（锁单时调用）
      * 
-     * @param goodsId  商品ID
+     * @param skuId  商品ID
      * @param orderId  订单ID
      * @param quantity 数量
      * @return 是否成功
      */
-    boolean freezeStock(String goodsId, String orderId, int quantity);
+    boolean freezeStock(String skuId, String orderId, int quantity);
 
     /**
      * 扣减库存（支付成功后调用）
      * 
-     * @param goodsId  商品ID
+     * @param skuId  商品ID
      * @param orderId  订单ID
      * @param quantity 数量
      * @return 是否成功
      */
-    boolean deductStock(String goodsId, String orderId, int quantity);
+    boolean deductStock(String skuId, String orderId, int quantity);
 
     /**
      * 释放库存（退单/超时时调用）
      * 
-     * @param goodsId  商品ID
+     * @param skuId  商品ID
      * @param orderId  订单ID
      * @param quantity 数量
      * @return 是否成功
      */
-    boolean releaseStock(String goodsId, String orderId, int quantity);
+    boolean releaseStock(String skuId, String orderId, int quantity);
 
     /**
      * 查询可用库存
      * 
-     * @param goodsId 商品ID
+     * @param skuId 商品ID
      * @return 可用库存数量
      */
-    int queryAvailableStock(String goodsId);
+    int queryAvailableStock(String skuId);
 
     /**
      * 扣减库存（简化版，按SKU ID）

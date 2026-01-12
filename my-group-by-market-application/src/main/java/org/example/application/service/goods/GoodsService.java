@@ -65,15 +65,15 @@ public class GoodsService {
                     .orElseThrow(() -> new BizException("SPU不存在"));
         }
 
-        String goodsId = "SKU-" + idGenerator.nextId();
-        Sku sku = Sku.create(goodsId, cmd.getSpuId(), cmd.getGoodsName(),
+        String skuId = "SKU-" + idGenerator.nextId();
+        Sku sku = Sku.create(skuId, cmd.getSpuId(), cmd.getGoodsName(),
                 cmd.getOriginalPrice(), cmd.getStock());
         sku.setSpecInfo(cmd.getSpecInfo());
         sku.setSkuImage(cmd.getSkuImage());
 
         skuRepository.save(sku);
 
-        log.info("【GoodsService】SKU创建成功, goodsId: {}", goodsId);
+        log.info("【GoodsService】SKU创建成功, skuId: {}", skuId);
         return goodsResultAssembler.toResult(sku);
     }
 
@@ -108,9 +108,9 @@ public class GoodsService {
      */
     @Transactional
     public SkuResult updateSku(UpdateSkuCmd cmd) {
-        log.info("【GoodsService】更新SKU, goodsId: {}", cmd.getGoodsId());
+        log.info("【GoodsService】更新SKU, skuId: {}", cmd.getSkuId());
 
-        Sku sku = skuRepository.findByGoodsId(cmd.getGoodsId())
+        Sku sku = skuRepository.findBySkuId(cmd.getSkuId())
                 .orElseThrow(() -> new BizException("SKU不存在"));
 
         if (cmd.getGoodsName() != null) {
@@ -128,7 +128,7 @@ public class GoodsService {
 
         skuRepository.update(sku);
 
-        log.info("【GoodsService】SKU更新成功, goodsId: {}", cmd.getGoodsId());
+        log.info("【GoodsService】SKU更新成功, skuId: {}", cmd.getSkuId());
         return goodsResultAssembler.toResult(sku);
     }
 
@@ -160,13 +160,13 @@ public class GoodsService {
      * 增加库存
      */
     @Transactional
-    public void addStock(String goodsId, int quantity) {
-        Sku sku = skuRepository.findByGoodsId(goodsId)
+    public void addStock(String skuId, int quantity) {
+        Sku sku = skuRepository.findBySkuId(skuId)
                 .orElseThrow(() -> new BizException("SKU不存在"));
         sku.addStock(quantity);
         skuRepository.update(sku);
-        log.info("【GoodsService】库存增加成功, goodsId: {}, 增加: {}, 当前: {}",
-                goodsId, quantity, sku.getStock());
+        log.info("【GoodsService】库存增加成功, skuId: {}, 增加: {}, 当前: {}",
+                skuId, quantity, sku.getStock());
     }
 
     /**
@@ -184,8 +184,8 @@ public class GoodsService {
     /**
      * 查询 SKU
      */
-    public SkuResult getSkuDetail(String goodsId) {
-        Sku sku = skuRepository.findByGoodsId(goodsId)
+    public SkuResult getSkuDetail(String skuId) {
+        Sku sku = skuRepository.findBySkuId(skuId)
                 .orElseThrow(() -> new BizException("SKU不存在"));
         return goodsResultAssembler.toResult(sku);
     }

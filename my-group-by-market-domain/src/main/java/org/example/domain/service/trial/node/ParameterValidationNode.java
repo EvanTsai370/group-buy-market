@@ -30,7 +30,7 @@ public class ParameterValidationNode extends AbstractFlowNode<TrialBalanceReques
             throw new BizException("用户ID不能为空");
         }
 
-        if (StringUtils.isBlank(request.getGoodsId())) {
+        if (StringUtils.isBlank(request.getSkuId())) {
             throw new BizException("商品ID不能为空");
         }
 

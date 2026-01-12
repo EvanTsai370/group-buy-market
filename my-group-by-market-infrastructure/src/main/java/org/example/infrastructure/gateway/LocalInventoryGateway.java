@@ -28,50 +28,50 @@ public class LocalInventoryGateway implements InventoryGateway {
     private final SkuRepository skuRepository;
 
     @Override
-    public boolean freezeStock(String goodsId, String orderId, int quantity) {
-        log.info("【InventoryGateway】冻结库存, goodsId: {}, orderId: {}, quantity: {}",
-                goodsId, orderId, quantity);
+    public boolean freezeStock(String skuId, String orderId, int quantity) {
+        log.info("【InventoryGateway】冻结库存, skuId: {}, orderId: {}, quantity: {}",
+                skuId, orderId, quantity);
 
-        int result = skuRepository.freezeStock(goodsId, quantity);
+        int result = skuRepository.freezeStock(skuId, quantity);
         boolean success = result >= 0;
         log.info("【InventoryGateway】冻结库存结果: {}", success);
         return success;
     }
 
     @Override
-    public boolean deductStock(String goodsId, String orderId, int quantity) {
-        log.info("【InventoryGateway】扣减库存, goodsId: {}, orderId: {}, quantity: {}",
-                goodsId, orderId, quantity);
+    public boolean deductStock(String skuId, String orderId, int quantity) {
+        log.info("【InventoryGateway】扣减库存, skuId: {}, orderId: {}, quantity: {}",
+                skuId, orderId, quantity);
 
-        int result = skuRepository.deductStock(goodsId, quantity);
+        int result = skuRepository.deductStock(skuId, quantity);
         boolean success = result >= 0;
         log.info("【InventoryGateway】扣减库存结果: {}", success);
         return success;
     }
 
     @Override
-    public boolean releaseStock(String goodsId, String orderId, int quantity) {
-        log.info("【InventoryGateway】释放库存, goodsId: {}, orderId: {}, quantity: {}",
-                goodsId, orderId, quantity);
+    public boolean releaseStock(String skuId, String orderId, int quantity) {
+        log.info("【InventoryGateway】释放库存, skuId: {}, orderId: {}, quantity: {}",
+                skuId, orderId, quantity);
 
-        int result = skuRepository.unfreezeStock(goodsId, quantity);
+        int result = skuRepository.unfreezeStock(skuId, quantity);
         boolean success = result >= 0;
         log.info("【InventoryGateway】释放库存结果: {}", success);
         return success;
     }
 
     @Override
-    public int queryAvailableStock(String goodsId) {
-        log.info("【InventoryGateway】查询可用库存, goodsId: {}", goodsId);
+    public int queryAvailableStock(String skuId) {
+        log.info("【InventoryGateway】查询可用库存, skuId: {}", skuId);
 
-        Optional<Sku> skuOpt = skuRepository.findByGoodsId(goodsId);
+        Optional<Sku> skuOpt = skuRepository.findBySkuId(skuId);
 
         if (skuOpt.isPresent()) {
             int availableStock = skuOpt.get().getAvailableStock();
             log.info("【InventoryGateway】可用库存: {}", availableStock);
             return availableStock;
         } else {
-            log.warn("【InventoryGateway】SKU 不存在: {}", goodsId);
+            log.warn("【InventoryGateway】SKU 不存在: {}", skuId);
             return 0;
         }
     }

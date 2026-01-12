@@ -129,12 +129,12 @@ public class AdminActivityController {
     public Result<String> addActivityGoods(
             @PathVariable String activityId,
             @RequestBody AddActivityGoodsRequest request) {
-        log.info("【AdminActivity】添加活动商品关联, activityId: {}, goodsId: {}",
-                activityId, request.getGoodsId());
+        log.info("【AdminActivity】添加活动商品关联, activityId: {}, skuId: {}",
+                activityId, request.getSkuId());
 
         adminActivityService.addActivityGoods(
                 activityId,
-                request.getGoodsId(),
+                request.getSkuId(),
                 request.getSource(),
                 request.getChannel(),
                 request.getDiscountId());
@@ -146,14 +146,14 @@ public class AdminActivityController {
     @Operation(summary = "查询活动商品", description = "查询活动商品关联")
     public Result<ActivityGoods> getActivityGoods(
             @PathVariable String activityId,
-            @RequestParam String goodsId,
+            @RequestParam String skuId,
             @RequestParam String source,
             @RequestParam String channel) {
-        log.info("【AdminActivity】查询活动商品关联, activityId: {}, goodsId: {}",
-                activityId, goodsId);
+        log.info("【AdminActivity】查询活动商品关联, activityId: {}, skuId: {}",
+                activityId, skuId);
 
         ActivityGoods activityGoods = adminActivityService.getActivityGoods(
-                activityId, goodsId, source, channel);
+                activityId, skuId, source, channel);
         return Result.success(activityGoods);
     }
 
@@ -187,7 +187,7 @@ public class AdminActivityController {
 
     @Data
     public static class AddActivityGoodsRequest {
-        private String goodsId;
+        private String skuId;
         private String source; // 来源（如：s01-小程序）
         private String channel; // 渠道（如：c01-首页）
         private String discountId; // 可选，为空则使用活动默认折扣

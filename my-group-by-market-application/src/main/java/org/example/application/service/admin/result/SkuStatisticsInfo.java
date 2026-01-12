@@ -25,7 +25,7 @@ import java.math.BigDecimal;
 public class SkuStatisticsInfo {
 
     @Schema(description = "商品ID")
-    private String goodsId;
+    private String skuId;
 
     @Schema(description = "商品名称")
     private String goodsName;

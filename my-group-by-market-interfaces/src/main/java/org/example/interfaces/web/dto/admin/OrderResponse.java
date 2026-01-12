@@ -35,7 +35,7 @@ public class OrderResponse {
     private String activityId;
 
     @Schema(description = "商品ID")
-    private String goodsId;
+    private String skuId;
 
     @Schema(description = "团长用户ID")
     private String leaderUserId;

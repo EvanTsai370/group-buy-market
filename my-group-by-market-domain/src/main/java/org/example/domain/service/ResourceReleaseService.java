@@ -76,13 +76,13 @@ public class ResourceReleaseService {
      *
      * @param orderId      订单ID
      * @param activityId   活动ID
-     * @param goodsId      商品ID
+     * @param skuId      商品ID
      * @param userId       用户ID
      * @param tradeOrderId 交易订单ID（用于分布式锁）
      * @param scene        场景标识（用于日志区分）
      */
     public void releaseAllResources(String orderId, String activityId,
-            String goodsId, String userId, String tradeOrderId, String scene) {
+            String skuId, String userId, String tradeOrderId, String scene) {
         log.info("【{}】开始释放全部预占资源, orderId={}, tradeOrderId={}", scene, orderId, tradeOrderId);
 
         // 1. 释放 Order.lockCount
@@ -92,7 +92,7 @@ public class ResourceReleaseService {
         releaseSlot(orderId, activityId, tradeOrderId, scene);
 
         // 3. 释放冻结库存
-        releaseInventory(goodsId, tradeOrderId, scene);
+        releaseInventory(skuId, tradeOrderId, scene);
 
         // 4. 释放参团次数
         releaseParticipationCount(userId, activityId, scene);
@@ -108,19 +108,19 @@ public class ResourceReleaseService {
      *
      * @param orderId      订单ID
      * @param activityId   活动ID
-     * @param goodsId      商品ID
+     * @param skuId      商品ID
      * @param tradeOrderId 交易订单ID（用于分布式锁，可为null）
      * @param scene        场景标识
      */
     public void releaseSlotAndInventory(String orderId, String activityId,
-            String goodsId, String tradeOrderId, String scene) {
+            String skuId, String tradeOrderId, String scene) {
         log.info("【{}】开始释放槽位和库存, orderId={}", scene, orderId);
 
         // 1. 释放名额槽位
         releaseSlot(orderId, activityId, tradeOrderId, scene);
 
         // 2. 释放冻结库存
-        releaseInventory(goodsId, tradeOrderId, scene);
+        releaseInventory(skuId, tradeOrderId, scene);
 
         log.info("【{}】槽位和库存释放完成, orderId={}", scene, orderId);
     }
@@ -219,26 +219,26 @@ public class ResourceReleaseService {
      * <p>
      * 与 InventoryOccupyHandler.freezeStock() 保持对称
      *
-     * @param goodsId      商品ID
+     * @param skuId      商品ID
      * @param tradeOrderId 交易订单ID（用于日志追踪）
      * @param scene        场景标识
      */
-    public void releaseInventory(String goodsId, String tradeOrderId, String scene) {
-        if (goodsId == null || goodsId.isEmpty()) {
+    public void releaseInventory(String skuId, String tradeOrderId, String scene) {
+        if (skuId == null || skuId.isEmpty()) {
             log.warn("【{}】商品ID为空，跳过库存释放, tradeOrderId={}", scene, tradeOrderId);
             return;
         }
 
         try {
-            int result = skuRepository.unfreezeStock(goodsId, UNFREEZE_QUANTITY);
+            int result = skuRepository.unfreezeStock(skuId, UNFREEZE_QUANTITY);
             if (result > 0) {
-                log.info("【{}】库存释放成功, goodsId={}, tradeOrderId={}", scene, goodsId, tradeOrderId);
+                log.info("【{}】库存释放成功, skuId={}, tradeOrderId={}", scene, skuId, tradeOrderId);
             } else {
-                log.warn("【{}】库存释放失败（可能已释放）, goodsId={}, tradeOrderId={}", scene, goodsId, tradeOrderId);
+                log.warn("【{}】库存释放失败（可能已释放）, skuId={}, tradeOrderId={}", scene, skuId, tradeOrderId);
             }
         } catch (Exception e) {
             // 释放失败只记录日志，不影响主流程
-            log.error("【{}】库存释放异常, goodsId={}, tradeOrderId={}", scene, goodsId, tradeOrderId, e);
+            log.error("【{}】库存释放异常, skuId={}, tradeOrderId={}", scene, skuId, tradeOrderId, e);
         }
     }
 

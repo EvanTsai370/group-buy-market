@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 public class PriceTrialResponse {
 
     /** 商品ID */
-    private String goodsId;
+    private String skuId;
 
     /** 原价 */
     private BigDecimal originalPrice;

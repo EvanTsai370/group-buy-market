@@ -43,7 +43,7 @@ public class UnpaidRefundStrategy implements RefundStrategy {
         resourceReleaseService.releaseAllResources(
                 tradeOrder.getOrderId(),
                 tradeOrder.getActivityId(),
-                tradeOrder.getGoodsId(),
+                tradeOrder.getSkuId(),
                 tradeOrder.getUserId(),
                 tradeOrder.getTradeOrderId(),
                 "未支付退单");

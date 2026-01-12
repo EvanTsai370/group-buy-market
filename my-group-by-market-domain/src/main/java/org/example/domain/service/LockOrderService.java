@@ -54,7 +54,7 @@ public class LockOrderService {
      * @param orderId        拼团订单ID
      * @param activityId     活动ID
      * @param userId         用户ID
-     * @param goodsId        商品ID
+     * @param skuId          商品ID
      * @param goodsName      商品名称
      * @param originalPrice  原始价格
      * @param deductionPrice 减免金额
@@ -71,7 +71,8 @@ public class LockOrderService {
             String orderId,
             String activityId,
             String userId,
-            String goodsId,
+            String skuId,
+            String spuId, // 新增：用于校验是否匹配拼团的商品大类
             String goodsName,
             BigDecimal originalPrice,
             BigDecimal deductionPrice,
@@ -95,7 +96,15 @@ public class LockOrderService {
         }
         Order order = orderOpt.get();
 
-        // 3. 校验Order是否可以锁定
+        // 3.1 校验商品类型是否匹配（SPU 级别匹配）
+        // 允许不同规格（SKU）的用户参与同一个拼团（SPU），只要它们属于同一个商品大类
+        if (!order.getSpuId().equals(spuId)) {
+            log.warn("【锁单服务】商品类型不匹配, orderId: {}, orderSpuId: {}, requestSpuId: {}",
+                    orderId, order.getSpuId(), spuId);
+            throw new BizException("商品类型不匹配，无法参与此拼团");
+        }
+
+        // 3.2 校验Order是否可以锁定
         order.validateLock();
 
         // 4. 创建TradeOrder聚合
@@ -105,7 +114,7 @@ public class LockOrderService {
                 orderId,
                 activityId,
                 userId,
-                goodsId,
+                skuId,
                 goodsName,
                 originalPrice,
                 deductionPrice,

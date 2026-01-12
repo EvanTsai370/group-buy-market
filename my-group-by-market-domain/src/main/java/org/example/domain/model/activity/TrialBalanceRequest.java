@@ -21,7 +21,7 @@ public class TrialBalanceRequest {
     private String userId;
 
     /** 商品ID */
-    private String goodsId;
+    private String skuId;
 
     /** 来源（如APP、小程序） */
     private String source;

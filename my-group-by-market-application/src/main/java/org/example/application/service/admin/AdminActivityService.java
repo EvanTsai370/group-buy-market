@@ -156,15 +156,15 @@ public class AdminActivityService {
      * 添加活动商品关联
      */
     @Transactional
-    public void addActivityGoods(String activityId, String goodsId,
+    public void addActivityGoods(String activityId, String skuId,
             String source, String channel, String discountId) {
-        log.info("【AdminActivity】添加活动商品关联, activityId: {}, goodsId: {}", activityId, goodsId);
+        log.info("【AdminActivity】添加活动商品关联, activityId: {}, skuId: {}", activityId, skuId);
 
         // 检查活动是否存在
         activityRepository.findById(activityId)
                 .orElseThrow(() -> new BizException("活动不存在"));
 
-        ActivityGoods activityGoods = new ActivityGoods(activityId, goodsId, source, channel, discountId);
+        ActivityGoods activityGoods = new ActivityGoods(activityId, skuId, source, channel, discountId);
         activityRepository.saveActivityGoods(activityGoods);
 
         log.info("【AdminActivity】活动商品关联添加成功");
@@ -173,9 +173,9 @@ public class AdminActivityService {
     /**
      * 查询活动商品关联
      */
-    public ActivityGoods getActivityGoods(String activityId, String goodsId,
+    public ActivityGoods getActivityGoods(String activityId, String skuId,
             String source, String channel) {
-        return activityRepository.queryActivityGoods(activityId, goodsId, source, channel);
+        return activityRepository.queryActivityGoods(activityId, skuId, source, channel);
     }
 
     // ==================== 命令对象 ====================

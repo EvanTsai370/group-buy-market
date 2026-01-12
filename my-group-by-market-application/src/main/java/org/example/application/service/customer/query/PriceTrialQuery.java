@@ -12,7 +12,7 @@ import lombok.Data;
 public class PriceTrialQuery {
 
     /** 商品ID */
-    private String goodsId;
+    private String skuId;
 
     /** 来源（APP/H5/PC） */
     private String source;

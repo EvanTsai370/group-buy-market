@@ -64,8 +64,8 @@ public class DiscountCalculationNode extends AbstractAsyncDataFlowNode<TrialBala
 
     @Override
     protected TrialBalanceResult doExecute(TrialBalanceRequest request, TrialBalanceContext context) {
-        log.info("【折扣计算节点】开始计算折扣，userId: {}, goodsId: {}",
-                 request.getUserId(), request.getGoodsId());
+        log.info("【折扣计算节点】开始计算折扣，userId: {}, skuId: {}",
+                 request.getUserId(), request.getSkuId());
 
         // 获取异步加载的数据（Activity 来自上一个节点，Discount 和 Sku 由当前节点加载）
         Activity activity = context.getActivity();

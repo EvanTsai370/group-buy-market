@@ -39,7 +39,7 @@ public class ResultAssemblyNode extends AbstractFlowNode<TrialBalanceRequest, Tr
             // 跳过了折扣计算：仅返回活动基本信息，价格相关字段为 null
             log.info("【结果组装节点】跳过折扣计算，仅返回活动基本信息，userId: {}", request.getUserId());
             resultBuilder
-                    .goodsId(request.getGoodsId())  // 使用请求中的 goodsId
+                    .skuId(request.getSkuId())  // 使用请求中的 skuId
                     .goodsName(null)
                     .originalPrice(null)
                     .deductionAmount(null)
@@ -47,7 +47,7 @@ public class ResultAssemblyNode extends AbstractFlowNode<TrialBalanceRequest, Tr
         } else {
             // 正常流程：返回完整信息（包括价格）
             resultBuilder
-                    .goodsId(sku.getGoodsId())
+                    .skuId(sku.getSkuId())
                     .goodsName(sku.getGoodsName())
                     .originalPrice(sku.getOriginalPrice())
                     .deductionAmount(context.getDeductionAmount())

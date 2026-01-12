@@ -25,7 +25,7 @@ public class OrderPO {
 
     private String orderId;
     private String activityId;
-    private String goodsId;
+    private String spuId;
     private BigDecimal originalPrice;
     private BigDecimal deductionPrice;
     private Integer targetCount;

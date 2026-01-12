@@ -45,8 +45,8 @@ public class TrialBalanceService {
      * @return 试算结果
      */
     public TrialBalanceResult execute(TrialBalanceRequest request) {
-        log.info("【试算服务】开始执行试算，userId: {}, goodsId: {}",
-                 request.getUserId(), request.getGoodsId());
+        log.info("【试算服务】开始执行试算，userId: {}, skuId: {}",
+                 request.getUserId(), request.getSkuId());
 
         // 创建上下文
         TrialBalanceContext context = TrialBalanceContext.builder().build();

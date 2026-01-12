@@ -44,7 +44,7 @@ public interface AdminGoodsAssembler {
     CreateSkuCmd toCommand(CreateSkuRequest request);
 
     /**
-     * UpdateSkuRequest → UpdateSkuCmd（需要外部设置 goodsId）
+     * UpdateSkuRequest → UpdateSkuCmd（需要外部设置 skuId）
      */
     UpdateSkuCmd toCommand(UpdateSkuRequest request);
 

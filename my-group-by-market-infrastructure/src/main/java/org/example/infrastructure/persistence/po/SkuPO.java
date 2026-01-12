@@ -22,7 +22,7 @@ public class SkuPO {
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    private String goodsId;
+    private String skuId;
     private String spuId;
     private String goodsName;
     private String specInfo;

@@ -15,8 +15,8 @@ import java.util.List;
 @Mapper
 public interface SkuMapper extends BaseMapper<SkuPO> {
 
-    @Select("SELECT * FROM sku WHERE goods_id = #{goodsId}")
-    SkuPO selectByGoodsId(@Param("goodsId") String goodsId);
+    @Select("SELECT * FROM sku WHERE sku_id = #{skuId}")
+    SkuPO selectBySkuId(@Param("skuId") String skuId);
 
     @Select("SELECT * FROM sku WHERE spu_id = #{spuId}")
     List<SkuPO> selectBySpuId(@Param("spuId") String spuId);
@@ -31,21 +31,21 @@ public interface SkuMapper extends BaseMapper<SkuPO> {
      * 原子冻结库存
      */
     @Update("UPDATE sku SET frozen_stock = frozen_stock + #{quantity}, update_time = NOW() " +
-            "WHERE goods_id = #{goodsId} AND (stock - frozen_stock) >= #{quantity}")
-    int freezeStock(@Param("goodsId") String goodsId, @Param("quantity") int quantity);
+            "WHERE sku_id = #{skuId} AND (stock - frozen_stock) >= #{quantity}")
+    int freezeStock(@Param("skuId") String skuId, @Param("quantity") int quantity);
 
     /**
      * 原子释放库存
      */
     @Update("UPDATE sku SET frozen_stock = GREATEST(0, frozen_stock - #{quantity}), update_time = NOW() " +
-            "WHERE goods_id = #{goodsId}")
-    int unfreezeStock(@Param("goodsId") String goodsId, @Param("quantity") int quantity);
+            "WHERE sku_id = #{skuId}")
+    int unfreezeStock(@Param("skuId") String skuId, @Param("quantity") int quantity);
 
     /**
      * 原子扣减库存
      */
     @Update("UPDATE sku SET stock = stock - #{quantity}, frozen_stock = frozen_stock - #{quantity}, update_time = NOW() "
             +
-            "WHERE goods_id = #{goodsId} AND frozen_stock >= #{quantity}")
-    int deductStock(@Param("goodsId") String goodsId, @Param("quantity") int quantity);
+            "WHERE sku_id = #{skuId} AND frozen_stock >= #{quantity}")
+    int deductStock(@Param("skuId") String skuId, @Param("quantity") int quantity);
 }

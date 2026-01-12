@@ -26,7 +26,7 @@ import java.time.LocalDateTime;
 public class SkuResponse {
 
     @Schema(description = "商品ID")
-    private String goodsId;
+    private String skuId;
 
     @Schema(description = "SPU ID")
     private String spuId;

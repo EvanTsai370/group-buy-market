@@ -8,7 +8,7 @@
         SELECT ag.activity_id
         FROM activity_goods ag
                  INNER JOIN activity a ON ag.activity_id = a.activity_id
-        WHERE ag.goods_id = #{goodsId}
+        WHERE ag.spu_id = #{spuId}
           AND ag.source = #{source}
           AND ag.channel = #{channel}
           AND a.status = 'ACTIVE'
@@ -29,17 +29,17 @@
         SELECT *
         FROM activity_goods
         WHERE activity_id = #{activityId}
-          AND goods_id = #{goodsId}
+          AND spu_id = #{spuId}
           AND source = #{source}
           AND channel = #{channel}
         LIMIT 1
     </select>
 
     <!-- 根据商品ID查询有效活动ID列表 -->
-    <select id="selectActiveActivityIdsByGoodsId" resultType="java.lang.String">
+    <select id="selectActiveActivityIdsBySkuId" resultType="java.lang.String">
         SELECT DISTINCT ag.activity_id
         FROM activity_goods ag
-        WHERE ag.goods_id = #{goodsId}
+        WHERE ag.spu_id = #{spuId}
     </select>
 
 </mapper>

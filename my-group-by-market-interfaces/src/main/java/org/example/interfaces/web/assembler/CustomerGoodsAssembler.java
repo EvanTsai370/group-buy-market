@@ -45,4 +45,19 @@ public interface CustomerGoodsAssembler {
      * 队伍列表结果列表 → 响应列表
      */
     List<TeamListResponse> toTeamListResponse(List<TeamListResult> results);
+
+    /**
+     * SPU列表结果 → 响应
+     */
+    SpuListResponse toResponse(SpuListResult result);
+
+    /**
+     * SPU列表结果列表 → 响应列表
+     */
+    List<SpuListResponse> toSpuListResponse(List<SpuListResult> results);
+
+    /**
+     * SPU详情结果 → 响应
+     */
+    SpuDetailResponse toResponse(SpuDetailResult result);
 }

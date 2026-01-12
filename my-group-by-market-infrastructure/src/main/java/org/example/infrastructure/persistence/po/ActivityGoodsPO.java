@@ -26,7 +26,7 @@ public class ActivityGoodsPO {
     private String activityId;
 
     /** 商品ID */
-    private String goodsId;
+    private String spuId;
 
     /** 来源 */
     private String source;

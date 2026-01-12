@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 public class Sku {
 
     /** SKU ID（商品ID） */
-    private String goodsId;
+    private String skuId;
 
     /** 关联的 SPU ID */
     private String spuId;
@@ -59,9 +59,9 @@ public class Sku {
     /**
      * 创建 SKU（工厂方法）
      */
-    public static Sku create(String goodsId, String spuId, String goodsName,
+    public static Sku create(String skuId, String spuId, String goodsName,
             BigDecimal originalPrice, Integer stock) {
-        if (goodsId == null || goodsId.isEmpty()) {
+        if (skuId == null || skuId.isEmpty()) {
             throw new BizException("SKU ID不能为空");
         }
         if (originalPrice == null || originalPrice.compareTo(BigDecimal.ZERO) <= 0) {
@@ -72,7 +72,7 @@ public class Sku {
         }
 
         Sku sku = new Sku();
-        sku.goodsId = goodsId;
+        sku.skuId = skuId;
         sku.spuId = spuId;
         sku.goodsName = goodsName;
         sku.originalPrice = originalPrice;
@@ -82,8 +82,8 @@ public class Sku {
         sku.createTime = LocalDateTime.now();
         sku.updateTime = LocalDateTime.now();
 
-        log.info("【SKU实体】创建SKU, goodsId: {}, goodsName: {}, stock: {}",
-                goodsId, goodsName, stock);
+        log.info("【SKU实体】创建SKU, skuId: {}, goodsName: {}, stock: {}",
+                skuId, goodsName, stock);
         return sku;
     }
 
@@ -108,8 +108,8 @@ public class Sku {
         this.frozenStock += quantity;
         this.updateTime = LocalDateTime.now();
 
-        log.info("【SKU实体】库存已冻结, goodsId: {}, 冻结数量: {}, 冻结后: {}",
-                goodsId, quantity, frozenStock);
+        log.info("【SKU实体】库存已冻结, skuId: {}, 冻结数量: {}, 冻结后: {}",
+                skuId, quantity, frozenStock);
     }
 
     /**
@@ -123,8 +123,8 @@ public class Sku {
         this.frozenStock = Math.max(0, this.frozenStock - quantity);
         this.updateTime = LocalDateTime.now();
 
-        log.info("【SKU实体】库存已释放, goodsId: {}, 释放数量: {}, 释放后: {}",
-                goodsId, quantity, frozenStock);
+        log.info("【SKU实体】库存已释放, skuId: {}, 释放数量: {}, 释放后: {}",
+                skuId, quantity, frozenStock);
     }
 
     /**
@@ -142,8 +142,8 @@ public class Sku {
         this.frozenStock -= quantity;
         this.updateTime = LocalDateTime.now();
 
-        log.info("【SKU实体】库存已扣减, goodsId: {}, 扣减数量: {}, 剩余库存: {}",
-                goodsId, quantity, stock);
+        log.info("【SKU实体】库存已扣减, skuId: {}, 扣减数量: {}, 剩余库存: {}",
+                skuId, quantity, stock);
     }
 
     /**
@@ -157,8 +157,8 @@ public class Sku {
         this.stock += quantity;
         this.updateTime = LocalDateTime.now();
 
-        log.info("【SKU实体】库存已增加, goodsId: {}, 增加数量: {}, 当前库存: {}",
-                goodsId, quantity, stock);
+        log.info("【SKU实体】库存已增加, skuId: {}, 增加数量: {}, 当前库存: {}",
+                skuId, quantity, stock);
     }
 
     /**
@@ -172,7 +172,7 @@ public class Sku {
         this.originalPrice = newPrice;
         this.updateTime = LocalDateTime.now();
 
-        log.info("【SKU实体】价格已更新, goodsId: {}, 新价格: {}", goodsId, newPrice);
+        log.info("【SKU实体】价格已更新, skuId: {}, 新价格: {}", skuId, newPrice);
     }
 
     /**

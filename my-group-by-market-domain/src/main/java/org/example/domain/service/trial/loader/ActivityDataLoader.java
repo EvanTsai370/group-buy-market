@@ -21,8 +21,8 @@ public class ActivityDataLoader implements DataLoader<TrialBalanceRequest, Trial
 
     @Override
     public void loadData(TrialBalanceRequest request, TrialBalanceContext context) {
-        log.info("【数据加载器】开始加载活动配置，goodsId: {}, activityId: {}",
-                 request.getGoodsId(), request.getActivityId());
+        log.info("【数据加载器】开始加载活动配置，skuId: {}, activityId: {}",
+                 request.getSkuId(), request.getActivityId());
 
         try {
             String activityId = request.getActivityId();
@@ -30,7 +30,7 @@ public class ActivityDataLoader implements DataLoader<TrialBalanceRequest, Trial
             // 如果没有指定活动ID，根据商品ID、来源、渠道查询
             if (StringUtils.isBlank(activityId)) {
                 activityId = activityRepository.queryActivityIdByGoodsSourceChannel(
-                    request.getGoodsId(),
+                    request.getSkuId(),
                     request.getSource(),
                     request.getChannel()
                 );
@@ -49,11 +49,11 @@ public class ActivityDataLoader implements DataLoader<TrialBalanceRequest, Trial
                     log.warn("【数据加载器】未找到活动配置，activityId: {}", activityId);
                 }
             } else {
-                log.info("【数据加载器】商品无关联活动，goodsId: {}", request.getGoodsId());
+                log.info("【数据加载器】商品无关联活动，skuId: {}", request.getSkuId());
             }
 
         } catch (Exception e) {
-            log.error("【数据加载器】活动配置加载失败，goodsId: {}", request.getGoodsId(), e);
+            log.error("【数据加载器】活动配置加载失败，skuId: {}", request.getSkuId(), e);
             throw new RuntimeException("活动配置加载失败", e);
         }
     }

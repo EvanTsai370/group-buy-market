@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 public class TrialBalanceResult {
 
     /** 商品ID */
-    private String goodsId;
+    private String skuId;
 
     /** 商品名称 */
     private String goodsName;

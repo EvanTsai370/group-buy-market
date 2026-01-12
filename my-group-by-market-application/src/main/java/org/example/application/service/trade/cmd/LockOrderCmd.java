@@ -32,7 +32,7 @@ public class LockOrderCmd {
     private String userId;
 
     @Schema(description = "商品ID", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String goodsId;
+    private String skuId;
 
     @Schema(description = "外部交易单号（幂等性保证）", requiredMode = Schema.RequiredMode.REQUIRED)
     private String outTradeNo;

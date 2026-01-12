@@ -63,7 +63,7 @@ public class PaidRefundStrategy implements RefundStrategy {
             // 已成团：只释放库存
             log.info("【已支付退单策略】已成团，不恢复名额，仅释放库存, orderId: {}", orderId);
             resourceReleaseService.releaseInventory(
-                    tradeOrder.getGoodsId(),
+                    tradeOrder.getSkuId(),
                     tradeOrder.getTradeOrderId(),
                     "已支付退单-已成团");
         } else {
@@ -71,7 +71,7 @@ public class PaidRefundStrategy implements RefundStrategy {
             resourceReleaseService.releaseAllResources(
                     orderId,
                     tradeOrder.getActivityId(),
-                    tradeOrder.getGoodsId(),
+                    tradeOrder.getSkuId(),
                     tradeOrder.getUserId(),
                     tradeOrder.getTradeOrderId(),
                     "已支付退单-未成团");

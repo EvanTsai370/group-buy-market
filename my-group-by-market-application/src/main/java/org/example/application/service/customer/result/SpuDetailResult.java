@@ -1,40 +1,19 @@
-package org.example.interfaces.web.dto.customer;
+package org.example.application.service.customer.result;
 
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * C端商品详情响应
- * 
+ * SPU详情结果
+ *
  * @author 开发团队
- * @since 2026-01-11
+ * @since 2026-01-12
  */
 @Data
-public class CustomerGoodsDetailResponse {
-
-    // ========== 商品基本信息 ==========
-
-    /** 商品ID */
-    private String skuId;
-
-    /** 商品名称 */
-    private String goodsName;
-
-    /** 规格信息 */
-    private String specInfo;
-
-    /** 原价 */
-    private BigDecimal originalPrice;
-
-    /** SKU图片 */
-    private String skuImage;
-
-    /** 可用库存 */
-    private Integer availableStock;
-
-    // ========== SPU 信息 ==========
+public class SpuDetailResult {
 
     /** SPU ID */
     private String spuId;
@@ -48,10 +27,13 @@ public class CustomerGoodsDetailResponse {
     /** 主图 */
     private String mainImage;
 
-    /** 详情图列表 */
+    /** 详情图列表（逗号分隔） */
     private String detailImages;
 
-    // ========== 活动信息 ==========
+    /** 包含的 SKU 列表 */
+    private List<GoodsDetailResult> skuList;
+
+    // ========== 活动信息（SPU维度） ==========
 
     /** 是否有拼团活动 */
     private Boolean hasActivity;
@@ -61,9 +43,6 @@ public class CustomerGoodsDetailResponse {
 
     /** 活动名称 */
     private String activityName;
-
-    /** 拼团价 */
-    private BigDecimal groupPrice;
 
     /** 成团目标人数 */
     private Integer targetCount;

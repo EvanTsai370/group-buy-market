@@ -17,17 +17,17 @@ public class ErrorHandlingNode extends AbstractFlowNode<TrialBalanceRequest, Tri
 
     @Override
     protected TrialBalanceResult doExecute(TrialBalanceRequest request, TrialBalanceContext context) {
-        log.error("【错误处理节点】流程执行异常，userId: {}, goodsId: {}",
-                  request.getUserId(), request.getGoodsId());
+        log.error("【错误处理节点】流程执行异常，userId: {}, skuId: {}",
+                  request.getUserId(), request.getSkuId());
 
         // 判断具体错误原因
         if (!context.hasActivity()) {
-            log.error("【错误处理节点】商品无关联活动，goodsId: {}", request.getGoodsId());
+            log.error("【错误处理节点】商品无关联活动，skuId: {}", request.getSkuId());
             throw new BizException("该商品暂无拼团活动");
         }
 
         if (!context.hasSku()) {
-            log.error("【错误处理节点】商品信息不存在，goodsId: {}", request.getGoodsId());
+            log.error("【错误处理节点】商品信息不存在，skuId: {}", request.getSkuId());
             throw new BizException("商品信息不存在");
         }
 

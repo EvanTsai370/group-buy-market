@@ -34,7 +34,7 @@ public class SkuRepositoryImpl implements SkuRepository {
 
     @Override
     public void update(Sku sku) {
-        SkuPO existing = skuMapper.selectByGoodsId(sku.getGoodsId());
+        SkuPO existing = skuMapper.selectBySkuId(sku.getSkuId());
         if (existing != null) {
             SkuPO po = skuConverter.toPO(sku);
             po.setId(existing.getId());
@@ -43,8 +43,8 @@ public class SkuRepositoryImpl implements SkuRepository {
     }
 
     @Override
-    public Optional<Sku> findByGoodsId(String goodsId) {
-        SkuPO po = skuMapper.selectByGoodsId(goodsId);
+    public Optional<Sku> findBySkuId(String skuId) {
+        SkuPO po = skuMapper.selectBySkuId(skuId);
         return Optional.ofNullable(po).map(skuConverter::toDomain);
     }
 
@@ -75,47 +75,47 @@ public class SkuRepositoryImpl implements SkuRepository {
     }
 
     @Override
-    public int freezeStock(String goodsId, int quantity) {
-        int rows = skuMapper.freezeStock(goodsId, quantity);
+    public int freezeStock(String skuId, int quantity) {
+        int rows = skuMapper.freezeStock(skuId, quantity);
         if (rows > 0) {
-            SkuPO updated = skuMapper.selectByGoodsId(goodsId);
-            log.info("【SKU仓储】库存冻结成功, goodsId: {}, 冻结量: {}, 当前冻结: {}",
-                    goodsId, quantity, updated.getFrozenStock());
+            SkuPO updated = skuMapper.selectBySkuId(skuId);
+            log.info("【SKU仓储】库存冻结成功, skuId: {}, 冻结量: {}, 当前冻结: {}",
+                    skuId, quantity, updated.getFrozenStock());
             return updated.getFrozenStock();
         }
-        log.warn("【SKU仓储】库存冻结失败, goodsId: {}, 冻结量: {}", goodsId, quantity);
+        log.warn("【SKU仓储】库存冻结失败, skuId: {}, 冻结量: {}", skuId, quantity);
         return -1;
     }
 
     @Override
-    public int unfreezeStock(String goodsId, int quantity) {
-        int rows = skuMapper.unfreezeStock(goodsId, quantity);
+    public int unfreezeStock(String skuId, int quantity) {
+        int rows = skuMapper.unfreezeStock(skuId, quantity);
         if (rows > 0) {
-            SkuPO updated = skuMapper.selectByGoodsId(goodsId);
-            log.info("【SKU仓储】库存释放成功, goodsId: {}, 释放量: {}, 当前冻结: {}",
-                    goodsId, quantity, updated.getFrozenStock());
+            SkuPO updated = skuMapper.selectBySkuId(skuId);
+            log.info("【SKU仓储】库存释放成功, skuId: {}, 释放量: {}, 当前冻结: {}",
+                    skuId, quantity, updated.getFrozenStock());
             return updated.getFrozenStock();
         }
-        log.warn("【SKU仓储】库存释放失败, goodsId: {}, 释放量: {}", goodsId, quantity);
+        log.warn("【SKU仓储】库存释放失败, skuId: {}, 释放量: {}", skuId, quantity);
         return -1;
     }
 
     @Override
-    public int deductStock(String goodsId, int quantity) {
-        int rows = skuMapper.deductStock(goodsId, quantity);
+    public int deductStock(String skuId, int quantity) {
+        int rows = skuMapper.deductStock(skuId, quantity);
         if (rows > 0) {
-            SkuPO updated = skuMapper.selectByGoodsId(goodsId);
-            log.info("【SKU仓储】库存扣减成功, goodsId: {}, 扣减量: {}, 剩余库存: {}",
-                    goodsId, quantity, updated.getStock());
+            SkuPO updated = skuMapper.selectBySkuId(skuId);
+            log.info("【SKU仓储】库存扣减成功, skuId: {}, 扣减量: {}, 剩余库存: {}",
+                    skuId, quantity, updated.getStock());
             return updated.getStock();
         }
-        log.warn("【SKU仓储】库存扣减失败, goodsId: {}, 扣减量: {}", goodsId, quantity);
+        log.warn("【SKU仓储】库存扣减失败, skuId: {}, 扣减量: {}", skuId, quantity);
         return -1;
     }
 
     @Override
-    public void deleteByGoodsId(String goodsId) {
-        SkuPO existing = skuMapper.selectByGoodsId(goodsId);
+    public void deleteBySkuId(String skuId) {
+        SkuPO existing = skuMapper.selectBySkuId(skuId);
         if (existing != null) {
             skuMapper.deleteById(existing.getId());
         }

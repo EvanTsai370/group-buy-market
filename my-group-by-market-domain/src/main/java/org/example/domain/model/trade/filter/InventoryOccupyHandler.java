@@ -20,9 +20,9 @@ import org.example.domain.model.goods.repository.SkuRepository;
  * <p>
  * 业务逻辑：
  * <ol>
- * <li>获取请求中的 goodsId</li>
+ * <li>获取请求中的 skuId</li>
  * <li>调用 SkuRepository.freezeStock() 原子冻结库存</li>
- * <li>冻结成功：将 goodsId 放入上下文，用于失败回滚</li>
+ * <li>冻结成功：将 skuId 放入上下文，用于失败回滚</li>
  * <li>冻结失败：返回 reject，阻止锁单继续</li>
  * </ol>
  *
@@ -62,29 +62,29 @@ public class InventoryOccupyHandler
 
     @Override
     public TradeFilterResponse handle(TradeFilterRequest request, TradeFilterContext context) throws Exception {
-        log.info("【交易规则过滤-库存预占】userId: {}, activityId: {}, goodsId: {}",
-                request.getUserId(), request.getActivityId(), request.getGoodsId());
+        log.info("【交易规则过滤-库存预占】userId: {}, activityId: {}, skuId: {}",
+                request.getUserId(), request.getActivityId(), request.getSkuId());
 
-        // 1. 获取 goodsId
-        String goodsId = request.getGoodsId();
-        if (StringUtils.isBlank(goodsId)) {
+        // 1. 获取 skuId
+        String skuId = request.getSkuId();
+        if (StringUtils.isBlank(skuId)) {
             throw new BizException("商品ID不能为空");
         }
 
         // 2. 原子冻结库存
-        int result = skuRepository.freezeStock(goodsId, FREEZE_QUANTITY);
+        int result = skuRepository.freezeStock(skuId, FREEZE_QUANTITY);
 
         if (result <= 0) {
-            log.warn("【交易规则过滤-库存预占】库存不足, userId: {}, goodsId: {}",
-                    request.getUserId(), goodsId);
+            log.warn("【交易规则过滤-库存预占】库存不足, userId: {}, skuId: {}",
+                    request.getUserId(), skuId);
             return TradeFilterResponse.reject("商品库存不足，请稍后再试");
         }
 
-        // 3. 冻结成功，将 goodsId 放入上下文，用于失败回滚
-        context.setRecoveryGoodsId(goodsId);
+        // 3. 冻结成功，将 skuId 放入上下文，用于失败回滚
+        context.setRecoverySkuId(skuId);
 
-        log.info("【交易规则过滤-库存预占】冻结成功, userId: {}, goodsId: {}, 冻结数量: {}",
-                request.getUserId(), goodsId, FREEZE_QUANTITY);
+        log.info("【交易规则过滤-库存预占】冻结成功, userId: {}, skuId: {}, 冻结数量: {}",
+                request.getUserId(), skuId, FREEZE_QUANTITY);
 
         return TradeFilterResponse.allow();
     }

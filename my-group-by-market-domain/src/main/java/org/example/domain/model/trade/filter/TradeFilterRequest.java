@@ -26,7 +26,7 @@ public class TradeFilterRequest {
     private String activityId;
 
     /** 商品ID */
-    private String goodsId;
+    private String skuId;
 
     /** 拼团订单ID（如果是加入已有队伍） */
     private String orderId;

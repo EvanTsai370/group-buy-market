@@ -57,7 +57,7 @@ public class TradeOrder {
     private String userId;
 
     /** 商品ID */
-    private String goodsId;
+    private String skuId;
 
     /** 商品名称（冗余，避免JOIN） */
     private String goodsName;
@@ -116,7 +116,7 @@ public class TradeOrder {
      * @param orderId        拼团订单ID
      * @param activityId     活动ID
      * @param userId         用户ID
-     * @param goodsId        商品ID
+     * @param skuId        商品ID
      * @param goodsName      商品名称
      * @param originalPrice  原始价格
      * @param deductionPrice 减免金额
@@ -133,7 +133,7 @@ public class TradeOrder {
             String orderId,
             String activityId,
             String userId,
-            String goodsId,
+            String skuId,
             String goodsName,
             BigDecimal originalPrice,
             BigDecimal deductionPrice,
@@ -159,7 +159,7 @@ public class TradeOrder {
         tradeOrder.orderId = orderId;
         tradeOrder.activityId = activityId;
         tradeOrder.userId = userId;
-        tradeOrder.goodsId = goodsId;
+        tradeOrder.skuId = skuId;
         tradeOrder.goodsName = goodsName;
         tradeOrder.originalPrice = originalPrice;
         tradeOrder.deductionPrice = deductionPrice;

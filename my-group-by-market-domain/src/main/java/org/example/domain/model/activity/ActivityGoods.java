@@ -16,8 +16,8 @@ public class ActivityGoods {
     /** 活动ID */
     private String activityId;
 
-    /** 商品ID */
-    private String goodsId;
+    /** 商品SPU ID */
+    private String spuId;
 
     /** 来源（如：s01-小程序、s02-App） */
     private String source;

@@ -27,7 +27,7 @@ public interface SkuRepository {
     /**
      * 根据 goods ID 查询
      */
-    Optional<Sku> findByGoodsId(String goodsId);
+    Optional<Sku> findBySkuId(String skuId);
 
     /**
      * 根据 SPU ID 查询所有 SKU
@@ -54,36 +54,36 @@ public interface SkuRepository {
      * 
      * @return 冻结后的库存量，-1 表示失败
      */
-    int freezeStock(String goodsId, int quantity);
+    int freezeStock(String skuId, int quantity);
 
     /**
      * 原子释放库存
      * 
      * @return 释放后的冻结库存量，-1 表示失败
      */
-    int unfreezeStock(String goodsId, int quantity);
+    int unfreezeStock(String skuId, int quantity);
 
     /**
      * 原子扣减库存
      * 
      * @return 扣减后的库存量，-1 表示失败
      */
-    int deductStock(String goodsId, int quantity);
+    int deductStock(String skuId, int quantity);
 
     /**
      * 删除
      */
-    void deleteByGoodsId(String goodsId);
+    void deleteBySkuId(String skuId);
 
     // ==================== TODO: 发货与退货库存操作 ====================
     //
     // 以下方法待与 InventoryGateway 微服务集成后实现：
     //
-    // 1. shipStock(goodsId, quantity) - 发货时调用
+    // 1. shipStock(skuId, quantity) - 发货时调用
     // 操作：frozenStock - quantity, stock - quantity
     // 场景：拼团成功后发货
     //
-    // 2. returnStock(goodsId, quantity) - 退货时调用
+    // 2. returnStock(skuId, quantity) - 退货时调用
     // 操作：stock + quantity
     // 场景：已发货订单退货
     //

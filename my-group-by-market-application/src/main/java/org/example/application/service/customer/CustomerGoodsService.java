@@ -53,6 +53,11 @@ public class CustomerGoodsService {
      *
      * @return 商品列表
      */
+    /**
+     * 查询在售商品列表（首页）
+     *
+     * @return 商品列表
+     */
     public List<GoodsListResult> listOnSaleGoods() {
         log.info("【CustomerGoodsService】查询在售商品列表");
 
@@ -61,14 +66,15 @@ public class CustomerGoodsService {
 
         for (Sku sku : skuList) {
             GoodsListResult result = new GoodsListResult();
-            result.setGoodsId(sku.getGoodsId());
+            result.setSkuId(sku.getSkuId());
             result.setGoodsName(sku.getGoodsName());
             result.setOriginalPrice(sku.getOriginalPrice());
             result.setMainImage(sku.getSkuImage());
             result.setAvailableStock(sku.getAvailableStock());
 
             // 查询关联的活动
-            Optional<Activity> activityOpt = activityRepository.findActiveByGoodsId(sku.getGoodsId());
+            // SPU 重构：使用 spuId 查询活动
+            Optional<Activity> activityOpt = activityRepository.findActiveBySpuId(sku.getSpuId());
             if (activityOpt.isPresent()) {
                 Activity activity = activityOpt.get();
                 result.setHasActivity(true);
@@ -92,20 +98,83 @@ public class CustomerGoodsService {
     }
 
     /**
+     * 查询在售 SPU 列表（新版首页）
+     *
+     * @return SPU 列表
+     */
+    public List<SpuListResult> listSpuOnSale() {
+        log.info("【CustomerGoodsService】查询在售 SPU 列表");
+
+        List<Spu> spuList = spuRepository.findAllOnSale();
+        List<SpuListResult> results = new ArrayList<>();
+
+        for (Spu spu : spuList) {
+            SpuListResult result = new SpuListResult();
+            result.setSpuId(spu.getSpuId());
+            result.setSpuName(spu.getSpuName());
+            result.setMainImage(spu.getMainImage());
+
+            // 查询关联的 SKU 以获取价格区间
+            List<Sku> skus = skuRepository.findBySpuId(spu.getSpuId());
+            if (skus.isEmpty()) {
+                continue; // 忽略无 SKU 的 SPU
+            }
+
+            // 计算最低原价
+            BigDecimal minOriginalPrice = skus.stream()
+                    .map(Sku::getOriginalPrice)
+                    .min(BigDecimal::compareTo)
+                    .orElse(BigDecimal.ZERO);
+            result.setMinOriginalPrice(minOriginalPrice);
+
+            // 查询关联活动
+            Optional<Activity> activityOpt = activityRepository.findActiveBySpuId(spu.getSpuId());
+            if (activityOpt.isPresent()) {
+                Activity activity = activityOpt.get();
+                result.setHasActivity(true);
+                result.setActivityId(activity.getActivityId());
+
+                // 计算最低拼团价
+                Discount discount = activityRepository.queryDiscountById(activity.getDiscountId());
+                if (discount != null) {
+                    BigDecimal minGroupPrice = calculateDiscountPrice(discount, minOriginalPrice);
+                    result.setMinGroupPrice(minGroupPrice);
+                } else {
+                    result.setMinGroupPrice(minOriginalPrice);
+                }
+            } else {
+                result.setHasActivity(false);
+                result.setMinGroupPrice(minOriginalPrice);
+            }
+
+            results.add(result);
+        }
+
+        log.info("【CustomerGoodsService】查询在售 SPU 列表完成，共{}条", results.size());
+        return results;
+    }
+
+    /**
      * 查询商品详情
      *
-     * @param goodsId 商品ID
+     * @param skuId 商品ID
      * @return 商品详情
      */
-    public GoodsDetailResult getGoodsDetail(String goodsId) {
-        log.info("【CustomerGoodsService】查询商品详情，goodsId: {}", goodsId);
+    /**
+     * 查询商品详情
+     *
+     * @param skuId 商品ID
+     * @return 商品详情
+     */
+    public GoodsDetailResult getGoodsDetail(String skuId) {
+        log.info("【CustomerGoodsService】查询商品详情，skuId: {}", skuId);
 
         // 1. 查询 SKU
-        Sku sku = skuRepository.findByGoodsId(goodsId)
+        Sku sku = skuRepository.findBySkuId(skuId)
                 .orElseThrow(() -> new BizException("商品不存在"));
 
         GoodsDetailResult result = new GoodsDetailResult();
-        result.setGoodsId(sku.getGoodsId());
+        result.setSkuId(sku.getSkuId());
         result.setGoodsName(sku.getGoodsName());
         result.setSpecInfo(sku.getSpecInfo());
         result.setOriginalPrice(sku.getOriginalPrice());
@@ -126,7 +195,8 @@ public class CustomerGoodsService {
         }
 
         // 3. 查询关联活动
-        Optional<Activity> activityOpt = activityRepository.findActiveByGoodsId(goodsId);
+        // SPU 重构：使用 spuId 查询活动
+        Optional<Activity> activityOpt = activityRepository.findActiveBySpuId(sku.getSpuId());
         if (activityOpt.isPresent()) {
             Activity activity = activityOpt.get();
             result.setHasActivity(true);
@@ -146,8 +216,77 @@ public class CustomerGoodsService {
             result.setHasActivity(false);
         }
 
-        log.info("【CustomerGoodsService】查询商品详情完成，goodsId: {}, hasActivity: {}",
-                goodsId, result.getHasActivity());
+        log.info("【CustomerGoodsService】查询商品详情完成，skuId: {}, hasActivity: {}",
+                skuId, result.getHasActivity());
+        return result;
+    }
+
+    /**
+     * 查询 SPU 详情（新版商品详情页）
+     *
+     * @param spuId SPU ID
+     * @return SPU 详情
+     */
+    public SpuDetailResult getSpuDetail(String spuId) {
+        log.info("【CustomerGoodsService】查询 SPU 详情，spuId: {}", spuId);
+
+        // 1. 查询 SPU
+        Spu spu = spuRepository.findBySpuId(spuId)
+                .orElseThrow(() -> new BizException("商品不存在"));
+
+        SpuDetailResult result = new SpuDetailResult();
+        result.setSpuId(spu.getSpuId());
+        result.setSpuName(spu.getSpuName());
+        result.setDescription(spu.getDescription());
+        result.setMainImage(spu.getMainImage());
+        result.setDetailImages(spu.getDetailImages());
+
+        // 2. 查询关联 SKU 列表
+        List<Sku> skus = skuRepository.findBySpuId(spuId);
+        List<GoodsDetailResult> skuResults = new ArrayList<>();
+
+        Optional<Activity> activityOpt = activityRepository.findActiveBySpuId(spuId);
+        Activity activity = activityOpt.orElse(null);
+        Discount discount = null;
+        if (activity != null) {
+            discount = activityRepository.queryDiscountById(activity.getDiscountId());
+        }
+
+        for (Sku sku : skus) {
+            GoodsDetailResult skuResult = new GoodsDetailResult();
+            skuResult.setSkuId(sku.getSkuId());
+            skuResult.setGoodsName(sku.getGoodsName());
+            skuResult.setSpecInfo(sku.getSpecInfo());
+            skuResult.setOriginalPrice(sku.getOriginalPrice());
+            skuResult.setSkuImage(sku.getSkuImage());
+            skuResult.setAvailableStock(sku.getAvailableStock());
+
+            // 计算拼团价
+            if (activity != null && discount != null) {
+                BigDecimal groupPrice = calculateDiscountPrice(discount, sku.getOriginalPrice());
+                skuResult.setGroupPrice(groupPrice);
+                skuResult.setHasActivity(true);
+            } else {
+                skuResult.setHasActivity(false);
+            }
+            skuResults.add(skuResult);
+        }
+        result.setSkuList(skuResults);
+
+        // 3. 填充活动信息
+        if (activity != null) {
+            result.setHasActivity(true);
+            result.setActivityId(activity.getActivityId());
+            result.setActivityName(activity.getActivityName());
+            result.setTargetCount(activity.getTarget());
+            result.setActivityEndTime(activity.getEndTime());
+            result.setValidTime(activity.getValidTime());
+        } else {
+            result.setHasActivity(false);
+        }
+
+        log.info("【CustomerGoodsService】查询 SPU 详情完成，spuId: {}, skuCount: {}, hasActivity: {}",
+                spuId, skuResults.size(), result.getHasActivity());
         return result;
     }
 
@@ -158,27 +297,28 @@ public class CustomerGoodsService {
      * @return 试算结果
      */
     public PriceTrialResult trialPrice(PriceTrialQuery query) {
-        log.info("【CustomerGoodsService】价格试算，goodsId: {}, source: {}, channel: {}",
-                query.getGoodsId(), query.getSource(), query.getChannel());
+        log.info("【CustomerGoodsService】价格试算，skuId: {}, source: {}, channel: {}",
+                query.getSkuId(), query.getSource(), query.getChannel());
 
         // 1. 查询 SKU
-        Sku sku = skuRepository.findByGoodsId(query.getGoodsId())
+        Sku sku = skuRepository.findBySkuId(query.getSkuId())
                 .orElseThrow(() -> new BizException("商品不存在"));
 
         PriceTrialResult result = new PriceTrialResult();
-        result.setGoodsId(query.getGoodsId());
+        result.setSkuId(query.getSkuId());
         result.setOriginalPrice(sku.getOriginalPrice());
 
         // 2. 根据来源渠道查询活动
         String activityId = null;
         if (query.getSource() != null && query.getChannel() != null) {
             activityId = activityRepository.queryActivityIdByGoodsSourceChannel(
-                    query.getGoodsId(), query.getSource(), query.getChannel());
+                    query.getSkuId(), query.getSource(), query.getChannel());
         }
 
         // 3. 如果没有指定渠道，尝试查找任意有效活动
         if (activityId == null) {
-            Optional<Activity> activityOpt = activityRepository.findActiveByGoodsId(query.getGoodsId());
+            // SPU 重构：使用 spuId 查询活动
+            Optional<Activity> activityOpt = activityRepository.findActiveBySpuId(sku.getSpuId());
             if (activityOpt.isPresent()) {
                 activityId = activityOpt.get().getActivityId();
             }
@@ -208,28 +348,29 @@ public class CustomerGoodsService {
             result.setDiscountPrice(sku.getOriginalPrice());
         }
 
-        log.info("【CustomerGoodsService】价格试算完成，goodsId: {}, 原价: {}, 折扣价: {}",
-                query.getGoodsId(), result.getOriginalPrice(), result.getDiscountPrice());
+        log.info("【CustomerGoodsService】价格试算完成，skuId: {}, 原价: {}, 折扣价: {}",
+                query.getSkuId(), result.getOriginalPrice(), result.getDiscountPrice());
         return result;
     }
 
     /**
      * 查询商品的拼团队伍列表
      *
-     * @param goodsId 商品ID
+     * @param skuId 商品ID
      * @return 队伍列表
      */
-    public List<TeamListResult> listGoodsTeams(String goodsId) {
-        log.info("【CustomerGoodsService】查询商品拼团队伍，goodsId: {}", goodsId);
+    public List<TeamListResult> listGoodsTeams(String skuId) {
+        log.info("【CustomerGoodsService】查询商品拼团队伍，skuId: {}", skuId);
 
         // 1. 确认商品存在
-        skuRepository.findByGoodsId(goodsId)
+        Sku sku = skuRepository.findBySkuId(skuId)
                 .orElseThrow(() -> new BizException("商品不存在"));
 
         // 2. 查询关联活动
-        Optional<Activity> activityOpt = activityRepository.findActiveByGoodsId(goodsId);
+        // SPU 重构：使用 spuId 查询活动
+        Optional<Activity> activityOpt = activityRepository.findActiveBySpuId(sku.getSpuId());
         if (activityOpt.isEmpty()) {
-            log.info("【CustomerGoodsService】商品无活动，返回空列表，goodsId: {}", goodsId);
+            log.info("【CustomerGoodsService】商品无活动，返回空列表，skuId: {}", skuId);
             return new ArrayList<>();
         }
 
@@ -243,10 +384,8 @@ public class CustomerGoodsService {
         LocalDateTime now = LocalDateTime.now();
 
         for (Order order : orders) {
-            // 只返回该商品的拼团
-            if (!goodsId.equals(order.getGoodsId())) {
-                continue;
-            }
+            // SPU 拼团模式下，同一个 Activity (SPU) 下的所有拼团都可见，无需校验 SkuId
+            // 因为不同 SKU 的用户可以一起拼团
 
             TeamListResult teamResult = new TeamListResult();
             teamResult.setOrderId(order.getOrderId());
@@ -268,8 +407,8 @@ public class CustomerGoodsService {
             results.add(teamResult);
         }
 
-        log.info("【CustomerGoodsService】查询商品拼团队伍完成，goodsId: {}, 共{}个拼团",
-                goodsId, results.size());
+        log.info("【CustomerGoodsService】查询商品拼团队伍完成，skuId: {}, 共{}个拼团",
+                skuId, results.size());
         return results;
     }
 

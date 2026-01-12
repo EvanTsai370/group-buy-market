@@ -17,7 +17,7 @@ public class GoodsDetailResult {
     // ========== 商品基本信息 ==========
 
     /** 商品ID */
-    private String goodsId;
+    private String skuId;
 
     /** 商品名称 */
     private String goodsName;

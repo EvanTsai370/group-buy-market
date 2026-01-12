@@ -44,26 +44,26 @@ public interface ActivityRepository {
     List<Activity> findAll(int page, int size);
 
     /**
-     * 根据商品ID、来源、渠道查询活动ID
+     * 根据SPU ID、来源、渠道查询活动ID
      * 用于试算场景：根据商品和渠道定位活动
      *
-     * @param goodsId 商品ID
+     * @param spuId   商品SPU ID
      * @param source  来源
      * @param channel 渠道
      * @return 活动ID（可能为空）
      */
-    String queryActivityIdByGoodsSourceChannel(String goodsId, String source, String channel);
+    String queryActivityIdByGoodsSourceChannel(String spuId, String source, String channel);
 
     /**
      * 根据活动ID和商品信息查询活动商品关联
      *
      * @param activityId 活动ID
-     * @param goodsId    商品ID
+     * @param spuId      商品SPU ID
      * @param source     来源
      * @param channel    渠道
      * @return 活动商品关联信息
      */
-    ActivityGoods queryActivityGoods(String activityId, String goodsId, String source, String channel);
+    ActivityGoods queryActivityGoods(String activityId, String spuId, String source, String channel);
 
     /**
      * 查询折扣配置
@@ -117,11 +117,11 @@ public interface ActivityRepository {
     String nextDiscountId();
 
     /**
-     * 根据商品ID查找当前有效的活动
+     * 根据SPU ID查找当前有效的活动
      * 用于 C 端商品详情页：展示商品关联的拼团活动
      *
-     * @param goodsId 商品ID
+     * @param spuId 商品SPU ID
      * @return 有效的活动（可能为空）
      */
-    Optional<Activity> findActiveByGoodsId(String goodsId);
+    Optional<Activity> findActiveBySpuId(String spuId);
 }

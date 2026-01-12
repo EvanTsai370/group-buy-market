@@ -31,5 +31,5 @@ public class TradeFilterContext {
     private String recoveryTeamSlotKey;
 
     /** 库存恢复商品ID（用于失败回滚时释放库存） */
-    private String recoveryGoodsId;
+    private String recoverySkuId;
 }

@@ -94,30 +94,30 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     }
 
     @Override
-    public String queryActivityIdByGoodsSourceChannel(String goodsId, String source, String channel) {
-        String activityId = activityGoodsMapper.selectActivityIdByGoodsSourceChannel(goodsId, source, channel);
-        log.info("【ActivityRepository】查询活动ID，goodsId: {}, source: {}, channel: {}, result: {}",
-                goodsId, source, channel, activityId);
+    public String queryActivityIdByGoodsSourceChannel(String spuId, String source, String channel) {
+        String activityId = activityGoodsMapper.selectActivityIdByGoodsSourceChannel(spuId, source, channel);
+        log.info("【ActivityRepository】查询活动ID，spuId: {}, source: {}, channel: {}, result: {}",
+                spuId, source, channel, activityId);
         return activityId;
     }
 
     @Override
-    public ActivityGoods queryActivityGoods(String activityId, String goodsId, String source, String channel) {
-        ActivityGoodsPO po = activityGoodsMapper.selectByActivityGoods(activityId, goodsId, source, channel);
+    public ActivityGoods queryActivityGoods(String activityId, String spuId, String source, String channel) {
+        ActivityGoodsPO po = activityGoodsMapper.selectByActivityGoods(activityId, spuId, source, channel);
         if (po == null) {
-            log.warn("【ActivityRepository】活动商品关联不存在，activityId: {}, goodsId: {}, source: {}, channel: {}",
-                    activityId, goodsId, source, channel);
+            log.warn("【ActivityRepository】活动商品关联不存在，activityId: {}, spuId: {}, source: {}, channel: {}",
+                    activityId, spuId, source, channel);
             return null;
         }
 
         ActivityGoods activityGoods = new ActivityGoods(
                 po.getActivityId(),
-                po.getGoodsId(),
+                po.getSpuId(),
                 po.getSource(),
                 po.getChannel(),
                 po.getDiscountId());
-        log.info("【ActivityRepository】查询活动商品关联，activityId: {}, goodsId: {}, discountId: {}",
-                activityId, goodsId, activityGoods.getDiscountId());
+        log.info("【ActivityRepository】查询活动商品关联，activityId: {}, spuId: {}, discountId: {}",
+                activityId, spuId, activityGoods.getDiscountId());
         return activityGoods;
     }
 
@@ -160,14 +160,14 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     public void saveActivityGoods(ActivityGoods activityGoods) {
         ActivityGoodsPO po = new ActivityGoodsPO();
         po.setActivityId(activityGoods.getActivityId());
-        po.setGoodsId(activityGoods.getGoodsId());
+        po.setSpuId(activityGoods.getSpuId());
         po.setSource(activityGoods.getSource());
         po.setChannel(activityGoods.getChannel());
         po.setDiscountId(activityGoods.getDiscountId());
 
         activityGoodsMapper.insert(po);
-        log.info("【ActivityRepository】新增活动商品关联, activityId: {}, goodsId: {}",
-                activityGoods.getActivityId(), activityGoods.getGoodsId());
+        log.info("【ActivityRepository】新增活动商品关联, activityId: {}, spuId: {}",
+                activityGoods.getActivityId(), activityGoods.getSpuId());
     }
 
     @Override
@@ -201,11 +201,11 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     }
 
     @Override
-    public Optional<Activity> findActiveByGoodsId(String goodsId) {
+    public Optional<Activity> findActiveBySpuId(String spuId) {
         // 1. 通过商品ID查询关联的活动ID列表
-        List<String> activityIds = activityGoodsMapper.selectActiveActivityIdsByGoodsId(goodsId);
+        List<String> activityIds = activityGoodsMapper.selectActiveActivityIdsBySkuId(spuId);
         if (activityIds == null || activityIds.isEmpty()) {
-            log.debug("【ActivityRepository】商品无关联活动，goodsId: {}", goodsId);
+            log.debug("【ActivityRepository】商品无关联活动，spuId: {}", spuId);
             return Optional.empty();
         }
 
@@ -220,13 +220,13 @@ public class ActivityRepositoryImpl implements ActivityRepository {
             ActivityPO po = activityMapper.selectOne(wrapper);
             if (po != null) {
                 Activity activity = ActivityConverter.INSTANCE.toDomain(po);
-                log.info("【ActivityRepository】查询商品关联活动，goodsId: {}, activityId: {}",
-                        goodsId, activityId);
+                log.info("【ActivityRepository】查询商品关联活动，spuId: {}, activityId: {}",
+                        spuId, activityId);
                 return Optional.of(activity);
             }
         }
 
-        log.debug("【ActivityRepository】商品无有效活动，goodsId: {}", goodsId);
+        log.debug("【ActivityRepository】商品无有效活动，spuId: {}", spuId);
         return Optional.empty();
     }
 }

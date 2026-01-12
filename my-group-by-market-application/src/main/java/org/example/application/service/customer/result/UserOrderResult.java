@@ -21,7 +21,7 @@ public class UserOrderResult {
     private String outTradeNo;
 
     /** 商品ID */
-    private String goodsId;
+    private String skuId;
 
     /** 商品名称 */
     private String goodsName;

@@ -49,12 +49,12 @@ public class CustomerGoodsController {
     /**
      * 商品详情
      */
-    @GetMapping("/{goodsId}/detail")
+    @GetMapping("/{skuId}/detail")
     @Operation(summary = "商品详情", description = "查询商品详情（含活动信息）")
-    public Result<CustomerGoodsDetailResponse> getGoodsDetail(@PathVariable String goodsId) {
-        log.info("【CustomerGoodsController】查询商品详情, goodsId: {}", goodsId);
+    public Result<CustomerGoodsDetailResponse> getGoodsDetail(@PathVariable String skuId) {
+        log.info("【CustomerGoodsController】查询商品详情, skuId: {}", skuId);
 
-        GoodsDetailResult result = customerGoodsService.getGoodsDetail(goodsId);
+        GoodsDetailResult result = customerGoodsService.getGoodsDetail(skuId);
         CustomerGoodsDetailResponse response = customerGoodsAssembler.toResponse(result);
 
         return Result.success(response);
@@ -63,19 +63,19 @@ public class CustomerGoodsController {
     /**
      * 价格试算
      */
-    @GetMapping("/{goodsId}/trial")
+    @GetMapping("/{skuId}/trial")
     @Operation(summary = "价格试算", description = "根据商品和渠道计算拼团价格")
     public Result<PriceTrialResponse> trialPrice(
-            @PathVariable String goodsId,
+            @PathVariable String skuId,
             @RequestParam(required = false) String source,
             @RequestParam(required = false) String channel,
             @RequestParam(required = false) String userId) {
 
-        log.info("【CustomerGoodsController】价格试算, goodsId: {}, source: {}, channel: {}",
-                goodsId, source, channel);
+        log.info("【CustomerGoodsController】价格试算, skuId: {}, source: {}, channel: {}",
+                skuId, source, channel);
 
         PriceTrialQuery query = new PriceTrialQuery();
-        query.setGoodsId(goodsId);
+        query.setSkuId(skuId);
         query.setSource(source);
         query.setChannel(channel);
         query.setUserId(userId);
@@ -89,14 +89,42 @@ public class CustomerGoodsController {
     /**
      * 拼团队伍列表
      */
-    @GetMapping("/{goodsId}/teams")
+    @GetMapping("/{skuId}/teams")
     @Operation(summary = "拼团队伍", description = "查询商品的进行中拼团队伍")
-    public Result<List<TeamListResponse>> listTeams(@PathVariable String goodsId) {
-        log.info("【CustomerGoodsController】查询拼团队伍, goodsId: {}", goodsId);
+    public Result<List<TeamListResponse>> listTeams(@PathVariable String skuId) {
+        log.info("【CustomerGoodsController】查询拼团队伍, skuId: {}", skuId);
 
-        List<TeamListResult> results = customerGoodsService.listGoodsTeams(goodsId);
+        List<TeamListResult> results = customerGoodsService.listGoodsTeams(skuId);
         List<TeamListResponse> responses = customerGoodsAssembler.toTeamListResponse(results);
 
         return Result.success(responses);
+    }
+
+    /**
+     * SPU 列表（新版首页）
+     */
+    @GetMapping("/spu/list")
+    @Operation(summary = "SPU列表", description = "查询在售SPU列表（支持关联活动展示）")
+    public Result<List<SpuListResponse>> listSpus() {
+        log.info("【CustomerGoodsController】查询SPU列表");
+
+        List<SpuListResult> results = customerGoodsService.listSpuOnSale();
+        List<SpuListResponse> responses = customerGoodsAssembler.toSpuListResponse(results);
+
+        return Result.success(responses);
+    }
+
+    /**
+     * SPU 详情
+     */
+    @GetMapping("/spu/{spuId}")
+    @Operation(summary = "SPU详情", description = "查询SPU详情（含SKU列表和活动信息）")
+    public Result<SpuDetailResponse> getSpuDetail(@PathVariable String spuId) {
+        log.info("【CustomerGoodsController】查询SPU详情, spuId: {}", spuId);
+
+        SpuDetailResult result = customerGoodsService.getSpuDetail(spuId);
+        SpuDetailResponse response = customerGoodsAssembler.toResponse(result);
+
+        return Result.success(response);
     }
 }

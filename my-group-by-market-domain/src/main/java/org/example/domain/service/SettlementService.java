@@ -148,7 +148,7 @@ public class SettlementService {
             resourceReleaseService.releaseAllResources(
                     tradeOrder.getOrderId(),
                     tradeOrder.getActivityId(),
-                    tradeOrder.getGoodsId(),
+                    tradeOrder.getSkuId(),
                     tradeOrder.getUserId(),
                     tradeOrder.getTradeOrderId(),
                     "交易关闭回调");

@@ -82,7 +82,7 @@ public class UserCenterService {
             UserOrderResult result = new UserOrderResult();
             result.setTradeOrderId(tradeOrder.getTradeOrderId());
             result.setOutTradeNo(tradeOrder.getOutTradeNo());
-            result.setGoodsId(tradeOrder.getGoodsId());
+            result.setSkuId(tradeOrder.getSkuId());
             result.setActivityId(tradeOrder.getActivityId());
             result.setOrderId(tradeOrder.getOrderId());
             result.setTradeAmount(tradeOrder.getPayPrice());
@@ -91,7 +91,7 @@ public class UserCenterService {
             result.setPayTime(tradeOrder.getPayTime());
 
             // 查询商品名称
-            skuRepository.findByGoodsId(tradeOrder.getGoodsId())
+            skuRepository.findBySkuId(tradeOrder.getSkuId())
                     .ifPresent(sku -> result.setGoodsName(sku.getGoodsName()));
 
             // 查询活动名称
