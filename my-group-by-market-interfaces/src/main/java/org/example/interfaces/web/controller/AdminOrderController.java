@@ -11,6 +11,7 @@ import org.example.common.api.Result;
 import org.example.interfaces.web.assembler.AdminOrderAssembler;
 import org.example.interfaces.web.dto.admin.AdminTradeOrderResponse;
 import org.example.interfaces.web.dto.admin.OrderResponse;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.List;
 @RequestMapping("/api/admin/order")
 @RequiredArgsConstructor
 @Tag(name = "订单管理", description = "管理后台订单管理接口")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminOrderController {
 
     private final AdminOrderService adminOrderService;

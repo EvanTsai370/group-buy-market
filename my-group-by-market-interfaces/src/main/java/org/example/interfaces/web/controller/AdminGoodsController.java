@@ -17,6 +17,7 @@ import org.example.interfaces.web.request.CreateSkuRequest;
 import org.example.interfaces.web.request.CreateSpuRequest;
 import org.example.interfaces.web.request.UpdateSkuRequest;
 import org.example.interfaces.web.request.UpdateSpuRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,6 +33,7 @@ import java.util.List;
 @RequestMapping("/api/admin/goods")
 @RequiredArgsConstructor
 @Tag(name = "商品管理", description = "管理后台商品管理接口")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminGoodsController {
 
     private final GoodsService goodsService;

@@ -11,6 +11,7 @@ import org.example.common.api.Result;
 import org.example.domain.model.user.valueobject.UserRole;
 import org.example.interfaces.web.assembler.AdminDashboardAssembler;
 import org.example.interfaces.web.dto.admin.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.List;
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
 @Tag(name = "管理后台", description = "管理后台接口")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminDashboardController {
 
     private final AdminStatisticsService adminStatisticsService;

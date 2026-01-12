@@ -9,6 +9,7 @@ import org.example.application.service.admin.result.SystemInfoResult;
 import org.example.common.api.Result;
 import org.example.interfaces.web.assembler.AdminOrderAssembler;
 import org.example.interfaces.web.dto.admin.SystemInfoResponse;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.Map;
 @RequestMapping("/api/admin/settings")
 @RequiredArgsConstructor
 @Tag(name = "系统设置", description = "管理后台系统设置接口")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminSettingsController {
 
     private final AdminSettingsService adminSettingsService;

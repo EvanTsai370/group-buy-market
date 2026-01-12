@@ -13,6 +13,7 @@ import org.example.domain.model.activity.Discount;
 import org.example.domain.model.activity.valueobject.DiscountType;
 import org.example.domain.model.activity.valueobject.GroupType;
 import org.example.domain.model.activity.valueobject.TagScope;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -30,6 +31,7 @@ import java.util.List;
 @RequestMapping("/api/admin/activity")
 @RequiredArgsConstructor
 @Tag(name = "活动管理", description = "管理后台活动管理接口")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminActivityController {
 
     private final AdminActivityService adminActivityService;

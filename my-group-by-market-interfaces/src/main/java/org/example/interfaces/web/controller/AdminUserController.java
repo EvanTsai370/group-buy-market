@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
 @Tag(name = "用户管理", description = "管理后台用户管理接口")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminUserController {
 
     private final AdminUserService adminUserService;
@@ -31,7 +32,6 @@ public class AdminUserController {
 
     @PostMapping("/admin")
     @Operation(summary = "创建管理员", description = "创建新的管理员用户（需要管理员权限）")
-    @PreAuthorize("hasRole('ADMIN')")
     public Result<UserDetailResponse> createAdmin(@RequestBody CreateAdminRequest request) {
         log.info("【AdminUser】创建管理员请求, username: {}", request.getUsername());
 
