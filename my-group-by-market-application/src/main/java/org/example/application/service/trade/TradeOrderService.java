@@ -217,7 +217,7 @@ public class TradeOrderService {
 
             log.error("【TradeOrderService】锁单失败(系统异常), userId: {}, activityId: {}, outTradeNo: {}",
                     cmd.getUserId(), cmd.getActivityId(), cmd.getOutTradeNo(), e);
-            throw new BizException("锁单失败: " + e.getMessage());
+            throw new BizException("锁单失败: %s", e.getMessage());
         }
     }
 
@@ -312,7 +312,7 @@ public class TradeOrderService {
             if (e instanceof BizException) {
                 throw (BizException) e;
             }
-            throw new BizException("交易规则校验失败: " + e.getMessage());
+            throw new BizException("交易规则校验失败: %s", e.getMessage());
         }
 
         Activity activity = context.getActivity();
@@ -418,7 +418,7 @@ public class TradeOrderService {
         String marketPlan = discount.getMarketPlan();
         DiscountCalculator calculator = discountCalculatorMap.get(marketPlan);
         if (calculator == null) {
-            throw new BizException("不支持的营销计划类型: " + marketPlan);
+            throw new BizException("不支持的营销计划类型: %s", marketPlan);
         }
 
         // 3. 后端计算价格
@@ -452,16 +452,13 @@ public class TradeOrderService {
         }
 
         if (originalPrice.compareTo(skuOriginalPrice) != 0) {
-            throw new BizException(String.format("原价校验失败，前端: %s, 后端: %s",
-                    originalPrice, skuOriginalPrice));
+            throw new BizException("原价校验失败，前端: %s, 后端: %s", originalPrice, skuOriginalPrice);
         }
         if (payPrice.compareTo(backendPayPrice) != 0) {
-            throw new BizException(String.format("实付金额校验失败，前端: %s, 后端: %s",
-                    payPrice, backendPayPrice));
+            throw new BizException("实付金额校验失败，前端: %s, 后端: %s", payPrice, backendPayPrice);
         }
         if (deductionPrice.compareTo(backendDeductionPrice) != 0) {
-            throw new BizException(String.format("优惠金额校验失败，前端: %s, 后端: %s",
-                    deductionPrice, backendDeductionPrice));
+            throw new BizException("优惠金额校验失败，前端: %s, 后端: %s", deductionPrice, backendDeductionPrice);
         }
     }
 

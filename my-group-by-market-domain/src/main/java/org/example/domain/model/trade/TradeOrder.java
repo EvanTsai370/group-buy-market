@@ -116,7 +116,7 @@ public class TradeOrder {
      * @param orderId        拼团订单ID
      * @param activityId     活动ID
      * @param userId         用户ID
-     * @param skuId        商品ID
+     * @param skuId          商品ID
      * @param goodsName      商品名称
      * @param originalPrice  原始价格
      * @param deductionPrice 减免金额
@@ -189,7 +189,7 @@ public class TradeOrder {
      */
     public void markAsPaid(LocalDateTime payTime) {
         if (this.status != TradeStatus.CREATE) {
-            throw new BizException("当前状态不支持支付操作，status: " + this.status);
+            throw new BizException("当前状态不支持支付操作，status: %s", this.status.getDesc());
         }
 
         this.status = TradeStatus.PAID;
@@ -207,7 +207,7 @@ public class TradeOrder {
      */
     public void markAsSettled(LocalDateTime settlementTime) {
         if (this.status != TradeStatus.PAID) {
-            throw new BizException("当前状态不支持结算操作，status: " + this.status);
+            throw new BizException("当前状态不支持结算操作，status: %s", this.status.getDesc());
         }
 
         this.status = TradeStatus.SETTLED;
@@ -228,7 +228,7 @@ public class TradeOrder {
      */
     public void markAsTimeout() {
         if (this.status != TradeStatus.CREATE) {
-            throw new BizException("当前状态不支持超时操作，status: " + this.status);
+            throw new BizException("当前状态不支持超时操作，status: %s", this.status.getDesc());
         }
 
         this.status = TradeStatus.TIMEOUT;
@@ -244,7 +244,7 @@ public class TradeOrder {
      */
     public void markAsRefund(String reason) {
         if (!this.status.canRefund()) {
-            throw new BizException("当前状态不支持退单操作，status: " + this.status);
+            throw new BizException("当前状态不支持退单操作，status: %s", this.status.getDesc());
         }
 
         this.status = TradeStatus.REFUND;
@@ -338,7 +338,7 @@ public class TradeOrder {
         if (this.status != TradeStatus.CREATE) {
             log.warn("【TradeOrder聚合】订单状态不允许支付, tradeOrderId: {}, status: {}",
                     tradeOrderId, status);
-            throw new BizException("订单状态不允许支付，status: " + this.status);
+            throw new BizException("订单状态不允许支付，status: %s", this.status.getDesc());
         }
 
         // 2. 渠道黑名单校验（可选）

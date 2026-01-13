@@ -17,6 +17,14 @@ public class BizException extends RuntimeException {
         this.args = null;
     }
 
+    // 默认构造：使用通用业务错误 + 动态参数（新增）
+    public BizException(String msg, Object... args) {
+        super(msg);
+        this.code = ErrorCode.BUSINESS_ERROR.getCode();
+        this.msg = msg;
+        this.args = args;
+    }
+
     // 使用枚举构造
     public BizException(IErrorCode errorCode) {
         super(errorCode.getMsg());

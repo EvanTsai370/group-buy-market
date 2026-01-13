@@ -195,12 +195,12 @@ public class Order {
     public void validateLock() {
         // 业务规则1：检查状态
         if (this.status != OrderStatus.PENDING) {
-            throw new BizException("拼团已结束，无法锁单，当前状态: " + this.status);
+            throw new BizException("拼团已结束，无法锁单，当前状态: %s", this.status.getDesc());
         }
 
         // 业务规则2：检查锁单量是否已达上限
         if (this.lockCount >= this.targetCount) {
-            throw new BizException("拼团锁单已满，lockCount: " + this.lockCount + ", targetCount: " + this.targetCount);
+            throw new BizException("拼团锁单已满，lockCount: %d, targetCount: %d", this.lockCount, this.targetCount);
         }
 
         // 业务规则3：检查是否已过期
@@ -271,7 +271,7 @@ public class Order {
 
         if (this.lockCount < this.completeCount) {
             throw new BizException(
-                    "锁单量不能小于完成人数，lockCount: " + this.lockCount + ", completeCount: " + this.completeCount);
+                    "锁单量不能小于完成人数，lockCount: %d, completeCount: %d", this.lockCount, this.completeCount);
         }
 
         log.debug("【Order聚合】释放锁单校验通过, orderId: {}, lockCount: {}", orderId, lockCount);
