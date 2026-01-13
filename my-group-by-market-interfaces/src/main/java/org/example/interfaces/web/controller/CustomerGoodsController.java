@@ -33,34 +33,6 @@ public class CustomerGoodsController {
     private final CustomerGoodsAssembler customerGoodsAssembler;
 
     /**
-     * 商品列表（首页）
-     */
-    @GetMapping("/list")
-    @Operation(summary = "商品列表", description = "查询在售商品列表（首页展示）")
-    public Result<List<CustomerGoodsListResponse>> listGoods() {
-        log.info("【CustomerGoodsController】查询商品列表");
-
-        List<GoodsListResult> results = customerGoodsService.listOnSaleGoods();
-        List<CustomerGoodsListResponse> responses = customerGoodsAssembler.toListResponse(results);
-
-        return Result.success(responses);
-    }
-
-    /**
-     * 商品详情
-     */
-    @GetMapping("/{skuId}/detail")
-    @Operation(summary = "商品详情", description = "查询商品详情（含活动信息）")
-    public Result<CustomerGoodsDetailResponse> getGoodsDetail(@PathVariable String skuId) {
-        log.info("【CustomerGoodsController】查询商品详情, skuId: {}", skuId);
-
-        GoodsDetailResult result = customerGoodsService.getGoodsDetail(skuId);
-        CustomerGoodsDetailResponse response = customerGoodsAssembler.toResponse(result);
-
-        return Result.success(response);
-    }
-
-    /**
      * 价格试算
      */
     @GetMapping("/{skuId}/trial")
@@ -90,10 +62,7 @@ public class CustomerGoodsController {
      * 拼团队伍列表（SPU维度）
      */
     @GetMapping("/{spuId}/teams")
-    @Operation(
-        summary = "拼团队伍列表",
-        description = "查询SPU的进行中拼团队伍。不同规格（SKU）的用户可以在同一队伍中一起拼团。例如：256GB和512GB的用户可以在同一队伍中成团。"
-    )
+    @Operation(summary = "拼团队伍列表", description = "查询SPU的进行中拼团队伍。不同规格（SKU）的用户可以在同一队伍中一起拼团。例如：256GB和512GB的用户可以在同一队伍中成团。")
     public Result<List<TeamListResponse>> listTeams(@PathVariable String spuId) {
         log.info("【CustomerGoodsController】查询拼团队伍, spuId: {}", spuId);
 

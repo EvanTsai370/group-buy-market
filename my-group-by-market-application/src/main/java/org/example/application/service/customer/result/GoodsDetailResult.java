@@ -34,23 +34,6 @@ public class GoodsDetailResult {
     /** 可用库存 */
     private Integer availableStock;
 
-    // ========== SPU 信息 ==========
-
-    /** SPU ID */
-    private String spuId;
-
-    /** SPU 名称 */
-    private String spuName;
-
-    /** 商品描述 */
-    private String description;
-
-    /** 主图 */
-    private String mainImage;
-
-    /** 详情图列表（逗号分隔） */
-    private String detailImages;
-
     // ========== 活动信息 ==========
 
     /** 是否有拼团活动 */
