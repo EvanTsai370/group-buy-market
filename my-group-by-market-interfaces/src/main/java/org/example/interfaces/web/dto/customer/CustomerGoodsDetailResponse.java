@@ -1,5 +1,6 @@
 package org.example.interfaces.web.dto.customer;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -16,44 +17,44 @@ public class CustomerGoodsDetailResponse {
 
     // ========== 商品基本信息 ==========
 
-    /** 商品ID */
+    @Schema(description = "商品ID")
     private String skuId;
 
-    /** 商品名称 */
+    @Schema(description = "商品名称")
     private String goodsName;
 
-    /** 规格信息 */
+    @Schema(description = "规格信息")
     private String specInfo;
 
-    /** 原价 */
+    @Schema(description = "原价")
     private BigDecimal originalPrice;
 
-    /** SKU图片 */
+    @Schema(description = "SKU图片")
     private String skuImage;
 
-    /** 可用库存 */
+    @Schema(description = "可用库存")
     private Integer availableStock;
 
     // ========== 活动信息 ==========
 
-    /** 是否有拼团活动 */
+    @Schema(description = "是否有拼团活动")
     private Boolean hasActivity;
 
-    /** 活动ID */
+    @Schema(description = "活动ID")
     private String activityId;
 
-    /** 活动名称 */
+    @Schema(description = "活动名称")
     private String activityName;
 
-    /** 拼团价 */
+    @Schema(description = "拼团价")
     private BigDecimal groupPrice;
 
-    /** 成团目标人数 */
+    @Schema(description = "成团目标人数")
     private Integer targetCount;
 
-    /** 活动截止时间 */
+    @Schema(description = "活动截止时间")
     private LocalDateTime activityEndTime;
 
-    /** 拼单有效时长（秒） */
+    @Schema(description = "拼单有效时长（秒）")
     private Integer validTime;
 }

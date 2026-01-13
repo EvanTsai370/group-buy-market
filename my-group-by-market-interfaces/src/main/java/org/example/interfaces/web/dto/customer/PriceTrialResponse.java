@@ -1,5 +1,6 @@
 package org.example.interfaces.web.dto.customer;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -13,24 +14,24 @@ import java.math.BigDecimal;
 @Data
 public class PriceTrialResponse {
 
-    /** 商品ID */
+    @Schema(description = "商品ID")
     private String skuId;
 
-    /** 原价 */
+    @Schema(description = "原价")
     private BigDecimal originalPrice;
 
-    /** 折扣价（拼团价） */
+    @Schema(description = "折扣价（拼团价）")
     private BigDecimal discountPrice;
 
-    /** 折扣描述 */
+    @Schema(description = "折扣描述")
     private String discountDesc;
 
-    /** 活动ID */
+    @Schema(description = "活动ID")
     private String activityId;
 
-    /** 活动名称 */
+    @Schema(description = "活动名称")
     private String activityName;
 
-    /** 是否命中活动 */
+    @Schema(description = "是否命中活动")
     private Boolean hitActivity;
 }

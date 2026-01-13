@@ -1,6 +1,7 @@
 package org.example.interfaces.web.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,10 +39,10 @@ public class CustomerGoodsController {
     @GetMapping("/{skuId}/trial")
     @Operation(summary = "价格试算", description = "根据商品和渠道计算拼团价格")
     public Result<PriceTrialResponse> trialPrice(
-            @PathVariable String skuId,
-            @RequestParam(required = false) String source,
-            @RequestParam(required = false) String channel,
-            @RequestParam(required = false) String userId) {
+            @Parameter(description = "SKU ID", required = true) @PathVariable String skuId,
+            @Parameter(description = "来源") @RequestParam(required = false) String source,
+            @Parameter(description = "渠道") @RequestParam(required = false) String channel,
+            @Parameter(description = "用户ID") @RequestParam(required = false) String userId) {
 
         log.info("【CustomerGoodsController】价格试算, skuId: {}, source: {}, channel: {}",
                 skuId, source, channel);
@@ -63,7 +64,8 @@ public class CustomerGoodsController {
      */
     @GetMapping("/{spuId}/teams")
     @Operation(summary = "拼团队伍列表", description = "查询SPU的进行中拼团队伍。不同规格（SKU）的用户可以在同一队伍中一起拼团。例如：256GB和512GB的用户可以在同一队伍中成团。")
-    public Result<List<TeamListResponse>> listTeams(@PathVariable String spuId) {
+    public Result<List<TeamListResponse>> listTeams(
+            @Parameter(description = "SPU ID", required = true) @PathVariable String spuId) {
         log.info("【CustomerGoodsController】查询拼团队伍, spuId: {}", spuId);
 
         List<TeamListResult> results = customerGoodsService.listGoodsTeams(spuId);
@@ -91,7 +93,8 @@ public class CustomerGoodsController {
      */
     @GetMapping("/spu/{spuId}")
     @Operation(summary = "SPU详情", description = "查询SPU详情（含SKU列表和活动信息）")
-    public Result<SpuDetailResponse> getSpuDetail(@PathVariable String spuId) {
+    public Result<SpuDetailResponse> getSpuDetail(
+            @Parameter(description = "SPU ID", required = true) @PathVariable String spuId) {
         log.info("【CustomerGoodsController】查询SPU详情, spuId: {}", spuId);
 
         SpuDetailResult result = customerGoodsService.getSpuDetail(spuId);

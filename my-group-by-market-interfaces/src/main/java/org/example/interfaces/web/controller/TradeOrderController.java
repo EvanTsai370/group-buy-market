@@ -1,6 +1,7 @@
 package org.example.interfaces.web.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -53,7 +54,7 @@ public class TradeOrderController {
      */
     @PostMapping("/lock")
     @Operation(summary = "锁单", description = "用户参与拼团，锁定交易订单")
-    public Result<TradeOrderResponse> lockOrder(@RequestBody LockOrderRequest request) {
+    public Result<TradeOrderResponse> lockOrder(@Valid @RequestBody LockOrderRequest request) {
         // 从认证上下文获取当前用户ID
         String currentUserId = authContextService.getCurrentUserId();
 
@@ -93,7 +94,7 @@ public class TradeOrderController {
     @Operation(summary = "退单", description = "用户申请退单")
     @RateLimit(key = "#tradeOrderId", message = "退款操作过于频繁，请稍后再试")
     public Result<Void> refundOrder(
-            @PathVariable @Pattern(regexp = "^TRD\\d+$", message = "交易订单ID格式错误") String tradeOrderId,
+            @Parameter(description = "交易订单ID", required = true) @PathVariable @Pattern(regexp = "^TRD\\d+$", message = "交易订单ID格式错误") String tradeOrderId,
             @RequestBody @Valid RefundRequest request) {
 
         // 从认证上下文获取当前用户ID
@@ -148,7 +149,8 @@ public class TradeOrderController {
      */
     @GetMapping("/{tradeOrderId}")
     @Operation(summary = "查询交易订单", description = "根据交易订单ID查询订单详情")
-    public Result<TradeOrderResponse> queryTradeOrder(@PathVariable String tradeOrderId) {
+    public Result<TradeOrderResponse> queryTradeOrder(
+            @Parameter(description = "交易订单ID", required = true) @PathVariable String tradeOrderId) {
         log.info("【TradeOrderController】查询交易订单, tradeOrderId: {}", tradeOrderId);
 
         // 1. 调用应用服务
@@ -203,7 +205,8 @@ public class TradeOrderController {
      */
     @GetMapping("/order/{orderId}/progress")
     @Operation(summary = "拼团进度", description = "查询拼团订单的实时进度（公开接口，无需登录）")
-    public Result<OrderProgressResponse> queryOrderProgress(@PathVariable String orderId) {
+    public Result<OrderProgressResponse> queryOrderProgress(
+            @Parameter(description = "拼团订单ID", required = true) @PathVariable String orderId) {
         log.info("【TradeOrderController】查询拼团进度, orderId: {}", orderId);
 
         // 1. 调用应用服务

@@ -4,8 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.application.assembler.PaymentResultAssembler;
 import org.example.application.service.payment.result.PaymentQueryResultObj;
-import org.example.application.service.payment.result.RefundQueryResultObj;
-import org.example.application.service.payment.result.RefundResultObj;
 import org.example.common.exception.BizException;
 import org.example.domain.gateway.PaymentGateway;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,39 +60,6 @@ public class AlipayPaymentService {
         log.info("【PaymentService】查询支付状态, outTradeNo: {}", outTradeNo);
         PaymentGateway.PaymentQueryResult gatewayResult = paymentGateway.queryPayment(outTradeNo, null);
         return paymentResultAssembler.toResult(gatewayResult);
-    }
-
-    /**
-     * 退款
-     */
-    public RefundResultObj refund(String outTradeNo, BigDecimal refundAmount,
-            String refundReason, String outRequestNo) {
-        log.info("【PaymentService】发起退款, outTradeNo: {}, refundAmount: {}", outTradeNo, refundAmount);
-
-        if (outRequestNo == null || outRequestNo.isEmpty()) {
-            outRequestNo = outTradeNo + "-RF-" + System.currentTimeMillis();
-        }
-
-        PaymentGateway.RefundResult gatewayResult = paymentGateway.refund(
-                outTradeNo, null, refundAmount, refundReason, outRequestNo);
-        return paymentResultAssembler.toResult(gatewayResult);
-    }
-
-    /**
-     * 查询退款
-     */
-    public RefundQueryResultObj queryRefund(String outTradeNo, String outRequestNo) {
-        log.info("【PaymentService】查询退款, outTradeNo: {}, outRequestNo: {}", outTradeNo, outRequestNo);
-        PaymentGateway.RefundQueryResult gatewayResult = paymentGateway.queryRefund(outTradeNo, outRequestNo);
-        return paymentResultAssembler.toResult(gatewayResult);
-    }
-
-    /**
-     * 关闭订单
-     */
-    public boolean closeOrder(String outTradeNo) {
-        log.info("【PaymentService】关闭订单, outTradeNo: {}", outTradeNo);
-        return paymentGateway.closeOrder(outTradeNo, null);
     }
 
     /**

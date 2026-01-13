@@ -85,11 +85,12 @@ public class SettlementService {
             return;
         }
 
-        // 3. 金额校验（防御性编程，告警但不阻断）
+        // 3. 金额校验（防御性编程，阻断金额不一致的支付）
         if (callbackAmount != null && callbackAmount.compareTo(tradeOrder.getPayPrice()) != 0) {
-            log.error("【结算服务】金额不匹配！expected: {}, actual: {}, outTradeNo: {}",
+            log.error("【结算服务】严重安全告警：支付金额不匹配！订单金额: {}, 实付金额: {}, outTradeNo: {}",
                     tradeOrder.getPayPrice(), callbackAmount, outTradeNo);
-            // 继续处理，但记录告警（可接入监控系统）
+            // 阻断业务处理，防止恶意篡改金额
+            throw new BizException("支付金额异常，请联系客服");
         }
 
         // 4. 调用核心结算逻辑

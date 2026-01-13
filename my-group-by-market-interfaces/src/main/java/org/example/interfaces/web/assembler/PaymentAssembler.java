@@ -1,11 +1,7 @@
 package org.example.interfaces.web.assembler;
 
 import org.example.application.service.payment.result.PaymentQueryResultObj;
-import org.example.application.service.payment.result.RefundQueryResultObj;
-import org.example.application.service.payment.result.RefundResultObj;
 import org.example.interfaces.web.dto.payment.PaymentQueryResponse;
-import org.example.interfaces.web.dto.payment.RefundQueryResponse;
-import org.example.interfaces.web.dto.payment.RefundResponse;
 import org.mapstruct.Mapper;
 
 /**
@@ -25,13 +21,4 @@ public interface PaymentAssembler {
      */
     PaymentQueryResponse toResponse(PaymentQueryResultObj result);
 
-    /**
-     * RefundResultObj → RefundResponse
-     */
-    RefundResponse toResponse(RefundResultObj result);
-
-    /**
-     * RefundQueryResultObj → RefundQueryResponse
-     */
-    RefundQueryResponse toResponse(RefundQueryResultObj result);
 }

@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 /**
@@ -36,12 +38,15 @@ public class LockOrderRequest {
     @Schema(description = "订单ID（加入已有拼团时传入，创建新拼团时为空）")
     private String orderId;
 
+    @NotBlank(message = "活动ID不能为空")
     @Schema(description = "活动ID", requiredMode = Schema.RequiredMode.REQUIRED)
     private String activityId;
 
+    @NotBlank(message = "商品ID不能为空")
     @Schema(description = "商品ID", requiredMode = Schema.RequiredMode.REQUIRED)
     private String skuId;
 
+    @NotBlank(message = "外部交易单号不能为空")
     @Schema(description = "外部交易单号（幂等性保证）", requiredMode = Schema.RequiredMode.REQUIRED)
     private String outTradeNo;
 
@@ -60,12 +65,15 @@ public class LockOrderRequest {
     @Schema(description = "MQ主题")
     private String notifyMq;
 
+    @NotNull(message = "商品原价不能为空")
     @Schema(description = "商品原价（从试算接口获取）", requiredMode = Schema.RequiredMode.REQUIRED)
     private BigDecimal originalPrice;
 
+    @NotNull(message = "优惠金额不能为空")
     @Schema(description = "优惠金额（从试算接口获取）", requiredMode = Schema.RequiredMode.REQUIRED)
     private BigDecimal deductionPrice;
 
+    @NotNull(message = "实付金额不能为空")
     @Schema(description = "实付金额（从试算接口获取）", requiredMode = Schema.RequiredMode.REQUIRED)
     private BigDecimal payPrice;
 }
