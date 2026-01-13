@@ -1,0 +1,33 @@
+# 测试环境配置
+
+spring:
+  datasource:
+    # 由 Testcontainers 动态配置
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+
+  data:
+    redis:
+      # 由 Testcontainers 动态配置
+      database: 0
+      timeout: 3000ms
+
+  rabbitmq:
+    # 由 Testcontainers 动态配置
+    virtual-host: /
+
+  # 禁用 RabbitMQ 自动配置（测试环境不需要消息队列）
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
+      - org.springframework.amqp.rabbit.annotation.RabbitBootstrapConfiguration
+
+logging:
+  level:
+    root: INFO
+    org.example: DEBUG
+    org.testcontainers: WARN
+    org.springframework.test: DEBUG
+    org.springframework.amqp: ERROR
