@@ -354,23 +354,25 @@ public class CustomerGoodsService {
     }
 
     /**
-     * 查询商品的拼团队伍列表
+     * 查询SPU的拼团队伍列表（SPU维度）
      *
-     * @param skuId 商品ID
-     * @return 队伍列表
+     * 注意：本系统采用SPU拼团模式，不同规格(SKU)的用户可以在同一队伍中一起拼团。
+     * 例如：购买 iPhone 15 Pro 256GB 黑色 和 512GB 白色 的用户可以一起成团。
+     *
+     * @param spuId 商品SPU ID
+     * @return 拼团队伍列表（SPU维度）
      */
-    public List<TeamListResult> listGoodsTeams(String skuId) {
-        log.info("【CustomerGoodsService】查询商品拼团队伍，skuId: {}", skuId);
+    public List<TeamListResult> listGoodsTeams(String spuId) {
+        log.info("【CustomerGoodsService】查询拼团队伍，spuId: {}", spuId);
 
-        // 1. 确认商品存在
-        Sku sku = skuRepository.findBySkuId(skuId)
+        // 1. 确认 SPU 存在
+        Spu spu = spuRepository.findBySpuId(spuId)
                 .orElseThrow(() -> new BizException("商品不存在"));
 
-        // 2. 查询关联活动
-        // SPU 重构：使用 spuId 查询活动
-        Optional<Activity> activityOpt = activityRepository.findActiveBySpuId(sku.getSpuId());
+        // 2. 查询 SPU 关联的活动
+        Optional<Activity> activityOpt = activityRepository.findActiveBySpuId(spuId);
         if (activityOpt.isEmpty()) {
-            log.info("【CustomerGoodsService】商品无活动，返回空列表，skuId: {}", skuId);
+            log.info("【CustomerGoodsService】SPU 无活动，返回空列表，spuId: {}", spuId);
             return new ArrayList<>();
         }
 
@@ -379,16 +381,15 @@ public class CustomerGoodsService {
         // 3. 查询进行中的拼团订单
         List<Order> orders = orderRepository.findPendingOrdersByActivity(activity.getActivityId());
 
-        // 4. 转换为结果
+        // 4. 转换为结果（添加 spuId 和 spuName）
         List<TeamListResult> results = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
 
         for (Order order : orders) {
-            // SPU 拼团模式下，同一个 Activity (SPU) 下的所有拼团都可见，无需校验 SkuId
-            // 因为不同 SKU 的用户可以一起拼团
-
             TeamListResult teamResult = new TeamListResult();
             teamResult.setOrderId(order.getOrderId());
+            teamResult.setSpuId(spu.getSpuId());       // 新增
+            teamResult.setSpuName(spu.getSpuName());   // 新增
             teamResult.setCurrentCount(order.getCompleteCount());
             teamResult.setTargetCount(order.getTargetCount());
             teamResult.setLeaderUserId(order.getLeaderUserId());
@@ -407,8 +408,8 @@ public class CustomerGoodsService {
             results.add(teamResult);
         }
 
-        log.info("【CustomerGoodsService】查询商品拼团队伍完成，skuId: {}, 共{}个拼团",
-                skuId, results.size());
+        log.info("【CustomerGoodsService】查询拼团队伍完成，spuId: {}, 共{}个拼团",
+                spuId, results.size());
         return results;
     }
 

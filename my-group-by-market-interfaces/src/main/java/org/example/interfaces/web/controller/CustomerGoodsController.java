@@ -87,14 +87,17 @@ public class CustomerGoodsController {
     }
 
     /**
-     * 拼团队伍列表
+     * 拼团队伍列表（SPU维度）
      */
-    @GetMapping("/{skuId}/teams")
-    @Operation(summary = "拼团队伍", description = "查询商品的进行中拼团队伍")
-    public Result<List<TeamListResponse>> listTeams(@PathVariable String skuId) {
-        log.info("【CustomerGoodsController】查询拼团队伍, skuId: {}", skuId);
+    @GetMapping("/{spuId}/teams")
+    @Operation(
+        summary = "拼团队伍列表",
+        description = "查询SPU的进行中拼团队伍。不同规格（SKU）的用户可以在同一队伍中一起拼团。例如：256GB和512GB的用户可以在同一队伍中成团。"
+    )
+    public Result<List<TeamListResponse>> listTeams(@PathVariable String spuId) {
+        log.info("【CustomerGoodsController】查询拼团队伍, spuId: {}", spuId);
 
-        List<TeamListResult> results = customerGoodsService.listGoodsTeams(skuId);
+        List<TeamListResult> results = customerGoodsService.listGoodsTeams(spuId);
         List<TeamListResponse> responses = customerGoodsAssembler.toTeamListResponse(results);
 
         return Result.success(responses);

@@ -1,34 +1,44 @@
 package org.example.interfaces.web.dto.customer;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
- * 拼团队伍响应
- * 
+ * 拼团队伍响应（SPU维度）
+ *
+ * 注意：本系统采用SPU拼团模式，不同规格(SKU)的用户可以在同一队伍中一起拼团
+ *
  * @author 开发团队
  * @since 2026-01-11
  */
 @Data
+@Schema(description = "拼团队伍信息")
 public class TeamListResponse {
 
-    /** 拼团订单ID */
+    @Schema(description = "拼团订单ID")
     private String orderId;
 
-    /** 当前参与人数 */
+    @Schema(description = "商品SPU ID")
+    private String spuId;
+
+    @Schema(description = "商品SPU名称")
+    private String spuName;
+
+    @Schema(description = "当前参与人数")
     private Integer currentCount;
 
-    /** 目标人数 */
+    @Schema(description = "目标人数")
     private Integer targetCount;
 
-    /** 剩余时间（秒） */
+    @Schema(description = "剩余时间（秒）")
     private Long remainingSeconds;
 
-    /** 团长用户ID */
+    @Schema(description = "团长用户ID")
     private String leaderUserId;
 
-    /** 团长昵称 */
+    @Schema(description = "团长昵称")
     private String leaderNickname;
 
-    /** 团长头像 */
+    @Schema(description = "团长头像")
     private String leaderAvatar;
 }

@@ -21,6 +21,7 @@ import org.example.common.api.Result;
 import org.example.common.exception.BizException;
 import org.example.domain.model.trade.TradeOrder;
 import org.example.domain.model.trade.repository.TradeOrderRepository;
+import org.example.interfaces.web.response.OrderProgressResponse;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -41,6 +42,8 @@ public class TradeOrderController {
     private final TradeOrderRepository tradeOrderRepository;
     private final RefundTimeWindowValidator refundTimeWindowValidator;
     private final AuthContextService authContextService;
+    private final org.example.application.service.OrderProgressService orderProgressService;
+    private final org.example.interfaces.web.assembler.OrderProgressAssembler orderProgressAssembler;
 
     /**
      * 锁单接口
@@ -188,5 +191,27 @@ public class TradeOrderController {
         tradeOrderService.refund(cmd);
 
         return Result.success();
+    }
+
+    /**
+     * 查询拼团进度接口
+     *
+     * 公开接口，无需登录。用于展示拼团订单的实时进度信息。
+     *
+     * @param orderId 拼团订单ID
+     * @return 拼团进度详情
+     */
+    @GetMapping("/order/{orderId}/progress")
+    @Operation(summary = "拼团进度", description = "查询拼团订单的实时进度（公开接口，无需登录）")
+    public Result<OrderProgressResponse> queryOrderProgress(@PathVariable String orderId) {
+        log.info("【TradeOrderController】查询拼团进度, orderId: {}", orderId);
+
+        // 1. 调用应用服务
+        var result = orderProgressService.queryOrderProgress(orderId);
+
+        // 2. 应用层 → 协议层转换
+        var response = orderProgressAssembler.toResponse(result);
+
+        return Result.success(response);
     }
 }
