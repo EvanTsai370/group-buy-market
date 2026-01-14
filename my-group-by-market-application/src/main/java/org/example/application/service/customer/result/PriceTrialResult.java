@@ -33,4 +33,10 @@ public class PriceTrialResult {
 
     /** 是否命中活动 */
     private Boolean hitActivity;
+
+    /** 是否可参与拼团 (供前端置灰拼团按钮使用) */
+    private Boolean canParticipate;
+
+    /** 不可参与的原因 */
+    private String reason;
 }

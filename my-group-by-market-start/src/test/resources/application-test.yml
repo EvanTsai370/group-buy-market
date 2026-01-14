@@ -18,7 +18,10 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
-    locations: classpath:db/migration
+    # Flyway会先执行主迁移(V1-V6)，然后是测试迁移(V99)
+    # 注意：test resources中的db/migration会覆盖main resources，所以我们需要用不同的版本号
+    locations: 
+      - classpath:db/migration
 
   rabbitmq:
     # 由 Testcontainers 动态配置

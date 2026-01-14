@@ -19,7 +19,9 @@ import org.example.domain.model.trade.repository.TradeOrderRepository;
  * <p>
  * 执行顺序：
  * <ol>
+ * <li>FlowControlHandler - 流控校验（降级开关、切量灰度）</li>
  * <li>ActivityAvailabilityHandler - 活动可用性校验（加载Activity到上下文）</li>
+ * <li>CrowdTagValidationHandler - 人群标签校验（依赖Activity信息）</li>
  * <li>UserParticipationLimitHandler - 用户参与限制校验（依赖Activity信息）</li>
  * <li>TeamSlotOccupyHandler - 组队名额占用校验（防止超卖）</li>
  * <li>InventoryOccupyHandler - 商品库存预占校验（防止库存超卖）</li>
@@ -34,15 +36,21 @@ public class TradeFilterFactory {
     private final AccountRepository accountRepository;
     private final TradeOrderRepository tradeOrderRepository;
     private final SkuRepository skuRepository;
+    private final org.example.domain.service.validation.FlowControlService flowControlService;
+    private final org.example.domain.service.validation.CrowdTagValidationService crowdTagValidationService;
 
     public TradeFilterFactory(ActivityRepository activityRepository,
             AccountRepository accountRepository,
             TradeOrderRepository tradeOrderRepository,
-            SkuRepository skuRepository) {
+            SkuRepository skuRepository,
+            org.example.domain.service.validation.FlowControlService flowControlService,
+            org.example.domain.service.validation.CrowdTagValidationService crowdTagValidationService) {
         this.activityRepository = activityRepository;
         this.accountRepository = accountRepository;
         this.tradeOrderRepository = tradeOrderRepository;
         this.skuRepository = skuRepository;
+        this.flowControlService = flowControlService;
+        this.crowdTagValidationService = crowdTagValidationService;
     }
 
     /**
@@ -55,10 +63,12 @@ public class TradeFilterFactory {
                 "交易规则过滤链");
 
         // 按顺序添加handler
-        executor.addHandler(new ActivityAvailabilityHandler(activityRepository))
-                .addHandler(new UserParticipationLimitHandler(accountRepository))
-                .addHandler(new TeamSlotOccupyHandler(tradeOrderRepository))
-                .addHandler(new InventoryOccupyHandler(skuRepository));
+        executor.addHandler(new FlowControlHandler(flowControlService)) // 1. 流控检查（最早拦截）
+                .addHandler(new ActivityAvailabilityHandler(activityRepository)) // 2. 活动可用性
+                .addHandler(new CrowdTagValidationHandler(crowdTagValidationService)) // 3. 人群标签校验
+                .addHandler(new UserParticipationLimitHandler(accountRepository)) // 4. 用户参与限制
+                .addHandler(new TeamSlotOccupyHandler(tradeOrderRepository)) // 5. 组队名额占用
+                .addHandler(new InventoryOccupyHandler(skuRepository)); // 6. 库存预占
 
         return executor;
     }

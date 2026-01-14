@@ -15,6 +15,9 @@ import org.example.domain.model.goods.repository.SpuRepository;
 import org.example.domain.model.order.Order;
 import org.example.domain.model.order.repository.OrderRepository;
 import org.example.domain.service.discount.DiscountCalculator;
+import org.example.domain.service.validation.CrowdTagValidationResult;
+import org.example.domain.service.validation.CrowdTagValidationService;
+import org.example.domain.service.validation.FlowControlService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -47,6 +50,10 @@ public class CustomerGoodsService {
     private final ActivityRepository activityRepository;
     private final OrderRepository orderRepository;
     private final Map<String, DiscountCalculator> discountCalculatorMap;
+
+    // 流控和人群标签校验服务
+    private final FlowControlService flowControlService;
+    private final CrowdTagValidationService crowdTagValidationService;
 
     /**
      * 查询在售 SPU 列表（新版首页）
@@ -228,8 +235,33 @@ public class CustomerGoodsService {
                 if (discount != null) {
                     BigDecimal discountPrice = calculateDiscountPrice(discount, sku.getOriginalPrice());
                     result.setDiscountPrice(discountPrice);
-                    result.setDiscountDesc(discount.getDiscountDesc());
+                    result.setDiscountDesc(discount.getMarketPlan());
                 }
+
+                // 5. 流控和人群标签校验（用于前端展示）
+                boolean canParticipate = true;
+                String reason = null;
+
+                try {
+                    // 5.1 流控校验
+                    flowControlService.validateFlowControl(query.getUserId());
+
+                    // 5.2 人群标签校验
+                    CrowdTagValidationResult validationResult = crowdTagValidationService
+                            .validate(query.getUserId(), activity);
+
+                    if (!validationResult.isParticipable()) {
+                        canParticipate = false;
+                        reason = validationResult.getReason();
+                    }
+                } catch (BizException e) {
+                    // 捕获流控异常，设置不可参与
+                    canParticipate = false;
+                    reason = e.getMessage();
+                }
+
+                result.setCanParticipate(canParticipate);
+                result.setReason(reason);
             } else {
                 result.setHitActivity(false);
                 result.setDiscountPrice(sku.getOriginalPrice());

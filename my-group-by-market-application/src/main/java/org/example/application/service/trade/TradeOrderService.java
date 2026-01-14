@@ -29,6 +29,8 @@ import org.example.domain.service.RefundService;
 import org.example.domain.service.ResourceReleaseService;
 import org.example.domain.service.discount.DiscountCalculator;
 import org.example.domain.service.timeout.ITimeoutMessageProducer;
+import org.example.domain.service.validation.CrowdTagValidationService;
+import org.example.domain.service.validation.FlowControlService;
 import org.example.domain.shared.IdGenerator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,7 +71,7 @@ public class TradeOrderService {
     private final RefundService refundService;
     private final ResourceReleaseService resourceReleaseService;
 
-    // 责任链工厂
+  // 责任链工厂
     private final TradeFilterFactory tradeFilterFactory;
 
     // Assembler
@@ -88,6 +90,8 @@ public class TradeOrderService {
             LockOrderService lockOrderService,
             RefundService refundService,
             ResourceReleaseService resourceReleaseService,
+            org.example.domain.service.validation.FlowControlService flowControlService,
+            org.example.domain.service.validation.CrowdTagValidationService crowdTagValidationService,
             TradeOrderResultAssembler tradeOrderResultAssembler,
             ITimeoutMessageProducer timeoutProducer) {
         this.activityRepository = activityRepository;
@@ -100,8 +104,14 @@ public class TradeOrderService {
         this.lockOrderService = lockOrderService;
         this.refundService = refundService;
         this.resourceReleaseService = resourceReleaseService;
-        this.tradeFilterFactory = new TradeFilterFactory(activityRepository, accountRepository, tradeOrderRepository,
-                skuRepository);
+      // 流控和人群标签校验服务
+      this.tradeFilterFactory = new TradeFilterFactory(
+                activityRepository,
+                accountRepository,
+                tradeOrderRepository,
+                skuRepository,
+                flowControlService,
+                crowdTagValidationService);
         this.tradeOrderResultAssembler = tradeOrderResultAssembler;
         this.timeoutProducer = timeoutProducer;
     }

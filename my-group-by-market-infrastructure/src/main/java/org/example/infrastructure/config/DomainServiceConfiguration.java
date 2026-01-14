@@ -60,6 +60,30 @@ public class DomainServiceConfiguration {
     }
 
     /**
+     * 流控服务
+     *
+     * <p>
+     * 检查系统降级开关和切量灰度控制
+     */
+    @Bean
+    public org.example.domain.service.validation.FlowControlService flowControlService(
+            ActivityRepository activityRepository) {
+        return new org.example.domain.service.validation.FlowControlService(activityRepository);
+    }
+
+    /**
+     * 人群标签校验服务
+     *
+     * <p>
+     * 验证用户是否在活动的目标人群范围内
+     */
+    @Bean
+    public org.example.domain.service.validation.CrowdTagValidationService crowdTagValidationService(
+            CrowdTagRepository crowdTagRepository) {
+        return new org.example.domain.service.validation.CrowdTagValidationService(crowdTagRepository);
+    }
+
+    /**
      * 资源释放领域服务
      *
      * <p>
