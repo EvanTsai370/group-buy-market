@@ -32,6 +32,7 @@ import org.example.domain.service.timeout.ITimeoutMessageProducer;
 import org.example.domain.service.validation.CrowdTagValidationService;
 import org.example.domain.service.validation.FlowControlService;
 import org.example.domain.shared.IdGenerator;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,7 +72,7 @@ public class TradeOrderService {
     private final RefundService refundService;
     private final ResourceReleaseService resourceReleaseService;
 
-  // 责任链工厂
+    // 责任链工厂
     private final TradeFilterFactory tradeFilterFactory;
 
     // Assembler
@@ -86,7 +87,7 @@ public class TradeOrderService {
             TradeOrderRepository tradeOrderRepository,
             AccountRepository accountRepository,
             IdGenerator idGenerator,
-            Map<String, DiscountCalculator> discountCalculatorMap,
+            @Qualifier("discountCalculatorMap") Map<String, DiscountCalculator> discountCalculatorMap,
             LockOrderService lockOrderService,
             RefundService refundService,
             ResourceReleaseService resourceReleaseService,
@@ -104,8 +105,8 @@ public class TradeOrderService {
         this.lockOrderService = lockOrderService;
         this.refundService = refundService;
         this.resourceReleaseService = resourceReleaseService;
-      // 流控和人群标签校验服务
-      this.tradeFilterFactory = new TradeFilterFactory(
+        // 流控和人群标签校验服务
+        this.tradeFilterFactory = new TradeFilterFactory(
                 activityRepository,
                 accountRepository,
                 tradeOrderRepository,

@@ -19,16 +19,16 @@ VALUES (
     'ACTIVE'
 );
 
--- 插入测试折扣（8折）
+-- 插入测试折扣（减200元）
 INSERT INTO discount (discount_id, discount_name, discount_desc, discount_amount, discount_type, market_plan, market_expr, tag_id) 
 VALUES (
-    'DIS001', 
-    '测试折扣-8折', 
+	'DIS001', 
+    '测试折扣-减200元', 
     '用于测试', 
-    100.00, 
+    200.00, 
     'BASE', 
-    'ZJ', -- 直减
-    '100', -- 减100元
+    'ZJ', -- 直减200元
+    '200', -- 减200元
     NULL
 );
 
