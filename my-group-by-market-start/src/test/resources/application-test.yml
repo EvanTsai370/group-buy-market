@@ -14,15 +14,20 @@ spring:
       database: 0
       timeout: 3000ms
 
+  # 启用 Flyway 自动迁移（测试环境需要创建表）
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
   rabbitmq:
     # 由 Testcontainers 动态配置
     virtual-host: /
-
-  # 禁用 RabbitMQ 自动配置（测试环境不需要消息队列）
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
-      - org.springframework.amqp.rabbit.annotation.RabbitBootstrapConfiguration
+    listener:
+      simple:
+        auto-startup: false
+      direct:
+        auto-startup: false
 
 logging:
   level:

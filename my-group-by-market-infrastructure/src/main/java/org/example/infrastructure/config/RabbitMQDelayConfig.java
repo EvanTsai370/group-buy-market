@@ -1,6 +1,7 @@
 package org.example.infrastructure.config;
 
 import org.springframework.amqp.core.*;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -74,7 +75,8 @@ public class RabbitMQDelayConfig {
      * 绑定关系
      */
     @Bean
-    public Binding timeoutBinding(Queue timeoutQueue, CustomExchange delayExchange) {
+    public Binding timeoutBinding(@Qualifier("timeoutQueue") Queue timeoutQueue,
+                                   @Qualifier("delayExchange") CustomExchange delayExchange) {
         return BindingBuilder
                 .bind(timeoutQueue)
                 .to(delayExchange)

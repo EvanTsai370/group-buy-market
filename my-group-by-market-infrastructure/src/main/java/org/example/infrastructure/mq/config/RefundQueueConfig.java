@@ -1,6 +1,7 @@
 package org.example.infrastructure.mq.config;
 
 import org.springframework.amqp.core.*;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -81,7 +82,8 @@ public class RefundQueueConfig {
      * 绑定退款队列到交换机
      */
     @Bean
-    public Binding refundBinding(Queue refundQueue, DirectExchange refundExchange) {
+    public Binding refundBinding(@Qualifier("refundQueue") Queue refundQueue,
+                                  @Qualifier("refundExchange") DirectExchange refundExchange) {
         return BindingBuilder.bind(refundQueue)
                 .to(refundExchange)
                 .with(REFUND_ROUTING_KEY);
@@ -119,7 +121,8 @@ public class RefundQueueConfig {
      * 绑定死信队列到死信交换机
      */
     @Bean
-    public Binding refundDlqBinding(Queue refundDlq, DirectExchange refundDlx) {
+    public Binding refundDlqBinding(@org.springframework.beans.factory.annotation.Qualifier("refundDlq") Queue refundDlq,
+                                     @org.springframework.beans.factory.annotation.Qualifier("refundDlx") DirectExchange refundDlx) {
         return BindingBuilder.bind(refundDlq)
                 .to(refundDlx)
                 .with(REFUND_DLQ_ROUTING_KEY);

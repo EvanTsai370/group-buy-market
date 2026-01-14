@@ -1,6 +1,7 @@
 package org.example.infrastructure.mq.config;
 
 import org.springframework.amqp.core.*;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -45,7 +46,8 @@ public class NotificationQueueConfig {
      * 绑定通知队列到交换机
      */
     @Bean
-    public Binding notificationBinding(Queue notificationQueue, DirectExchange notificationExchange) {
+    public Binding notificationBinding(@Qualifier("notificationQueue") Queue notificationQueue,
+                                       @Qualifier("notificationExchange") DirectExchange notificationExchange) {
         return BindingBuilder.bind(notificationQueue)
                 .to(notificationExchange)
                 .with(NOTIFICATION_ROUTING_KEY);

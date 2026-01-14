@@ -56,10 +56,6 @@ public class PercentageDiscountCalculatorTest extends IntegrationTestBase {
         assertThat(result)
             .as("9.99 * 0.8 应该等于 7.99（保留2位小数），而不是 7")
             .isEqualByComparingTo(new BigDecimal("7.99"));
-
-        // 如果测试失败，说明发现了 Bug：
-        // PercentageDiscountCalculator 使用了 setScale(0, DOWN)
-        // 导致 9.99 * 0.8 = 7.992 被截断成 7
     }
 
     @Test
@@ -145,30 +141,4 @@ public class PercentageDiscountCalculatorTest extends IntegrationTestBase {
         discount.setMarketExpr(percentage);
         return discount;
     }
-
-    /**
-     * 【测试失败后的修复方案】
-     *
-     * 如果上述测试失败，说明发现了 Bug。修复方法：
-     *
-     * 在 PercentageDiscountCalculator.java 中：
-     *
-     * 修改前（错误）：
-     * <pre>
-     * BigDecimal deductionPrice = originalPrice.multiply(new BigDecimal(marketExpr))
-     *         .setScale(0, RoundingMode.DOWN);  // ❌ Bug: 丢失小数
-     * </pre>
-     *
-     * 修改后（正确）：
-     * <pre>
-     * BigDecimal deductionPrice = originalPrice.multiply(new BigDecimal(marketExpr))
-     *         .setScale(2, RoundingMode.DOWN);  // ✅ 保留2位小数
-     * </pre>
-     *
-     * 或者使用四舍五入：
-     * <pre>
-     * BigDecimal deductionPrice = originalPrice.multiply(new BigDecimal(marketExpr))
-     *         .setScale(2, RoundingMode.HALF_UP);  // ✅ 四舍五入到2位小数
-     * </pre>
-     */
 }

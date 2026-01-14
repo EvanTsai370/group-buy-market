@@ -45,5 +45,9 @@ public abstract class IntegrationTestBase {
         registry.add("spring.rabbitmq.port", TestContainersConfig::getRabbitmqAmqpPort);
         registry.add("spring.rabbitmq.username", () -> "guest");
         registry.add("spring.rabbitmq.password", () -> "guest");
+
+        // 禁用 RabbitMQ 监听器自动启动（测试环境不需要）
+        registry.add("spring.rabbitmq.listener.simple.auto-startup", () -> "false");
+        registry.add("spring.rabbitmq.listener.direct.auto-startup", () -> "false");
     }
 }

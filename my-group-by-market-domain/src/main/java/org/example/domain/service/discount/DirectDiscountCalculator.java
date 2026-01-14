@@ -26,8 +26,17 @@ public class DirectDiscountCalculator extends AbstractDiscountCalculator {
         // 折扣表达式 - 直减为扣减金额
         String marketExpr = discount.getMarketExpr();
 
+        // 解析直减金额，处理非法表达式
+        BigDecimal deductionAmount;
+        try {
+            deductionAmount = new BigDecimal(marketExpr);
+        } catch (NumberFormatException e) {
+            log.error("【直减折扣计算】折扣表达式格式错误: {}, 返回原价", marketExpr, e);
+            return originalPrice; // 优雅降级
+        }
+
         // 折扣价格
-        BigDecimal deductionPrice = originalPrice.subtract(new BigDecimal(marketExpr));
+        BigDecimal deductionPrice = originalPrice.subtract(deductionAmount);
 
         // 判断折扣后金额，最低支付1分钱
         if (deductionPrice.compareTo(BigDecimal.ZERO) <= 0) {

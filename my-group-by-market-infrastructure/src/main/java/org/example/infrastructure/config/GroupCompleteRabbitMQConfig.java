@@ -1,6 +1,7 @@
 package org.example.infrastructure.config;
 
 import org.springframework.amqp.core.*;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -38,7 +39,8 @@ public class GroupCompleteRabbitMQConfig {
      * 绑定队列到交换机
      */
     @Bean
-    public Binding groupCompleteBinding(Queue groupCompleteQueue, DirectExchange groupCompleteExchange) {
+    public Binding groupCompleteBinding(@Qualifier("groupCompleteQueue") Queue groupCompleteQueue,
+                                        @Qualifier("groupCompleteExchange") DirectExchange groupCompleteExchange) {
         return BindingBuilder.bind(groupCompleteQueue)
                 .to(groupCompleteExchange)
                 .with(ROUTING_KEY_GROUP_COMPLETE);

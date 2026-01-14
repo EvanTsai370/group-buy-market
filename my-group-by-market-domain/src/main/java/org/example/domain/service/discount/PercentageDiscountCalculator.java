@@ -22,21 +22,30 @@ public class PercentageDiscountCalculator extends AbstractDiscountCalculator {
 
     @Override
     protected BigDecimal doCalculate(BigDecimal originalPrice, Discount discount) {
-        log.info("【折扣计算】原价: {}, 折扣表达式: {}", LogDesensitizer.maskPrice(originalPrice, log), discount.getMarketExpr());
+        log.info("【百分比折扣计算】原价: {}, 折扣表达式: {}", LogDesensitizer.maskPrice(originalPrice, log), discount.getMarketExpr());
 
-        // 折扣表达式 - 折扣百分比
+        // 折扣表达式 - 百分比
         String marketExpr = discount.getMarketExpr();
 
-        // 折扣价格 + 四舍五入
-        BigDecimal deductionPrice = originalPrice.multiply(new BigDecimal(marketExpr))
-                .setScale(0, RoundingMode.DOWN);
+        // 解析百分比，处理非法表达式
+        BigDecimal percentage;
+        try {
+            percentage = new BigDecimal(marketExpr);
+        } catch (NumberFormatException e) {
+            log.error("【百分比折扣计算】折扣表达式格式错误: {}, 返回原价", marketExpr, e);
+            return originalPrice; // 优雅降级
+        }
 
-        // 判断折扣后金额，最低支付1分钱
-        if (deductionPrice.compareTo(BigDecimal.ZERO) <= 0) {
+        // 百分比折扣
+        BigDecimal discountedPrice = originalPrice.multiply(percentage)
+                .setScale(2, RoundingMode.DOWN);
+
+        // 最小值保护：折扣后价格不能低于 0.01 元
+        if (discountedPrice.compareTo(new BigDecimal("0.01")) < 0) {
             return new BigDecimal("0.01");
         }
 
-        log.info("【折扣计算】计算完成，实付金额: {}", LogDesensitizer.maskPrice(deductionPrice, log));
-        return deductionPrice;
+        log.info("【百分比折扣计算】计算完成，实付金额: {}", LogDesensitizer.maskPrice(discountedPrice, log));
+        return discountedPrice;
     }
 }
