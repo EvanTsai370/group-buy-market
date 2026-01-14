@@ -42,30 +42,24 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     public void save(Activity activity) {
         ActivityPO po = ActivityConverter.INSTANCE.toPO(activity);
 
-        if (po.getId() == null) {
-            // 新增
-            activityMapper.insert(po);
-            log.info("【ActivityRepository】新增活动, activityId: {}", activity.getActivityId());
+        // MyBatis-Plus 会根据主键是否存在自动判断 INSERT/UPDATE
+        boolean success = activityMapper.insertOrUpdate(po);
+        if (success) {
+            log.info("【ActivityRepository】保存活动成功, activityId: {}", activity.getActivityId());
         } else {
-            // 更新
-            activityMapper.updateById(po);
-            log.info("【ActivityRepository】更新活动, activityId: {}", activity.getActivityId());
+            log.warn("【ActivityRepository】保存活动失败, activityId: {}", activity.getActivityId());
         }
     }
 
     @Override
     public void update(Activity activity) {
-        LambdaQueryWrapper<ActivityPO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ActivityPO::getActivityId, activity.getActivityId());
-
-        ActivityPO existingPo = activityMapper.selectOne(wrapper);
-        if (existingPo == null) {
-            throw new RuntimeException("活动不存在: " + activity.getActivityId());
-        }
-
         ActivityPO po = ActivityConverter.INSTANCE.toPO(activity);
-        po.setId(existingPo.getId());
-        activityMapper.updateById(po);
+
+        // 直接使用业务ID更新
+        int rows = activityMapper.updateById(po);
+        if (rows == 0) {
+            throw new RuntimeException("活动不存在或更新失败: " + activity.getActivityId());
+        }
         log.info("【ActivityRepository】更新活动, activityId: {}", activity.getActivityId());
     }
 
@@ -142,17 +136,12 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     public void saveDiscount(Discount discount) {
         DiscountPO po = DiscountConverter.INSTANCE.toPO(discount);
 
-        LambdaQueryWrapper<DiscountPO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(DiscountPO::getDiscountId, discount.getDiscountId());
-        DiscountPO existingPo = discountMapper.selectOne(wrapper);
-
-        if (existingPo == null) {
-            discountMapper.insert(po);
-            log.info("【ActivityRepository】新增折扣配置, discountId: {}", discount.getDiscountId());
+        // MyBatis-Plus 会根据主键是否存在自动判断 INSERT/UPDATE
+        boolean success = discountMapper.insertOrUpdate(po);
+        if (success) {
+            log.info("【ActivityRepository】保存折扣配置成功, discountId: {}", discount.getDiscountId());
         } else {
-            po.setId(existingPo.getId());
-            discountMapper.updateById(po);
-            log.info("【ActivityRepository】更新折扣配置, discountId: {}", discount.getDiscountId());
+            log.warn("【ActivityRepository】保存折扣配置失败, discountId: {}", discount.getDiscountId());
         }
     }
 

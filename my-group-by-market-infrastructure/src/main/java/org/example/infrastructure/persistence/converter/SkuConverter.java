@@ -20,7 +20,6 @@ public interface SkuConverter {
 
     List<Sku> toDomainList(List<SkuPO> poList);
 
-    @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", source = "status", qualifiedByName = "statusToString")
     SkuPO toPO(Sku sku);
 

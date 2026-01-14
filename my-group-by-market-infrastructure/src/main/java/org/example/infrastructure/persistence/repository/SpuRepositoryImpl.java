@@ -27,17 +27,15 @@ public class SpuRepositoryImpl implements SpuRepository {
     @Override
     public void save(Spu spu) {
         SpuPO po = spuConverter.toPO(spu);
-        spuMapper.insert(po);
+        // MyBatis-Plus 会根据主键是否存在自动判断 INSERT/UPDATE
+        spuMapper.insertOrUpdate(po);
     }
 
     @Override
     public void update(Spu spu) {
-        SpuPO existing = spuMapper.selectBySpuId(spu.getSpuId());
-        if (existing != null) {
-            SpuPO po = spuConverter.toPO(spu);
-            po.setId(existing.getId());
-            spuMapper.updateById(po);
-        }
+        SpuPO po = spuConverter.toPO(spu);
+        // 直接使用业务ID更新
+        spuMapper.updateById(po);
     }
 
     @Override
@@ -74,9 +72,7 @@ public class SpuRepositoryImpl implements SpuRepository {
 
     @Override
     public void deleteBySpuId(String spuId) {
-        SpuPO existing = spuMapper.selectBySpuId(spuId);
-        if (existing != null) {
-            spuMapper.deleteById(existing.getId());
-        }
+        // 直接使用业务ID删除
+        spuMapper.deleteById(spuId);
     }
 }

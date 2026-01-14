@@ -19,9 +19,7 @@ import java.time.LocalDateTime;
 @TableName("account")
 public class AccountPO {
 
-    @TableId(type = IdType.AUTO)
-    private Long id;
-
+    @TableId(type = IdType.INPUT)
     private String accountId;
     private String userId;
     private String activityId;

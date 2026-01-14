@@ -49,8 +49,13 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
     @Override
     public void save(TradeOrder tradeOrder) {
         TradeOrderPO po = tradeOrderConverter.toPO(tradeOrder);
-        tradeOrderMapper.insert(po);
-        log.debug("【TradeOrderRepository】保存交易订单, tradeOrderId: {}", tradeOrder.getTradeOrderId());
+        // MyBatis-Plus 会根据主键是否存在自动判断 INSERT/UPDATE
+        boolean success = tradeOrderMapper.insertOrUpdate(po);
+        if (!success) {
+            log.warn("【TradeOrderRepository】保存交易订单失败, tradeOrderId: {}", tradeOrder.getTradeOrderId());
+        } else {
+            log.debug("【TradeOrderRepository】保存交易订单成功, tradeOrderId: {}", tradeOrder.getTradeOrderId());
+        }
     }
 
     @Override

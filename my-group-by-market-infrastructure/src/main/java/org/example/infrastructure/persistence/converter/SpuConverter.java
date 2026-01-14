@@ -20,7 +20,6 @@ public interface SpuConverter {
 
     List<Spu> toDomainList(List<SpuPO> poList);
 
-    @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", source = "status", qualifiedByName = "statusToString")
     SpuPO toPO(Spu spu);
 

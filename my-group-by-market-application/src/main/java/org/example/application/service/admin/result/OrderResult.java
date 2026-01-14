@@ -34,8 +34,8 @@ public class OrderResult {
     @Schema(description = "活动ID")
     private String activityId;
 
-    @Schema(description = "商品ID")
-    private String skuId;
+    @Schema(description = "商品SPU ID")
+    private String spuId;
 
     @Schema(description = "团长用户ID")
     private String leaderUserId;

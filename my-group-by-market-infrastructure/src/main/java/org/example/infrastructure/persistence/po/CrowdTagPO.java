@@ -19,9 +19,7 @@ import java.time.LocalDateTime;
 @TableName("crowd_tag")
 public class CrowdTagPO {
 
-    @TableId(type = IdType.AUTO)
-    private Long id;
-
+    @TableId(type = IdType.INPUT)
     private String tagId;
     private String tagName;
     private String tagDesc;

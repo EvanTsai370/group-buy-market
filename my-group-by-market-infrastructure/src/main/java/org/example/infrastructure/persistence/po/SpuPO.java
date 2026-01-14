@@ -12,9 +12,7 @@ import java.time.LocalDateTime;
 @TableName("spu")
 public class SpuPO {
 
-    @TableId(type = IdType.AUTO)
-    private Long id;
-
+    @TableId(type = IdType.INPUT)
     private String spuId;
     private String spuName;
     private String categoryId;

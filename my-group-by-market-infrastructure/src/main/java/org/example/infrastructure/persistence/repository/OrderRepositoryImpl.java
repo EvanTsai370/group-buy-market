@@ -35,19 +35,14 @@ public class OrderRepositoryImpl implements OrderRepository {
         // 保存主单
         OrderPO orderPO = OrderConverter.INSTANCE.toPO(order);
 
-        if (orderPO.getId() == null) {
-            // 新增
-            orderMapper.insert(orderPO);
-            log.info("【OrderRepository】新增订单, orderId: {}", order.getOrderId());
-        } else {
-            // 更新（包含乐观锁）
-            int rows = orderMapper.updateById(orderPO);
-            if (rows == 0) {
-                throw new RuntimeException("订单更新失败，版本冲突: orderId=" + order.getOrderId());
-            }
-            log.info("【OrderRepository】更新订单, orderId: {}, version: {}",
-                    order.getOrderId(), order.getVersion());
+        // MyBatis-Plus 会根据主键是否存在自动判断 INSERT/UPDATE
+        // 对于有乐观锁的聚合，insertOrUpdate 会自动处理版本号
+        boolean success = orderMapper.insertOrUpdate(orderPO);
+        if (!success) {
+            throw new RuntimeException("订单保存失败（可能是版本冲突）: orderId=" + order.getOrderId());
         }
+        log.info("【OrderRepository】保存订单成功, orderId: {}, version: {}",
+                order.getOrderId(), order.getVersion());
     }
 
     @Override

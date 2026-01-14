@@ -1,5 +1,6 @@
 package org.example.infrastructure.persistence.po;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -26,8 +27,8 @@ import java.time.LocalDateTime;
 @TableName("trade_order")
 public class TradeOrderPO {
 
-    /** 交易订单ID */
-    @TableId
+    /** 交易订单ID（业务主键） */
+    @TableId(type = IdType.INPUT)
     private String tradeOrderId;
 
     /** 拼团队伍ID */

@@ -24,17 +24,15 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public void save(User user) {
         UserPO po = userConverter.toPO(user);
-        userMapper.insert(po);
+        // MyBatis-Plus 会根据主键是否存在自动判断 INSERT/UPDATE
+        userMapper.insertOrUpdate(po);
     }
 
     @Override
     public void update(User user) {
-        UserPO existing = userMapper.selectByUserId(user.getUserId());
-        if (existing != null) {
-            UserPO po = userConverter.toPO(user);
-            po.setId(existing.getId());
-            userMapper.updateById(po);
-        }
+        UserPO po = userConverter.toPO(user);
+        // 直接使用业务ID更新
+        userMapper.updateById(po);
     }
 
     @Override

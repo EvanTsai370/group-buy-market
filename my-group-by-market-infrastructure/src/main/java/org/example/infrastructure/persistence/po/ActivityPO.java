@@ -19,11 +19,8 @@ import java.time.LocalDateTime;
 @TableName("activity")
 public class ActivityPO {
 
-    /** 自增ID */
-    @TableId(type = IdType.AUTO)
-    private Long id;
-
-    /** 活动ID */
+    /** 活动ID（业务主键） */
+    @TableId(type = IdType.INPUT)
     private String activityId;
 
     /** 活动名称 */

@@ -12,9 +12,7 @@ import java.time.LocalDateTime;
 @TableName("user")
 public class UserPO {
 
-    @TableId(type = IdType.AUTO)
-    private Long id;
-
+    @TableId(type = IdType.INPUT)
     private String userId;
     private String username;
     private String password;

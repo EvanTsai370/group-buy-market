@@ -9,8 +9,7 @@
 
 -- 1. 拼团活动表
 CREATE TABLE activity (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
-    activity_id VARCHAR(50) NOT NULL UNIQUE COMMENT '活动ID',
+    activity_id VARCHAR(50) PRIMARY KEY COMMENT '活动ID（业务主键）',
     activity_name VARCHAR(100) NOT NULL COMMENT '活动名称',
     activity_desc VARCHAR(500) COMMENT '活动描述',
 
@@ -42,7 +41,7 @@ CREATE TABLE activity (
 
 -- 2. 活动商品关联表（支持一个活动配置多个商品）
 CREATE TABLE activity_goods (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID（保留，用于联合主键场景）',
     activity_id VARCHAR(50) NOT NULL COMMENT '活动ID',
     spu_id VARCHAR(32) NOT NULL COMMENT 'SPU ID',
 
@@ -65,8 +64,7 @@ CREATE TABLE activity_goods (
 
 -- 3. 折扣配置表
 CREATE TABLE discount (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
-    discount_id VARCHAR(50) NOT NULL UNIQUE COMMENT '折扣ID',
+    discount_id VARCHAR(50) PRIMARY KEY COMMENT '折扣ID（业务主键）',
     discount_name VARCHAR(100) NOT NULL COMMENT '折扣标题',
     discount_desc VARCHAR(500) COMMENT '折扣描述',
 
@@ -91,8 +89,7 @@ CREATE TABLE discount (
 
 -- 4. 人群标签表
 CREATE TABLE crowd_tag (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
-    tag_id VARCHAR(50) NOT NULL UNIQUE COMMENT '标签ID',
+    tag_id VARCHAR(50) PRIMARY KEY COMMENT '标签ID（业务主键）',
     tag_name VARCHAR(100) NOT NULL COMMENT '标签名称（如：沉睡用户）',
     tag_desc VARCHAR(500) COMMENT '标签描述',
     tag_rule VARCHAR(500) COMMENT '标签规则（JSON表达式）',
@@ -111,7 +108,7 @@ CREATE TABLE crowd_tag (
 
 -- 5. 人群标签明细表
 CREATE TABLE crowd_tag_detail (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID（保留，明细表使用联合唯一约束）',
     tag_id VARCHAR(50) NOT NULL COMMENT '标签ID',
     user_id VARCHAR(50) NOT NULL COMMENT '用户ID',
 
@@ -124,8 +121,7 @@ CREATE TABLE crowd_tag_detail (
 
 -- 6. 拼团账户表
 CREATE TABLE account (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
-    account_id VARCHAR(50) NOT NULL UNIQUE COMMENT '账户ID',
+    account_id VARCHAR(50) PRIMARY KEY COMMENT '账户ID（业务主键）',
     user_id VARCHAR(50) NOT NULL COMMENT '用户ID',
     activity_id VARCHAR(50) NOT NULL COMMENT '活动ID',
 
@@ -144,8 +140,7 @@ CREATE TABLE account (
 
 -- 7. 拼团订单表（主单）
 CREATE TABLE `order` (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
-    order_id VARCHAR(50) NOT NULL UNIQUE COMMENT '拼团订单ID',
+    order_id VARCHAR(50) PRIMARY KEY COMMENT '拼团订单ID（业务主键）',
     team_id VARCHAR(50) COMMENT '拼团队伍ID（8位随机数，用户友好）',
     activity_id VARCHAR(50) NOT NULL COMMENT '活动ID',
 
@@ -195,8 +190,7 @@ CREATE TABLE `order` (
 
 -- 8. 用户表（认证主表）
 CREATE TABLE `user` (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
-    user_id VARCHAR(50) NOT NULL UNIQUE COMMENT '用户ID（业务主键）',
+    user_id VARCHAR(50) PRIMARY KEY COMMENT '用户ID（业务主键）',
     username VARCHAR(50) UNIQUE COMMENT '用户名（用户名密码登录）',
     password VARCHAR(255) COMMENT '加密密码（BCrypt）',
     nickname VARCHAR(100) COMMENT '昵称',
@@ -220,7 +214,7 @@ CREATE TABLE `user` (
 
 -- 9. 第三方登录绑定表（OAuth）
 CREATE TABLE user_oauth (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID（保留，OAuth绑定无业务ID）',
     user_id VARCHAR(50) NOT NULL COMMENT '用户ID',
     provider VARCHAR(20) NOT NULL COMMENT '提供商：WECHAT/QQ/ALIPAY',
     provider_user_id VARCHAR(100) NOT NULL COMMENT '第三方用户ID（openid）',
@@ -238,8 +232,7 @@ CREATE TABLE user_oauth (
 
 -- 10. SPU 商品主表（Standard Product Unit）
 CREATE TABLE spu (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
-    spu_id VARCHAR(50) NOT NULL UNIQUE COMMENT 'SPU ID',
+    spu_id VARCHAR(50) PRIMARY KEY COMMENT 'SPU ID（业务主键）',
     spu_name VARCHAR(200) NOT NULL COMMENT '商品名称',
     category_id VARCHAR(50) COMMENT '分类ID',
     brand VARCHAR(100) COMMENT '品牌',
@@ -258,8 +251,7 @@ CREATE TABLE spu (
 
 -- 11. 商品SKU表
 CREATE TABLE sku (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
-    sku_id VARCHAR(32) NOT NULL UNIQUE COMMENT 'SKU ID',
+    sku_id VARCHAR(32) PRIMARY KEY COMMENT 'SKU ID（业务主键）',
     spu_id VARCHAR(50) COMMENT 'SPU ID',
     goods_name VARCHAR(200) NOT NULL COMMENT '商品名称',
     spec_info TEXT COMMENT '规格信息（JSON，如：{"颜色":"红色","尺寸":"XL"}）',
@@ -278,8 +270,7 @@ CREATE TABLE sku (
 
 -- 12. 交易订单表（拼团锁单、支付、结算记录）
 CREATE TABLE trade_order (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
-    trade_order_id VARCHAR(50) NOT NULL UNIQUE COMMENT '交易订单ID',
+    trade_order_id VARCHAR(50) PRIMARY KEY COMMENT '交易订单ID（业务主键）',
 
     -- 关联信息
     team_id VARCHAR(50) NOT NULL COMMENT '拼团队伍ID（关联 order 表）',
@@ -337,8 +328,7 @@ CREATE TABLE trade_order (
 
 -- 13. 回调任务表（可选，用于异步通知）
 CREATE TABLE notify_task (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
-    task_id VARCHAR(50) NOT NULL UNIQUE COMMENT '任务ID',
+    task_id VARCHAR(50) PRIMARY KEY COMMENT '任务ID（业务主键）',
 
     -- 关联信息
     activity_id VARCHAR(50) NOT NULL COMMENT '活动ID',
@@ -400,8 +390,7 @@ CREATE TABLE notification_task (
 
 -- 15. 支付记录表
 CREATE TABLE payment_record (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
-    payment_id VARCHAR(50) NOT NULL UNIQUE COMMENT '支付记录ID',
+    payment_id VARCHAR(50) PRIMARY KEY COMMENT '支付记录ID（业务主键）',
     trade_order_id VARCHAR(50) NOT NULL COMMENT '交易订单ID',
     
     -- 支付渠道信息
@@ -434,8 +423,7 @@ CREATE TABLE payment_record (
 
 -- 16. 库存服务接口记录表（对接外部库存服务）
 CREATE TABLE inventory_record (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '自增ID',
-    record_id VARCHAR(50) NOT NULL UNIQUE COMMENT '记录ID',
+    record_id VARCHAR(50) PRIMARY KEY COMMENT '记录ID（业务主键）',
     goods_id VARCHAR(50) NOT NULL COMMENT '商品ID',
     order_id VARCHAR(50) NOT NULL COMMENT '拼团订单ID',
     

@@ -30,7 +30,8 @@ public class NotificationTaskRepositoryImpl implements NotificationTaskRepositor
     @Override
     public void save(NotificationTask task) {
         NotificationTaskPO po = notificationTaskConverter.toPO(task);
-        notificationTaskMapper.insert(po);
+        // MyBatis-Plus 会根据主键是否存在自动判断 INSERT/UPDATE
+        notificationTaskMapper.insertOrUpdate(po);
         log.debug("保存通知任务: taskId={}, tradeOrderId={}", task.getTaskId(), task.getTradeOrderId());
     }
 

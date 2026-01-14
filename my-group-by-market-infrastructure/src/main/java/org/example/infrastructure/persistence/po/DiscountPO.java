@@ -20,9 +20,7 @@ import java.time.LocalDateTime;
 @TableName("discount")
 public class DiscountPO {
 
-    @TableId(type = IdType.AUTO)
-    private Long id;
-
+    @TableId(type = IdType.INPUT)
     private String discountId;
     private String discountName;
     private String discountDesc;

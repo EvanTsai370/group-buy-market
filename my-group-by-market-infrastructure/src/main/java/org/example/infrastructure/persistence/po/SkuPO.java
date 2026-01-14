@@ -19,9 +19,7 @@ import java.time.LocalDateTime;
 @TableName("sku")
 public class SkuPO {
 
-    @TableId(type = IdType.AUTO)
-    private Long id;
-
+    @TableId(type = IdType.INPUT)
     private String skuId;
     private String spuId;
     private String goodsName;

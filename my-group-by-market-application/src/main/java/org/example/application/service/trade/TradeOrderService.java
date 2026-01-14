@@ -175,7 +175,7 @@ public class TradeOrderService {
             PriceValidationResult priceResult = calculateAndValidatePrice(cmd, activity, sku);
 
             // 4. 创建或加载Order
-            String orderId = createOrderIfNeeded(cmd, activity, priceResult.originalPrice, priceResult.deductionPrice);
+            String orderId = createOrderIfNeeded(cmd, activity, priceResult.originalPrice, priceResult.deductionPrice, sku);
 
             // 5. 构建通知配置
             NotifyConfig notifyConfig = buildNotifyConfig(cmd);
@@ -480,10 +480,11 @@ public class TradeOrderService {
      * @param activity       活动信息
      * @param originalPrice  原价
      * @param deductionPrice 优惠金额
+     * @param sku            商品信息
      * @return orderId
      */
     private String createOrderIfNeeded(LockOrderCmd cmd, Activity activity,
-            BigDecimal originalPrice, BigDecimal deductionPrice) {
+            BigDecimal originalPrice, BigDecimal deductionPrice, Sku sku) {
         String orderId = cmd.getOrderId();
 
         // 如果已有orderId,直接返回
@@ -513,7 +514,7 @@ public class TradeOrderService {
                 orderId,
                 teamId,
                 cmd.getActivityId(),
-                cmd.getSkuId(),
+                sku.getSpuId(), // 修复：传入 spuId 而不是 skuId
                 cmd.getUserId(),
                 activity.getTarget(),
                 price,

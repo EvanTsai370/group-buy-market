@@ -44,14 +44,12 @@ public class CrowdTagRepositoryImpl implements CrowdTagRepository {
     public void save(CrowdTag tag) {
         CrowdTagPO po = CrowdTagConverter.INSTANCE.toPO(tag);
 
-        if (po.getId() == null) {
-            // 新增
-            crowdTagMapper.insert(po);
-            log.info("【CrowdTagRepository】新增标签, tagId: {}", tag.getTagId());
+        // MyBatis-Plus 会根据主键是否存在自动判断 INSERT/UPDATE
+        boolean success = crowdTagMapper.insertOrUpdate(po);
+        if (success) {
+            log.info("【CrowdTagRepository】保存标签成功, tagId: {}", tag.getTagId());
         } else {
-            // 更新
-            crowdTagMapper.updateById(po);
-            log.info("【CrowdTagRepository】更新标签, tagId: {}", tag.getTagId());
+            log.warn("【CrowdTagRepository】保存标签失败, tagId: {}", tag.getTagId());
         }
     }
 

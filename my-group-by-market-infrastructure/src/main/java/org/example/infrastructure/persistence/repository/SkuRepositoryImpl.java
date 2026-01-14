@@ -29,17 +29,15 @@ public class SkuRepositoryImpl implements SkuRepository {
     @Override
     public void save(Sku sku) {
         SkuPO po = skuConverter.toPO(sku);
-        skuMapper.insert(po);
+        // MyBatis-Plus 会根据主键是否存在自动判断 INSERT/UPDATE
+        skuMapper.insertOrUpdate(po);
     }
 
     @Override
     public void update(Sku sku) {
-        SkuPO existing = skuMapper.selectBySkuId(sku.getSkuId());
-        if (existing != null) {
-            SkuPO po = skuConverter.toPO(sku);
-            po.setId(existing.getId());
-            skuMapper.updateById(po);
-        }
+        SkuPO po = skuConverter.toPO(sku);
+        // 直接使用业务ID更新
+        skuMapper.updateById(po);
     }
 
     @Override
@@ -115,9 +113,7 @@ public class SkuRepositoryImpl implements SkuRepository {
 
     @Override
     public void deleteBySkuId(String skuId) {
-        SkuPO existing = skuMapper.selectBySkuId(skuId);
-        if (existing != null) {
-            skuMapper.deleteById(existing.getId());
-        }
+        // 直接使用业务ID删除
+        skuMapper.deleteById(skuId);
     }
 }

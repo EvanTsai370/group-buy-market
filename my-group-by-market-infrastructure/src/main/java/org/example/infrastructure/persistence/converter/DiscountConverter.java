@@ -23,9 +23,7 @@ public interface DiscountConverter {
 
     /**
      * Domain Entity 转 PO
-     * 忽略 id 字段（由数据库自动生成）
      */
-    @Mapping(target = "id", ignore = true)
     DiscountPO toPO(Discount discount);
 
     /**

@@ -28,15 +28,13 @@ public class AccountRepositoryImpl implements AccountRepository {
     public void save(Account account) {
         AccountPO po = AccountConverter.INSTANCE.toPO(account);
 
-        if (po.getId() == null) {
-            // 新增
-            accountMapper.insert(po);
-            log.info("【AccountRepository】新增账户, accountId: {}, userId: {}",
+        // MyBatis-Plus 会根据主键是否存在自动判断 INSERT/UPDATE
+        boolean success = accountMapper.insertOrUpdate(po);
+        if (success) {
+            log.info("【AccountRepository】保存账户成功, accountId: {}, userId: {}",
                     account.getAccountId(), account.getUserId());
         } else {
-            // 更新
-            accountMapper.updateById(po);
-            log.info("【AccountRepository】更新账户, accountId: {}, userId: {}",
+            log.warn("【AccountRepository】保存账户失败, accountId: {}, userId: {}",
                     account.getAccountId(), account.getUserId());
         }
     }

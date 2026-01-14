@@ -20,9 +20,7 @@ import java.time.LocalDateTime;
 @TableName("`order`") // order 是 MySQL 关键字，需要加反引号
 public class OrderPO {
 
-    @TableId(type = IdType.AUTO)
-    private Long id;
-
+    @TableId(type = IdType.INPUT)
     private String orderId;
     private String activityId;
     private String spuId;

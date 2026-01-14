@@ -18,7 +18,6 @@ public interface UserConverter {
     @Mapping(target = "role", source = "role", qualifiedByName = "stringToUserRole")
     User toDomain(UserPO po);
 
-    @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", source = "status", qualifiedByName = "userStatusToString")
     @Mapping(target = "role", source = "role", qualifiedByName = "userRoleToString")
     UserPO toPO(User user);
