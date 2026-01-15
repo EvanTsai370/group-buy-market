@@ -47,7 +47,7 @@ public class UserCenterController {
         log.info("【UserCenterController】获取用户资料, userId: {}", userId);
 
         UserProfileResult result = userCenterService.getUserProfile(userId);
-        UserProfileResponse response = userCenterAssembler.toResponse(result);
+        UserProfileResponse response = userCenterAssembler.toUserProfileResponse(result);
 
         return Result.success(response);
     }

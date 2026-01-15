@@ -53,7 +53,7 @@ public interface AdminGoodsAssembler {
     /**
      * SpuResult → SpuResponse
      */
-    SpuResponse toResponse(SpuResult result);
+    SpuResponse toSpuResponse(SpuResult result);
 
     /**
      * SpuResult 列表转换
@@ -63,7 +63,7 @@ public interface AdminGoodsAssembler {
     /**
      * SkuResult → SkuResponse
      */
-    SkuResponse toResponse(SkuResult result);
+    SkuResponse toSkuResponse(SkuResult result);
 
     /**
      * SkuResult 列表转换

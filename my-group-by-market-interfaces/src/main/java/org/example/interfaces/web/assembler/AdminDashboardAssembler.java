@@ -21,22 +21,22 @@ public interface AdminDashboardAssembler {
     /**
      * DashboardOverviewResult → DashboardOverviewResponse
      */
-    DashboardOverviewResponse toResponse(DashboardOverviewResult result);
+    DashboardOverviewResponse toDashboardOverviewResponse(DashboardOverviewResult result);
 
     /**
      * UserStatisticsResult → UserStatisticsResponse
      */
-    UserStatisticsResponse toResponse(UserStatisticsResult result);
+    UserStatisticsResponse toUserStatisticsResponse(UserStatisticsResult result);
 
     /**
      * GoodsStatisticsResult → GoodsStatisticsResponse
      */
-    GoodsStatisticsResponse toResponse(GoodsStatisticsResult result);
+    GoodsStatisticsResponse toGoodsStatisticsResponse(GoodsStatisticsResult result);
 
     /**
      * SkuStatisticsInfo → SkuStatisticsInfoResponse
      */
-    SkuStatisticsInfoResponse toResponse(SkuStatisticsInfo info);
+    SkuStatisticsInfoResponse toSkuStatisticsInfoResponse(SkuStatisticsInfo info);
 
     /**
      * SkuStatisticsInfo 列表转换
@@ -46,7 +46,7 @@ public interface AdminDashboardAssembler {
     /**
      * UserDetailResult → UserDetailResponse
      */
-    UserDetailResponse toResponse(UserDetailResult result);
+    UserDetailResponse toUserDetailResponse(UserDetailResult result);
 
     /**
      * UserDetailResult 列表转换

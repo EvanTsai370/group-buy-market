@@ -21,12 +21,12 @@ public interface UserCenterAssembler {
     /**
      * 用户资料结果 → 响应
      */
-    UserProfileResponse toResponse(UserProfileResult result);
+    UserProfileResponse toUserProfileResponse(UserProfileResult result);
 
     /**
      * 用户订单结果 → 响应
      */
-    UserOrderResponse toResponse(UserOrderResult result);
+    UserOrderResponse toUserOrderResponse(UserOrderResult result);
 
     /**
      * 用户订单结果列表 → 响应列表

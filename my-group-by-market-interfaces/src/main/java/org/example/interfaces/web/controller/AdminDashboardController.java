@@ -41,7 +41,7 @@ public class AdminDashboardController {
     public Result<DashboardOverviewResponse> getDashboard() {
         log.info("【AdminDashboard】获取仪表盘概览");
         DashboardOverviewResult result = adminStatisticsService.getDashboardOverview();
-        return Result.success(adminDashboardAssembler.toResponse(result));
+        return Result.success(adminDashboardAssembler.toDashboardOverviewResponse(result));
     }
 
     @GetMapping("/statistics/users")
@@ -49,7 +49,7 @@ public class AdminDashboardController {
     public Result<UserStatisticsResponse> getUserStatistics() {
         log.info("【AdminDashboard】获取用户统计");
         UserStatisticsResult result = adminStatisticsService.getUserStatistics();
-        return Result.success(adminDashboardAssembler.toResponse(result));
+        return Result.success(adminDashboardAssembler.toUserStatisticsResponse(result));
     }
 
     @GetMapping("/statistics/goods")
@@ -57,7 +57,7 @@ public class AdminDashboardController {
     public Result<GoodsStatisticsResponse> getGoodsStatistics() {
         log.info("【AdminDashboard】获取商品统计");
         GoodsStatisticsResult result = adminStatisticsService.getGoodsStatistics();
-        return Result.success(adminDashboardAssembler.toResponse(result));
+        return Result.success(adminDashboardAssembler.toGoodsStatisticsResponse(result));
     }
 
     // ============== 用户管理 ==============
@@ -77,7 +77,7 @@ public class AdminDashboardController {
     public Result<UserDetailResponse> getUserDetail(@PathVariable String userId) {
         log.info("【AdminDashboard】查询用户详情, userId: {}", userId);
         UserDetailResult result = adminUserService.getUserDetail(userId);
-        return Result.success(adminDashboardAssembler.toResponse(result));
+        return Result.success(adminDashboardAssembler.toUserDetailResponse(result));
     }
 
     @PostMapping("/users/{userId}/disable")

@@ -25,7 +25,7 @@ public interface AdminOrderAssembler {
     /**
      * OrderResult → OrderResponse
      */
-    OrderResponse toResponse(OrderResult result);
+    OrderResponse toOrderResponse(OrderResult result);
 
     /**
      * OrderResult 列表转换
@@ -35,7 +35,7 @@ public interface AdminOrderAssembler {
     /**
      * TradeOrderResult → AdminTradeOrderResponse
      */
-    AdminTradeOrderResponse toResponse(TradeOrderResult result);
+    AdminTradeOrderResponse toTradeOrderResponse(TradeOrderResult result);
 
     /**
      * TradeOrderResult 列表转换
@@ -45,5 +45,5 @@ public interface AdminOrderAssembler {
     /**
      * SystemInfoResult → SystemInfoResponse
      */
-    SystemInfoResponse toResponse(SystemInfoResult result);
+    SystemInfoResponse toSystemInfoResponse(SystemInfoResult result);
 }

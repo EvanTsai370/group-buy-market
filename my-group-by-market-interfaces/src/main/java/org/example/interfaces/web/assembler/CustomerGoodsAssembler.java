@@ -19,7 +19,7 @@ public interface CustomerGoodsAssembler {
     /**
      * 商品列表结果 → 响应
      */
-    CustomerGoodsListResponse toResponse(GoodsListResult result);
+    CustomerGoodsListResponse toGoodsListResponse(GoodsListResult result);
 
     /**
      * 商品列表结果列表 → 响应列表
@@ -29,17 +29,17 @@ public interface CustomerGoodsAssembler {
     /**
      * 商品详情结果 → 响应
      */
-    CustomerGoodsDetailResponse toResponse(GoodsDetailResult result);
+    CustomerGoodsDetailResponse toGoodsDetailResponse(GoodsDetailResult result);
 
     /**
      * 价格试算结果 → 响应
      */
-    PriceTrialResponse toResponse(PriceTrialResult result);
+    PriceTrialResponse toPriceTrialResponse(PriceTrialResult result);
 
     /**
      * 队伍列表结果 → 响应
      */
-    TeamListResponse toResponse(TeamListResult result);
+    TeamListResponse toTeamListResponse(TeamListResult result);
 
     /**
      * 队伍列表结果列表 → 响应列表
@@ -49,7 +49,7 @@ public interface CustomerGoodsAssembler {
     /**
      * SPU列表结果 → 响应
      */
-    SpuListResponse toResponse(SpuListResult result);
+    SpuListResponse toSpuListResponse(SpuListResult result);
 
     /**
      * SPU列表结果列表 → 响应列表
@@ -59,5 +59,5 @@ public interface CustomerGoodsAssembler {
     /**
      * SPU详情结果 → 响应
      */
-    SpuDetailResponse toResponse(SpuDetailResult result);
+    SpuDetailResponse toSpuDetailResponse(SpuDetailResult result);
 }

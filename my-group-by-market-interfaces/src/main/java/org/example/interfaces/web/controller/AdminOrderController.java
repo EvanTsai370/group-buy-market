@@ -40,7 +40,7 @@ public class AdminOrderController {
     public Result<OrderResponse> getOrderDetail(@PathVariable String orderId) {
         log.info("【AdminOrder】查询拼团订单详情, orderId: {}", orderId);
         OrderResult result = adminOrderService.getOrderDetail(orderId);
-        return Result.success(adminOrderAssembler.toResponse(result));
+        return Result.success(adminOrderAssembler.toOrderResponse(result));
     }
 
     @GetMapping("/{orderId}/trades")
@@ -66,6 +66,6 @@ public class AdminOrderController {
     public Result<AdminTradeOrderResponse> getTradeOrderDetail(@PathVariable String tradeOrderId) {
         log.info("【AdminOrder】查询交易订单详情, tradeOrderId: {}", tradeOrderId);
         TradeOrderResult result = adminOrderService.getTradeOrderDetail(tradeOrderId);
-        return Result.success(adminOrderAssembler.toResponse(result));
+        return Result.success(adminOrderAssembler.toTradeOrderResponse(result));
     }
 }

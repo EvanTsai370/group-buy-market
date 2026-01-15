@@ -54,7 +54,7 @@ public class CustomerGoodsController {
         query.setUserId(userId);
 
         PriceTrialResult result = customerGoodsService.trialPrice(query);
-        PriceTrialResponse response = customerGoodsAssembler.toResponse(result);
+        PriceTrialResponse response = customerGoodsAssembler.toPriceTrialResponse(result);
 
         return Result.success(response);
     }
@@ -98,7 +98,7 @@ public class CustomerGoodsController {
         log.info("【CustomerGoodsController】查询SPU详情, spuId: {}", spuId);
 
         SpuDetailResult result = customerGoodsService.getSpuDetail(spuId);
-        SpuDetailResponse response = customerGoodsAssembler.toResponse(result);
+        SpuDetailResponse response = customerGoodsAssembler.toSpuDetailResponse(result);
 
         return Result.success(response);
     }

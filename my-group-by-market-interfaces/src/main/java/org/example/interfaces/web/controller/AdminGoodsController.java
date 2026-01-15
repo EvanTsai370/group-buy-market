@@ -47,7 +47,7 @@ public class AdminGoodsController {
         log.info("【AdminGoods】创建SPU, spuName: {}", request.getSpuName());
         CreateSpuCmd cmd = adminGoodsAssembler.toCommand(request);
         SpuResult result = goodsService.createSpu(cmd);
-        return Result.success(adminGoodsAssembler.toResponse(result));
+        return Result.success(adminGoodsAssembler.toSpuResponse(result));
     }
 
     @PutMapping("/spu/{spuId}")
@@ -58,7 +58,7 @@ public class AdminGoodsController {
         UpdateSpuCmd cmd = adminGoodsAssembler.toCommand(request);
         cmd.setSpuId(spuId);
         SpuResult result = goodsService.updateSpu(cmd);
-        return Result.success(adminGoodsAssembler.toResponse(result));
+        return Result.success(adminGoodsAssembler.toSpuResponse(result));
     }
 
     @PostMapping("/spu/{spuId}/on-sale")
@@ -81,7 +81,7 @@ public class AdminGoodsController {
     @Operation(summary = "查询SPU详情", description = "查询商品SPU详情（包含SKU列表）")
     public Result<SpuResponse> getSpuDetail(@PathVariable String spuId) {
         SpuResult result = goodsService.getSpuDetail(spuId);
-        return Result.success(adminGoodsAssembler.toResponse(result));
+        return Result.success(adminGoodsAssembler.toSpuResponse(result));
     }
 
     @GetMapping("/spu")
@@ -101,7 +101,7 @@ public class AdminGoodsController {
         log.info("【AdminGoods】创建SKU, goodsName: {}", request.getGoodsName());
         CreateSkuCmd cmd = adminGoodsAssembler.toCommand(request);
         SkuResult result = goodsService.createSku(cmd);
-        return Result.success(adminGoodsAssembler.toResponse(result));
+        return Result.success(adminGoodsAssembler.toSkuResponse(result));
     }
 
     @PutMapping("/sku/{skuId}")
@@ -112,7 +112,7 @@ public class AdminGoodsController {
         UpdateSkuCmd cmd = adminGoodsAssembler.toCommand(request);
         cmd.setSkuId(skuId);
         SkuResult result = goodsService.updateSku(cmd);
-        return Result.success(adminGoodsAssembler.toResponse(result));
+        return Result.success(adminGoodsAssembler.toSkuResponse(result));
     }
 
     @PostMapping("/sku/{skuId}/add-stock")
@@ -128,7 +128,7 @@ public class AdminGoodsController {
     @Operation(summary = "查询SKU详情", description = "查询商品SKU详情")
     public Result<SkuResponse> getSkuDetail(@PathVariable String skuId) {
         SkuResult result = goodsService.getSkuDetail(skuId);
-        return Result.success(adminGoodsAssembler.toResponse(result));
+        return Result.success(adminGoodsAssembler.toSkuResponse(result));
     }
 
     @GetMapping("/sku")

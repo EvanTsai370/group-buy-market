@@ -36,7 +36,7 @@ public class AdminSettingsController {
     public Result<SystemInfoResponse> getSystemInfo() {
         log.info("【AdminSettings】获取系统信息");
         SystemInfoResult result = adminSettingsService.getSystemInfo();
-        return Result.success(adminOrderAssembler.toResponse(result));
+        return Result.success(adminOrderAssembler.toSystemInfoResponse(result));
     }
 
     @GetMapping("/config")
