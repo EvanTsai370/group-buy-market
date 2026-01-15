@@ -39,6 +39,9 @@ public class Account {
     /** 更新时间 */
     private LocalDateTime updateTime;
 
+    /** 乐观锁版本号 */
+    private Long version;
+
     /** 领域事件列表 */
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 

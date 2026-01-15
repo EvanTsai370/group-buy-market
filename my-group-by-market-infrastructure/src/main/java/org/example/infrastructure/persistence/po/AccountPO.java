@@ -25,6 +25,10 @@ public class AccountPO {
     private String activityId;
     private Integer participationCount;
 
+    /** 乐观锁版本号 */
+    @Version
+    private Long version;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

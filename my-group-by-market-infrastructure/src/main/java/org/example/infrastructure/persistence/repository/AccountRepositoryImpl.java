@@ -28,14 +28,33 @@ public class AccountRepositoryImpl implements AccountRepository {
     public void save(Account account) {
         AccountPO po = AccountConverter.INSTANCE.toPO(account);
 
-        // MyBatis-Plus 会根据主键是否存在自动判断 INSERT/UPDATE
-        boolean success = accountMapper.insertOrUpdate(po);
-        if (success) {
-            log.info("【AccountRepository】保存账户成功, accountId: {}, userId: {}",
-                    account.getAccountId(), account.getUserId());
+        // 检查账户是否已存在
+        AccountPO existing = accountMapper.selectById(po.getAccountId());
+
+        if (existing == null) {
+            // 新账户：使用 insert()
+            int rows = accountMapper.insert(po);
+            if (rows > 0) {
+                log.info("【AccountRepository】创建账户成功, accountId: {}, userId: {}",
+                        account.getAccountId(), account.getUserId());
+            } else {
+                log.warn("【AccountRepository】创建账户失败, accountId: {}, userId: {}",
+                        account.getAccountId(), account.getUserId());
+            }
         } else {
-            log.warn("【AccountRepository】保存账户失败, accountId: {}, userId: {}",
-                    account.getAccountId(), account.getUserId());
+            // 已存在账户：使用 updateById() 触发乐观锁
+            int rows = accountMapper.updateById(po);
+            if (rows > 0) {
+                log.info("【AccountRepository】更新账户成功, accountId: {}, userId: {}, version: {}",
+                        account.getAccountId(), account.getUserId(), po.getVersion());
+            } else {
+                // 更新失败：可能是乐观锁冲突（version 不匹配）
+                log.warn("【AccountRepository】更新账户失败(可能是乐观锁冲突), accountId: {}, userId: {}, version: {}",
+                        account.getAccountId(), account.getUserId(), po.getVersion());
+                throw new org.springframework.dao.OptimisticLockingFailureException(
+                        String.format("Account 更新失败，乐观锁冲突: accountId=%s, version=%s",
+                                account.getAccountId(), po.getVersion()));
+            }
         }
     }
 

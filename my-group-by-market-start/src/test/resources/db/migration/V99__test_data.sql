@@ -1,8 +1,7 @@
--- 测试数据：用于 TradeOrderServiceIdempotencyTest
 -- 这个文件在测试执行时被Flyway加载，为测试提供基础数据
 
 -- 插入测试活动
-INSERT INTO activity (activity_id, activity_name, activity_desc, discount_id, tag_id, tag_scope, group_type, target, valid_time, participation_limit, start_time, end_time, status) 
+INSERT INTO activity (activity_id, activity_name, activity_desc, discount_id, tag_id, tag_scope, group_type, target, valid_time, participation_limit, start_time, end_time, status)
 VALUES (
     'ACT001', 
     '测试活动-iPhone拼团', 
