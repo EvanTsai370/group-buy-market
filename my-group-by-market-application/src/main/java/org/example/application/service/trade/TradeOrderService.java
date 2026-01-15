@@ -152,8 +152,8 @@ public class TradeOrderService {
         log.info("【TradeOrderService】开始锁单, userId: {}, activityId: {}, orderId: {}, outTradeNo: {}",
                 cmd.getUserId(), cmd.getActivityId(), cmd.getOrderId(), cmd.getOutTradeNo());
 
-        // 用于回滚的上下文
-        TradeFilterContext filterContext = null;
+        // ✅ 在外部创建context，避免异常时丢失
+        TradeFilterContext filterContext = new TradeFilterContext();
 
         try {
             // 0. 幂等性检查：检查外部交易单号是否已存在
@@ -164,8 +164,8 @@ public class TradeOrderService {
                 return tradeOrderResultAssembler.toResult(existingTradeOrder.get());
             }
 
-            // 1. 执行交易规则过滤链（保存context用于回滚）
-            filterContext = executeTradeFilter(cmd);
+            // 1. 执行交易规则过滤链（传入context，异常时仍可访问）
+            executeTradeFilter(cmd, filterContext);
             Activity activity = filterContext.getActivity();
 
             // 2. 加载Sku
@@ -175,7 +175,8 @@ public class TradeOrderService {
             PriceValidationResult priceResult = calculateAndValidatePrice(cmd, activity, sku);
 
             // 4. 创建或加载Order
-            String orderId = createOrderIfNeeded(cmd, activity, priceResult.originalPrice, priceResult.deductionPrice, sku);
+            String orderId = createOrderIfNeeded(cmd, activity, priceResult.originalPrice, priceResult.deductionPrice,
+                    sku);
 
             // 5. 构建通知配置
             NotifyConfig notifyConfig = buildNotifyConfig(cmd);
@@ -294,14 +295,14 @@ public class TradeOrderService {
      * <p>
      * 设计说明：
      * <ul>
-     * <li>返回整个context而不是只返回Activity，用于后续回滚</li>
+     * <li>接受外部创建的context，确保异常时context不丢失</li>
      * <li>context中包含recoveryTeamSlotKey和recoverySkuId，用于失败时恢复资源</li>
      * </ul>
      *
-     * @param cmd 锁单命令
-     * @return 过滤链上下文（包含Activity和回滚信息）
+     * @param cmd     锁单命令
+     * @param context 过滤链上下文（外部创建，用于保存回滚信息）
      */
-    private TradeFilterContext executeTradeFilter(LockOrderCmd cmd) {
+    private void executeTradeFilter(LockOrderCmd cmd, TradeFilterContext context) {
         ChainExecutor<TradeFilterRequest, TradeFilterContext, TradeFilterResponse> filterChain = tradeFilterFactory
                 .createFilterChain();
 
@@ -311,8 +312,6 @@ public class TradeOrderService {
                 .skuId(cmd.getSkuId())
                 .orderId(cmd.getOrderId())
                 .build();
-
-        TradeFilterContext context = new TradeFilterContext();
 
         try {
             TradeFilterResponse response = filterChain.execute(request, context);
@@ -330,8 +329,6 @@ public class TradeOrderService {
         if (activity == null) {
             throw new BizException("活动信息加载失败");
         }
-
-        return context;
     }
 
     /**
@@ -375,6 +372,14 @@ public class TradeOrderService {
      * </ul>
      *
      * <p>
+     * 智能回滚机制：
+     * <ul>
+     * <li>只回滚context中标记的资源（recoveryTeamSlotKey、recoverySkuId）</li>
+     * <li>如果某个资源未被占用（标志为null），则自动跳过</li>
+     * <li>避免过度回滚或重复回滚</li>
+     * </ul>
+     *
+     * <p>
      * 注意：此场景不需要释放 Order.lockCount（因为锁单还未成功，lockCount 未增加）
      *
      * @param filterContext 过滤链上下文
@@ -385,14 +390,17 @@ public class TradeOrderService {
             return;
         }
 
+        // ✅ 直接从context获取标志位，避免转换
+        String recoveryTeamSlotKey = filterContext.getRecoveryTeamSlotKey();
         String recoverySkuId = filterContext.getRecoverySkuId();
         Activity activity = filterContext.getActivity();
         String activityId = activity != null ? activity.getActivityId() : null;
 
         // 使用 ResourceReleaseService 统一释放资源
         // 锁单失败时 Order.lockCount 还未增加，只需释放槽位和库存
+        // ✅ 直接传递teamSlotKey，而不是orderId
         resourceReleaseService.releaseSlotAndInventory(
-                cmd.getOrderId(),
+                recoveryTeamSlotKey, // ✅ 传递key，不是orderId
                 activityId,
                 recoverySkuId,
                 null, // tradeOrderId 还未生成

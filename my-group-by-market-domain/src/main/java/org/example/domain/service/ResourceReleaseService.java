@@ -76,7 +76,7 @@ public class ResourceReleaseService {
      *
      * @param orderId      订单ID
      * @param activityId   活动ID
-     * @param skuId      商品ID
+     * @param skuId        商品ID
      * @param userId       用户ID
      * @param tradeOrderId 交易订单ID（用于分布式锁）
      * @param scene        场景标识（用于日志区分）
@@ -88,8 +88,9 @@ public class ResourceReleaseService {
         // 1. 释放 Order.lockCount
         releaseLockCount(orderId, scene);
 
-        // 2. 释放名额槽位
-        releaseSlot(orderId, activityId, tradeOrderId, scene);
+        // 2. 释放名额槽位（需要从orderId构造teamSlotKey）
+        String teamSlotKey = orderId != null ? RedisKeyManager.teamSlotKey(orderId) : null;
+        releaseSlot(teamSlotKey, activityId, tradeOrderId, scene);
 
         // 3. 释放冻结库存
         releaseInventory(skuId, tradeOrderId, scene);
@@ -106,23 +107,30 @@ public class ResourceReleaseService {
      * <p>
      * 锁单失败时 Order.lockCount 还未增加，只需释放名额槽位和库存
      *
-     * @param orderId      订单ID
+     * <p>
+     * 智能回滚机制：
+     * <ul>
+     * <li>如果teamSlotKey为null，自动跳过槽位释放（说明TeamSlotOccupyHandler未执行或失败）</li>
+     * <li>如果skuId为null，自动跳过库存释放（说明InventoryOccupyHandler未执行或失败）</li>
+     * </ul>
+     *
+     * @param teamSlotKey  Redis槽位key（从context.recoveryTeamSlotKey获取，可为null）
      * @param activityId   活动ID
-     * @param skuId      商品ID
+     * @param skuId        商品ID（从context.recoverySkuId获取，可为null）
      * @param tradeOrderId 交易订单ID（用于分布式锁，可为null）
      * @param scene        场景标识
      */
-    public void releaseSlotAndInventory(String orderId, String activityId,
+    public void releaseSlotAndInventory(String teamSlotKey, String activityId,
             String skuId, String tradeOrderId, String scene) {
-        log.info("【{}】开始释放槽位和库存, orderId={}", scene, orderId);
+        log.info("【{}】开始释放槽位和库存, teamSlotKey={}, skuId={}", scene, teamSlotKey, skuId);
 
-        // 1. 释放名额槽位
-        releaseSlot(orderId, activityId, tradeOrderId, scene);
+        // 1. 释放名额槽位（如果teamSlotKey为null会自动跳过）
+        releaseSlot(teamSlotKey, activityId, tradeOrderId, scene);
 
-        // 2. 释放冻结库存
+        // 2. 释放冻结库存（如果skuId为null会自动跳过）
         releaseInventory(skuId, tradeOrderId, scene);
 
-        log.info("【{}】槽位和库存释放完成, orderId={}", scene, orderId);
+        log.info("【{}】槽位和库存释放完成", scene);
     }
 
     /**
@@ -177,19 +185,23 @@ public class ResourceReleaseService {
      * <p>
      * 与 TeamSlotOccupyHandler.DECR 操作对称，使用 INCR 恢复
      *
-     * @param orderId      订单ID
+     * <p>
+     * 设计改进：直接接受teamSlotKey，避免orderId ↔ teamSlotKey的来回转换
+     *
+     * @param teamSlotKey  Redis槽位key（格式：team_slot:{orderId}，可为null）
      * @param activityId   活动ID
      * @param tradeOrderId 交易订单ID（用于分布式锁）
      * @param scene        场景标识
      */
-    public void releaseSlot(String orderId, String activityId,
+    public void releaseSlot(String teamSlotKey, String activityId,
             String tradeOrderId, String scene) {
-        if (orderId == null || orderId.isEmpty()) {
-            log.warn("【{}】订单ID为空，跳过槽位释放", scene);
+        if (teamSlotKey == null || teamSlotKey.isEmpty()) {
+            log.warn("【{}】teamSlotKey为空，跳过槽位释放", scene);
             return;
         }
 
-        String teamSlotKey = RedisKeyManager.teamSlotKey(orderId);
+        // ✅ 只在需要时才提取orderId（用于生成lockKey）
+        String orderId = RedisKeyManager.extractOrderIdFromTeamSlotKey(teamSlotKey);
         Integer validTime = getValidTime(activityId);
         String lockKey = RedisKeyManager.lockKey("resource-release", tradeOrderId != null ? tradeOrderId : orderId);
 
@@ -198,18 +210,18 @@ public class ResourceReleaseService {
             Boolean lockAcquired = lockService.setNx(lockKey, 30 * 24 * 60, TimeUnit.MINUTES);
 
             if (Boolean.FALSE.equals(lockAcquired)) {
-                log.warn("【{}】槽位恢复操作已在进行中，跳过重复操作, orderId={}", scene, orderId);
+                log.warn("【{}】槽位恢复操作已在进行中，跳过重复操作, teamSlotKey={}", scene, teamSlotKey);
                 return;
             }
 
-            // 在锁保护下执行名额恢复
+            // ✅ 直接使用传入的teamSlotKey，不再重新组装
             tradeOrderRepository.recoveryTeamSlot(teamSlotKey, validTime);
-            log.info("【{}】槽位释放成功, teamSlotKey={}, orderId={}", scene, teamSlotKey, orderId);
+            log.info("【{}】槽位释放成功, teamSlotKey={}", scene, teamSlotKey);
 
         } catch (Exception ex) {
             // 恢复失败：释放锁，允许重试
             lockService.delete(lockKey);
-            log.error("【{}】槽位释放失败, teamSlotKey={}, orderId={}", scene, teamSlotKey, orderId, ex);
+            log.error("【{}】槽位释放失败, teamSlotKey={}", scene, teamSlotKey, ex);
         }
     }
 
@@ -219,7 +231,7 @@ public class ResourceReleaseService {
      * <p>
      * 与 InventoryOccupyHandler.freezeStock() 保持对称
      *
-     * @param skuId      商品ID
+     * @param skuId        商品ID
      * @param tradeOrderId 交易订单ID（用于日志追踪）
      * @param scene        场景标识
      */
