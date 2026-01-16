@@ -114,9 +114,13 @@ public class RefundService {
                 }
                 TradeOrder tradeOrder = tradeOrderOpt.get();
 
-                // 3. 幂等性检查
-                if (tradeOrder.getStatus() == TradeStatus.REFUND) {
-                    log.info("【退单服务】订单已退款，幂等返回, tradeOrderId={}", tradeOrderId);
+                // 3. 幂等性检查：已结算、已超时或已退款则静默返回
+                // 注意：PAID状态允许退款（拼团失败场景）
+                if (tradeOrder.getStatus() == TradeStatus.SETTLED ||
+                        tradeOrder.getStatus() == TradeStatus.TIMEOUT ||
+                        tradeOrder.getStatus() == TradeStatus.REFUND) {
+                    log.info("【退单服务】订单已处理，幂等返回, tradeOrderId={}, status={}",
+                            tradeOrderId, tradeOrder.getStatus());
                     return;
                 }
 

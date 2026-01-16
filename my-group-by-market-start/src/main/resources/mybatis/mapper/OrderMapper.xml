@@ -52,6 +52,7 @@
     1. 使用条件更新代替乐观锁，避免高并发下的误杀
     2. 在 WHERE 条件中限制 complete_count < target_count，保证不会超卖
     3. 使用 CASE WHEN 实现：如果达到目标人数，同时更新状态为 SUCCESS
+    4. CASE WHEN中的complete_count是更新后的值
 
     并发安全分析：
     - MySQL InnoDB 的行锁机制保证同一时刻只有一个事务能更新同一行
@@ -62,11 +63,11 @@
         UPDATE `order`
         SET complete_count = complete_count + 1,
             status = CASE
-                WHEN complete_count + 1 = target_count THEN 'SUCCESS'
+                WHEN complete_count = target_count THEN 'SUCCESS'
                 ELSE status
             END,
             completed_time = CASE
-                WHEN complete_count + 1 = target_count THEN NOW()
+                WHEN complete_count  = target_count THEN NOW()
                 ELSE completed_time
             END,
             update_time = NOW()

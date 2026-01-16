@@ -113,9 +113,10 @@ public class DomainServiceConfiguration {
             TradeOrderRepository tradeOrderRepository,
             NotificationTaskRepository notificationTaskRepository,
             IdGenerator idGenerator,
-            ResourceReleaseService resourceReleaseService) {
+            ResourceReleaseService resourceReleaseService,
+            IDistributedLockService lockService) {
         return new SettlementService(orderRepository, tradeOrderRepository,
-                notificationTaskRepository, idGenerator, resourceReleaseService);
+                notificationTaskRepository, idGenerator, resourceReleaseService, lockService);
     }
 
     /**

@@ -1,6 +1,7 @@
 package org.example.domain.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.cache.RedisKeyManager;
 import org.example.common.exception.BizException;
 import org.example.domain.model.notification.NotificationTask;
 import org.example.domain.model.notification.repository.NotificationTaskRepository;
@@ -9,6 +10,7 @@ import org.example.domain.model.order.repository.OrderRepository;
 import org.example.domain.model.order.valueobject.OrderStatus;
 import org.example.domain.model.trade.TradeOrder;
 import org.example.domain.model.trade.repository.TradeOrderRepository;
+import org.example.domain.service.lock.IDistributedLockService;
 import org.example.domain.shared.IdGenerator;
 
 import java.math.BigDecimal;
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 结算领域服务
@@ -46,17 +49,20 @@ public class SettlementService {
     private final NotificationTaskRepository notificationTaskRepository;
     private final IdGenerator idGenerator;
     private final ResourceReleaseService resourceReleaseService;
+    private final IDistributedLockService lockService;
 
     public SettlementService(OrderRepository orderRepository,
             TradeOrderRepository tradeOrderRepository,
             NotificationTaskRepository notificationTaskRepository,
             IdGenerator idGenerator,
-            ResourceReleaseService resourceReleaseService) {
+            ResourceReleaseService resourceReleaseService,
+            IDistributedLockService lockService) {
         this.orderRepository = orderRepository;
         this.tradeOrderRepository = tradeOrderRepository;
         this.notificationTaskRepository = notificationTaskRepository;
         this.idGenerator = idGenerator;
         this.resourceReleaseService = resourceReleaseService;
+        this.lockService = lockService;
     }
 
     /**
@@ -165,6 +171,7 @@ public class SettlementService {
      * <p>
      * 业务流程：
      * <ol>
+     * <li>获取分布式锁（与退款使用相同锁，确保互斥）</li>
      * <li>加载TradeOrder，校验状态</li>
      * <li>加载Order，用于时间校验</li>
      * <li>执行增强的结算校验（状态+渠道+时间）</li>
@@ -177,6 +184,7 @@ public class SettlementService {
      * <p>
      * 并发控制设计（遵循CONCURRENCY.md）：
      * <ul>
+     * <li>使用分布式锁防止与超时处理并发（Race #9修复）</li>
      * <li>使用 SQL 原子更新避免乐观锁误杀</li>
      * <li>SQL 更新后立即 Reload 聚合根同步状态</li>
      * <li>基于最新状态触发领域事件</li>
@@ -186,59 +194,85 @@ public class SettlementService {
      * @param tradeOrderId 交易订单ID
      */
     public void handlePaymentSuccess(String tradeOrderId) {
-        // 1. 加载TradeOrder
-        Optional<TradeOrder> tradeOrderOpt = tradeOrderRepository.findByTradeOrderId(tradeOrderId);
-        if (tradeOrderOpt.isEmpty()) {
-            throw new BizException("交易订单不存在");
-        }
-        TradeOrder tradeOrder = tradeOrderOpt.get();
+        // 1. 分布式锁：防止与超时处理并发（Race #9修复）
+        // 使用与RefundService相同的锁key，确保支付回调和超时处理互斥
+        String lockKey = RedisKeyManager.lockKey("refund", tradeOrderId);
 
-        // 2. 幂等性检查：已支付或已结算则静默返回
-        if (tradeOrder.isPaid() || tradeOrder.isSettled()) {
-            log.info("【结算服务】订单已处理，跳过重复处理, tradeOrderId: {}, status: {}",
-                    tradeOrderId, tradeOrder.getStatus());
-            return;
-        }
+        try {
+            // 尝试获取锁（30秒超时）
+            boolean lockAcquired = lockService.tryLock(lockKey, 0, 30, TimeUnit.SECONDS);
+            if (!lockAcquired) {
+                log.warn("【结算服务】订单处理中，请稍后重试, tradeOrderId={}", tradeOrderId);
+                throw new BizException("订单处理中，请稍后重试");
+            }
 
-        // 3. 加载Order（用于时间校验）
-        String orderId = tradeOrder.getOrderId();
-        Optional<Order> orderOpt = orderRepository.findById(orderId);
-        if (orderOpt.isEmpty()) {
-            throw new BizException("拼团订单不存在");
-        }
-        Order order = orderOpt.get();
+            try {
+                // 2. 加载TradeOrder
+                Optional<TradeOrder> tradeOrderOpt = tradeOrderRepository.findByTradeOrderId(tradeOrderId);
+                if (tradeOrderOpt.isEmpty()) {
+                    throw new BizException("交易订单不存在");
+                }
+                TradeOrder tradeOrder = tradeOrderOpt.get();
 
-        // 4. 获取渠道黑名单（TODO: 可以从配置中心或数据库加载）
-        // 目前暂不启用渠道黑名单，传空集合
-        Set<String> blacklistedChannels = Set.of();
+                // 3. 幂等性检查：已支付、已结算或已超时则静默返回
+                if (tradeOrder.isPaid() || tradeOrder.isSettled() || tradeOrder.isTimeout()) {
+                    log.info("【结算服务】订单已处理，跳过重复处理, tradeOrderId: {}, status: {}",
+                            tradeOrderId, tradeOrder.getStatus());
+                    return;
+                }
 
-        // 5. 校验是否可以支付（增强版：状态+渠道+时间）
-        tradeOrder.validatePayment(order, blacklistedChannels);
+                // 4. 加载Order（用于时间校验）
+                String orderId = tradeOrder.getOrderId();
+                Optional<Order> orderOpt = orderRepository.findById(orderId);
+                if (orderOpt.isEmpty()) {
+                    throw new BizException("拼团订单不存在");
+                }
+                Order order = orderOpt.get();
 
-        // 6. 标记为已支付
-        tradeOrder.markAsPaid(LocalDateTime.now());
-        tradeOrderRepository.update(tradeOrder);
+                // 5. 获取渠道黑名单（TODO: 可以从配置中心或数据库加载）
+                // 目前暂不启用渠道黑名单，传空集合
+                Set<String> blacklistedChannels = Set.of();
 
-        // 7. 原子增加Order的completeCount（数据库层并发控制）
-        int newCompleteCount = orderRepository.tryIncrementCompleteCount(orderId);
-        if (newCompleteCount == -1) {
-            throw new BizException("拼团订单状态异常或已超时");
-        }
+                // 6. 校验是否可以支付（增强版：状态+渠道+时间）
+                tradeOrder.validatePayment(order, blacklistedChannels);
 
-        log.info("【结算服务】支付成功，拼团进度更新, tradeOrderId: {}, orderId: {}, completeCount: {}",
-                tradeOrderId, orderId, newCompleteCount);
+                // 7. 先原子增加Order的completeCount（SQL原子操作，防止超卖）
+                // 【重要】此顺序确保竞争失败的线程在此步骤就失败，不会污染TradeOrder状态
+                int newCompleteCount = orderRepository.tryIncrementCompleteCount(orderId);
+                if (newCompleteCount == -1) {
+                    throw new BizException("拼团订单状态异常或已超时");
+                }
 
-        // 8. 重新加载Order以同步最新状态（关键！遵循CONCURRENCY.md）
-        order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new BizException("拼团订单不存在"));
+                // 8. 再标记为已支付（此时已确认有名额，可以安全地标记）
+                tradeOrder.markAsPaid(LocalDateTime.now());
+                tradeOrderRepository.update(tradeOrder);
 
-        log.debug("【结算服务】重新加载Order, orderId: {}, status: {}, completeCount: {}/{}",
-                orderId, order.getStatus(), order.getCompleteCount(), order.getTargetCount());
+                log.info("【结算服务】支付成功，拼团进度更新, tradeOrderId: {}, orderId: {}, completeCount: {}",
+                        tradeOrderId, orderId, newCompleteCount);
 
-        // 9. 基于最新状态触发结算流程
-        if (order.getStatus() == OrderStatus.SUCCESS) {
-            log.info("【结算服务】拼团成功，开始结算, orderId: {}", orderId);
-            settleCompletedOrder(orderId);
+                // 9. 重新加载Order以同步最新状态（关键！遵循CONCURRENCY.md）
+                order = orderRepository.findById(orderId)
+                        .orElseThrow(() -> new BizException("拼团订单不存在"));
+
+                log.debug("【结算服务】重新加载Order, orderId: {}, status: {}, completeCount: {}/{}",
+                        orderId, order.getStatus(), order.getCompleteCount(), order.getTargetCount());
+
+                // 10. 结算流程完全依赖事件驱动（SettlementEventListener）
+                // 移除同步调用，避免与异步事件监听器重复执行
+                if (order.getStatus() == OrderStatus.SUCCESS) {
+                    log.info("【结算服务】拼团成功，将由SettlementEventListener异步处理结算, orderId: {}", orderId);
+                }
+
+            } finally {
+                // 释放锁
+                lockService.unlock(lockKey);
+            }
+
+        } catch (BizException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("【结算服务】支付处理失败, tradeOrderId={}", tradeOrderId, e);
+            throw new BizException("支付处理失败: " + e.getMessage());
         }
     }
 

@@ -8,12 +8,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.application.service.payment.AlipayPaymentService;
+import org.example.application.service.payment.PaymentCallbackApplicationService;
 import org.example.application.service.payment.result.PaymentQueryResultObj;
 import org.example.common.api.Result;
 import org.example.common.exception.BizException;
 import org.example.domain.model.trade.TradeOrder;
 import org.example.domain.model.trade.repository.TradeOrderRepository;
-import org.example.domain.service.SettlementService;
 import org.example.domain.shared.AuthContextService;
 import org.example.interfaces.web.assembler.PaymentAssembler;
 import org.example.interfaces.web.dto.payment.PaymentQueryResponse;
@@ -39,7 +39,7 @@ public class PaymentController {
 
     private final AlipayPaymentService alipayPaymentService;
     private final PaymentAssembler paymentAssembler;
-    private final SettlementService settlementService;
+    private final PaymentCallbackApplicationService paymentCallbackApplicationService;
     private final TradeOrderRepository tradeOrderRepository;
     private final AuthContextService authContextService;
 
@@ -179,15 +179,15 @@ public class PaymentController {
 
             // 6. 根据交易状态处理业务
             if ("TRADE_SUCCESS".equals(tradeStatus) || "TRADE_FINISHED".equals(tradeStatus)) {
-                // 支付成功：调用结算服务（内置幂等性检查和金额校验）
+                // 支付成功：调用应用服务（内置事务管理、幂等性检查和金额校验）
                 BigDecimal callbackAmount = totalAmount != null ? new BigDecimal(totalAmount) : null;
-                settlementService.handlePaymentSuccessByOutTradeNo(outTradeNo, callbackAmount);
+                paymentCallbackApplicationService.handlePaymentSuccess(outTradeNo, callbackAmount);
 
             } else if ("TRADE_CLOSED".equals(tradeStatus)) {
                 // 交易关闭：释放锁定的名额和库存
                 log.info("【PaymentController】交易关闭，触发退单流程, outTradeNo={}", outTradeNo);
                 try {
-                    settlementService.handlePaymentFailedByOutTradeNo(outTradeNo);
+                    paymentCallbackApplicationService.handlePaymentFailure(outTradeNo);
                 } catch (Exception ex) {
                     // 退单失败只记录日志，不影响返回 success（避免重复通知）
                     log.error("【PaymentController】交易关闭处理失败, outTradeNo={}", outTradeNo, ex);
