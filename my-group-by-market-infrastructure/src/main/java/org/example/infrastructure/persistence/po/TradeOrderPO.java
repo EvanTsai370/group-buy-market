@@ -99,4 +99,10 @@ public class TradeOrderPO {
 
     /** 退款时间 */
     private LocalDateTime refundTime;
+
+    /** 资源释放标记（用于幂等性保证） */
+    private Boolean participationCountReleased;
+    private Boolean lockCountReleased;
+    private Boolean slotReleased;
+    private Boolean inventoryReleased;
 }

@@ -175,9 +175,6 @@ CREATE TABLE `order` (
     -- 回调接口
     notify_url VARCHAR(500) COMMENT '回调接口地址',
 
-    -- 并发控制（乐观锁）
-    version BIGINT NOT NULL DEFAULT 1 COMMENT '乐观锁版本号',
-
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 
@@ -310,6 +307,12 @@ CREATE TABLE trade_order (
     -- 退款相关字段
     refund_reason VARCHAR(500) COMMENT '退款原因',
     refund_time DATETIME COMMENT '退款时间',
+
+    -- 资源释放标记（用于幂等性保证）
+    participation_count_released TINYINT(1) DEFAULT 0 COMMENT '参团次数是否已释放',
+    lock_count_released TINYINT(1) DEFAULT 0 COMMENT 'lockCount是否已释放',
+    slot_released TINYINT(1) DEFAULT 0 COMMENT '槽位是否已释放',
+    inventory_released TINYINT(1) DEFAULT 0 COMMENT '库存是否已释放',
 
     -- 审计字段
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

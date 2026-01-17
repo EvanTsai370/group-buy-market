@@ -2,6 +2,7 @@ package org.example.domain.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.cache.RedisKeyManager;
+import org.example.common.exception.BizException;
 import org.example.domain.model.activity.Activity;
 import org.example.domain.model.activity.repository.ActivityRepository;
 import org.example.domain.model.account.Account;
@@ -9,6 +10,7 @@ import org.example.domain.model.account.repository.AccountRepository;
 import org.example.domain.model.goods.repository.SkuRepository;
 import org.example.domain.model.order.Order;
 import org.example.domain.model.order.repository.OrderRepository;
+import org.example.domain.model.trade.TradeOrder;
 import org.example.domain.model.trade.repository.TradeOrderRepository;
 import org.example.domain.service.lock.IDistributedLockService;
 
@@ -24,6 +26,7 @@ import java.util.concurrent.TimeUnit;
  * <li>统一管理预占资源的释放</li>
  * <li>确保释放顺序一致，避免遗漏</li>
  * <li>提供分布式锁保护，防止重复释放</li>
+ * <li>通过释放标记实现幂等性，支持MQ重试</li>
  * </ul>
  *
  * <p>
@@ -78,27 +81,33 @@ public class ResourceReleaseService {
      * @param activityId   活动ID
      * @param skuId        商品ID
      * @param userId       用户ID
-     * @param tradeOrderId 交易订单ID（用于分布式锁）
+     * @param tradeOrderId 交易订单ID（用于分布式锁和幂等性检查）
      * @param scene        场景标识（用于日志区分）
      */
     public void releaseAllResources(String orderId, String activityId,
             String skuId, String userId, String tradeOrderId, String scene) {
         log.info("【{}】开始释放全部预占资源, orderId={}, tradeOrderId={}", scene, orderId, tradeOrderId);
 
-        // 1. 释放 Order.lockCount
-        releaseLockCount(orderId, scene);
+        try {
+            // 1. 释放 Order.lockCount
+            releaseLockCount(orderId, tradeOrderId, scene);
 
-        // 2. 释放名额槽位（需要从orderId构造teamSlotKey）
-        String teamSlotKey = orderId != null ? RedisKeyManager.teamSlotKey(orderId) : null;
-        releaseSlot(teamSlotKey, activityId, tradeOrderId, scene);
+            // 2. 释放名额槽位（需要从orderId构造teamSlotKey）
+            String teamSlotKey = orderId != null ? RedisKeyManager.teamSlotKey(orderId) : null;
+            releaseSlot(teamSlotKey, activityId, tradeOrderId, scene);
 
-        // 3. 释放冻结库存
-        releaseInventory(skuId, tradeOrderId, scene);
+            // 3. 释放冻结库存
+            releaseInventory(skuId, tradeOrderId, scene);
 
-        // 4. 释放参团次数
-        releaseParticipationCount(userId, activityId, scene);
+            // 4. 释放参团次数
+            releaseParticipationCount(userId, activityId, tradeOrderId, scene);
 
-        log.info("【{}】全部预占资源释放完成, orderId={}, tradeOrderId={}", scene, orderId, tradeOrderId);
+            log.info("【{}】全部预占资源释放完成, orderId={}, tradeOrderId={}", scene, orderId, tradeOrderId);
+        } catch (Exception e) {
+            log.error("【{}】资源释放异常, orderId={}, tradeOrderId={}, 已释放的资源不会回滚",
+                    scene, orderId, tradeOrderId, e);
+            throw e; // 抛出异常，触发MQ降级重试
+        }
     }
 
     /**
@@ -139,43 +148,66 @@ public class ResourceReleaseService {
      * <p>
      * 执行流程：
      * <ol>
+     * <li>检查幂等性标记（如果已释放则跳过）</li>
      * <li>加载 Order 聚合</li>
      * <li>调用 Order.validateReleaseLock() 进行业务校验</li>
      * <li>调用 Repository 原子递减 lockCount</li>
+     * <li>标记为已释放</li>
      * </ol>
      *
-     * @param orderId 订单ID
-     * @param scene   场景标识
+     * @param orderId      订单ID
+     * @param tradeOrderId 交易订单ID（用于幂等性检查）
+     * @param scene        场景标识
      * @return true=成功, false=失败（可能已释放或lockCount为0）
      */
-    public boolean releaseLockCount(String orderId, String scene) {
+    public boolean releaseLockCount(String orderId, String tradeOrderId, String scene) {
         if (orderId == null || orderId.isEmpty()) {
             log.warn("【{}】订单ID为空，跳过lockCount释放", scene);
             return false;
         }
 
         try {
-            // 1. 加载 Order 聚合
+            // 1. 幂等性检查：如果已释放过，直接返回
+            if (tradeOrderId != null && !tradeOrderId.isEmpty()) {
+                TradeOrder tradeOrder = tradeOrderRepository.findByTradeOrderId(tradeOrderId).orElse(null);
+                if (tradeOrder != null && tradeOrder.isLockCountReleased()) {
+                    log.warn("【{}】lockCount已释放过，跳过 tradeOrderId={}, orderId={}",
+                            scene, tradeOrderId, orderId);
+                    return true;
+                }
+            }
+
+            // 2. 加载 Order 聚合
             Order order = orderRepository.findById(orderId).orElse(null);
             if (order == null) {
                 log.warn("【{}】Order不存在，跳过lockCount释放, orderId={}", scene, orderId);
                 return false;
             }
 
-            // 2. 业务校验
+            // 3. 业务校验
             order.validateReleaseLock();
 
-            // 3. 原子递减 lockCount
+            // 4. 原子递减 lockCount
             boolean success = orderRepository.decrementLockCount(orderId);
-            if (success) {
-                log.info("【{}】Order.lockCount释放成功, orderId={}", scene, orderId);
-            } else {
+            if (!success) {
                 log.warn("【{}】Order.lockCount释放失败（可能已为0）, orderId={}", scene, orderId);
+                return false;
             }
-            return success;
+
+            // 5. 标记为已释放（关键！）
+            if (tradeOrderId != null && !tradeOrderId.isEmpty()) {
+                TradeOrder tradeOrder = tradeOrderRepository.findByTradeOrderId(tradeOrderId).orElse(null);
+                if (tradeOrder != null) {
+                    tradeOrder.markLockCountReleased();
+                    tradeOrderRepository.save(tradeOrder);
+                }
+            }
+
+            log.info("【{}】Order.lockCount释放成功, orderId={}", scene, orderId);
+            return true;
         } catch (Exception e) {
             log.error("【{}】Order.lockCount释放异常, orderId={}", scene, orderId, e);
-            return false;
+            throw e; // 抛出异常，触发MQ重试
         }
     }
 
@@ -190,7 +222,7 @@ public class ResourceReleaseService {
      *
      * @param teamSlotKey  Redis槽位key（格式：team_slot:{orderId}，可为null）
      * @param activityId   活动ID
-     * @param tradeOrderId 交易订单ID（用于分布式锁）
+     * @param tradeOrderId 交易订单ID（用于分布式锁和幂等性检查）
      * @param scene        场景标识
      */
     public void releaseSlot(String teamSlotKey, String activityId,
@@ -200,13 +232,22 @@ public class ResourceReleaseService {
             return;
         }
 
-        // ✅ 只在需要时才提取orderId（用于生成lockKey）
-        String orderId = RedisKeyManager.extractOrderIdFromTeamSlotKey(teamSlotKey);
-        Integer validTime = getValidTime(activityId);
-        String lockKey = RedisKeyManager.lockKey("resource-release", tradeOrderId != null ? tradeOrderId : orderId);
-
         try {
-            // 尝试获取锁（30天过期，防止锁永久占用）
+            // 1. 幂等性检查：如果已释放过，直接返回
+            if (tradeOrderId != null && !tradeOrderId.isEmpty()) {
+                TradeOrder tradeOrder = tradeOrderRepository.findByTradeOrderId(tradeOrderId).orElse(null);
+                if (tradeOrder != null && tradeOrder.isSlotReleased()) {
+                    log.warn("【{}】槽位已释放过，跳过 tradeOrderId={}", scene, tradeOrderId);
+                    return;
+                }
+            }
+
+            // 2. 提取orderId（用于生成lockKey）
+            String orderId = RedisKeyManager.extractOrderIdFromTeamSlotKey(teamSlotKey);
+            Integer validTime = getValidTime(activityId);
+            String lockKey = RedisKeyManager.lockKey("resource-release", tradeOrderId != null ? tradeOrderId : orderId);
+
+            // 3. 尝试获取锁（30天过期，防止锁永久占用）
             Boolean lockAcquired = lockService.setNx(lockKey, 30 * 24 * 60, TimeUnit.MINUTES);
 
             if (Boolean.FALSE.equals(lockAcquired)) {
@@ -214,14 +255,23 @@ public class ResourceReleaseService {
                 return;
             }
 
-            // ✅ 直接使用传入的teamSlotKey，不再重新组装
+            // 4. 执行释放
             tradeOrderRepository.recoveryTeamSlot(teamSlotKey, validTime);
+
+            // 5. 标记为已释放（关键！）
+            if (tradeOrderId != null && !tradeOrderId.isEmpty()) {
+                TradeOrder tradeOrder = tradeOrderRepository.findByTradeOrderId(tradeOrderId).orElse(null);
+                if (tradeOrder != null) {
+                    tradeOrder.markSlotReleased();
+                    tradeOrderRepository.save(tradeOrder);
+                }
+            }
+
             log.info("【{}】槽位释放成功, teamSlotKey={}", scene, teamSlotKey);
 
         } catch (Exception ex) {
-            // 恢复失败：释放锁，允许重试
-            lockService.delete(lockKey);
             log.error("【{}】槽位释放失败, teamSlotKey={}", scene, teamSlotKey, ex);
+            throw ex; // 抛出异常，触发MQ重试
         }
     }
 
@@ -232,7 +282,7 @@ public class ResourceReleaseService {
      * 与 InventoryOccupyHandler.freezeStock() 保持对称
      *
      * @param skuId        商品ID
-     * @param tradeOrderId 交易订单ID（用于日志追踪）
+     * @param tradeOrderId 交易订单ID（用于日志追踪和幂等性检查）
      * @param scene        场景标识
      */
     public void releaseInventory(String skuId, String tradeOrderId, String scene) {
@@ -242,15 +292,36 @@ public class ResourceReleaseService {
         }
 
         try {
-            int result = skuRepository.unfreezeStock(skuId, UNFREEZE_QUANTITY);
-            if (result > 0) {
-                log.info("【{}】库存释放成功, skuId={}, tradeOrderId={}", scene, skuId, tradeOrderId);
-            } else {
-                log.warn("【{}】库存释放失败（可能已释放）, skuId={}, tradeOrderId={}", scene, skuId, tradeOrderId);
+            // 1. 幂等性检查：如果已释放过，直接返回
+            if (tradeOrderId != null && !tradeOrderId.isEmpty()) {
+                TradeOrder tradeOrder = tradeOrderRepository.findByTradeOrderId(tradeOrderId).orElse(null);
+                if (tradeOrder != null && tradeOrder.isInventoryReleased()) {
+                    log.warn("【{}】库存已释放过，跳过 tradeOrderId={}, skuId={}",
+                            scene, tradeOrderId, skuId);
+                    return;
+                }
             }
+
+            // 2. 执行释放
+            int result = skuRepository.unfreezeStock(skuId, UNFREEZE_QUANTITY);
+            if (result <= 0) {
+                log.warn("【{}】库存释放失败（可能已释放）, skuId={}, tradeOrderId={}", scene, skuId, tradeOrderId);
+                throw new BizException("库存释放失败");
+            }
+
+            // 3. 标记为已释放（关键！）
+            if (tradeOrderId != null && !tradeOrderId.isEmpty()) {
+                TradeOrder tradeOrder = tradeOrderRepository.findByTradeOrderId(tradeOrderId).orElse(null);
+                if (tradeOrder != null) {
+                    tradeOrder.markInventoryReleased();
+                    tradeOrderRepository.save(tradeOrder);
+                }
+            }
+
+            log.info("【{}】库存释放成功, skuId={}, tradeOrderId={}", scene, skuId, tradeOrderId);
         } catch (Exception e) {
-            // 释放失败只记录日志，不影响主流程
             log.error("【{}】库存释放异常, skuId={}, tradeOrderId={}", scene, skuId, tradeOrderId, e);
+            throw e; // 抛出异常，触发MQ重试
         }
     }
 
@@ -282,33 +353,54 @@ public class ResourceReleaseService {
      * <p>
      * 与 Account.deductCount() 保持对称，调用 compensateCount() 恢复
      *
-     * @param userId     用户ID
-     * @param activityId 活动ID
-     * @param scene      场景标识
+     * @param userId       用户ID
+     * @param activityId   活动ID
+     * @param tradeOrderId 交易订单ID（用于幂等性检查）
+     * @param scene        场景标识
      */
-    public void releaseParticipationCount(String userId, String activityId, String scene) {
+    public void releaseParticipationCount(String userId, String activityId, String tradeOrderId, String scene) {
         if (userId == null || userId.isEmpty() || activityId == null || activityId.isEmpty()) {
             log.warn("【{}】用户ID或活动ID为空，跳过参团次数释放", scene);
             return;
         }
 
         try {
-            // 1. 加载 Account 聚合
+            // 1. 幂等性检查：如果已释放过，直接返回
+            if (tradeOrderId != null && !tradeOrderId.isEmpty()) {
+                TradeOrder tradeOrder = tradeOrderRepository.findByTradeOrderId(tradeOrderId).orElse(null);
+                if (tradeOrder != null && tradeOrder.isParticipationCountReleased()) {
+                    log.warn("【{}】参团次数已释放过，跳过 tradeOrderId={}, userId={}",
+                            scene, tradeOrderId, userId);
+                    return;
+                }
+            }
+
+            // 2. 加载 Account 聚合
             Account account = accountRepository.findByUserAndActivity(userId, activityId).orElse(null);
             if (account == null) {
                 log.warn("【{}】Account不存在，跳过参团次数释放, userId={}, activityId={}", scene, userId, activityId);
                 return;
             }
 
-            // 2. 调用聚合根方法补偿
+            // 3. 调用聚合根方法补偿
             account.compensateCount();
 
-            // 3. 持久化
+            // 4. 持久化
             accountRepository.save(account);
+
+            // 5. 标记为已释放（关键！）
+            if (tradeOrderId != null && !tradeOrderId.isEmpty()) {
+                TradeOrder tradeOrder = tradeOrderRepository.findByTradeOrderId(tradeOrderId).orElse(null);
+                if (tradeOrder != null) {
+                    tradeOrder.markParticipationCountReleased();
+                    tradeOrderRepository.save(tradeOrder);
+                }
+            }
 
             log.info("【{}】参团次数释放成功, userId={}, activityId={}", scene, userId, activityId);
         } catch (Exception e) {
             log.error("【{}】参团次数释放异常, userId={}, activityId={}", scene, userId, activityId, e);
+            throw e; // 抛出异常，触发MQ重试
         }
     }
 }

@@ -104,6 +104,12 @@ public class TradeOrder {
     /** 退款时间 */
     private LocalDateTime refundTime;
 
+    /** 资源释放标记（用于幂等性保证） */
+    private boolean participationCountReleased = false;
+    private boolean lockCountReleased = false;
+    private boolean slotReleased = false;
+    private boolean inventoryReleased = false;
+
     /** 领域事件列表 */
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 
@@ -387,5 +393,67 @@ public class TradeOrder {
         List<DomainEvent> events = new ArrayList<>(this.domainEvents);
         this.domainEvents.clear();
         return events;
+    }
+
+    // ==================== 资源释放标记方法 ====================
+
+    /**
+     * 标记参团次数已释放
+     */
+    public void markParticipationCountReleased() {
+        this.participationCountReleased = true;
+        this.updateTime = LocalDateTime.now();
+    }
+
+    /**
+     * 检查参团次数是否已释放
+     */
+    public boolean isParticipationCountReleased() {
+        return this.participationCountReleased;
+    }
+
+    /**
+     * 标记lockCount已释放
+     */
+    public void markLockCountReleased() {
+        this.lockCountReleased = true;
+        this.updateTime = LocalDateTime.now();
+    }
+
+    /**
+     * 检查lockCount是否已释放
+     */
+    public boolean isLockCountReleased() {
+        return this.lockCountReleased;
+    }
+
+    /**
+     * 标记槽位已释放
+     */
+    public void markSlotReleased() {
+        this.slotReleased = true;
+        this.updateTime = LocalDateTime.now();
+    }
+
+    /**
+     * 检查槽位是否已释放
+     */
+    public boolean isSlotReleased() {
+        return this.slotReleased;
+    }
+
+    /**
+     * 标记库存已释放
+     */
+    public void markInventoryReleased() {
+        this.inventoryReleased = true;
+        this.updateTime = LocalDateTime.now();
+    }
+
+    /**
+     * 检查库存是否已释放
+     */
+    public boolean isInventoryReleased() {
+        return this.inventoryReleased;
     }
 }

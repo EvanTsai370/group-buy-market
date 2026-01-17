@@ -41,8 +41,7 @@ public class OrderRepositoryImpl implements OrderRepository {
         if (!success) {
             throw new RuntimeException("订单保存失败（可能是版本冲突）: orderId=" + order.getOrderId());
         }
-        log.info("【OrderRepository】保存订单成功, orderId: {}, version: {}",
-                order.getOrderId(), order.getVersion());
+        log.info("【OrderRepository】保存订单成功, orderId: {}", order.getOrderId());
     }
 
     @Override

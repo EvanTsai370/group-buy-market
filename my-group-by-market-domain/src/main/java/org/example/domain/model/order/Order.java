@@ -74,9 +74,6 @@ public class Order {
     /** 渠道 */
     private String channel;
 
-    /** 乐观锁版本号（关键！防止并发超卖） */
-    private Long version;
-
     /** 领域事件列表 */
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 
@@ -118,7 +115,6 @@ public class Order {
         order.completedTime = null; // 初始未成团
         order.source = source;
         order.channel = channel;
-        order.version = 1L;
 
         // 发出领域事件
         order.addDomainEvent(new OrderCreatedEvent(orderId, leaderUserId, activityId));

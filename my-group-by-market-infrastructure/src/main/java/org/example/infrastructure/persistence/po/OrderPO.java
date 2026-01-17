@@ -40,10 +40,6 @@ public class OrderPO {
     private String channel;
     private String notifyUrl;
 
-    /** 乐观锁版本号 */
-    @Version
-    private Long version;
-
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

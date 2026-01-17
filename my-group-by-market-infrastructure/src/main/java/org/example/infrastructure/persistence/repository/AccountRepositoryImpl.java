@@ -8,6 +8,7 @@ import org.example.domain.shared.IdGenerator;
 import org.example.infrastructure.persistence.converter.AccountConverter;
 import org.example.infrastructure.persistence.mapper.AccountMapper;
 import org.example.infrastructure.persistence.po.AccountPO;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -51,7 +52,7 @@ public class AccountRepositoryImpl implements AccountRepository {
                 // 更新失败：可能是乐观锁冲突（version 不匹配）
                 log.warn("【AccountRepository】更新账户失败(可能是乐观锁冲突), accountId: {}, userId: {}, version: {}",
                         account.getAccountId(), account.getUserId(), po.getVersion());
-                throw new org.springframework.dao.OptimisticLockingFailureException(
+                throw new OptimisticLockingFailureException(
                         String.format("Account 更新失败，乐观锁冲突: accountId=%s, version=%s",
                                 account.getAccountId(), po.getVersion()));
             }
