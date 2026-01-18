@@ -11,6 +11,7 @@ import org.example.infrastructure.persistence.mapper.TradeOrderMapper;
 import org.example.infrastructure.persistence.po.TradeOrderPO;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -132,7 +133,30 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
         String availableKey = RedisKeyManager.teamSlotAvailableKey(orderId);
         String lockedKey = RedisKeyManager.teamSlotLockedKey(orderId);
 
-        // 1. 初始化名额（仅首次）
+        // 两种方法实现初始化原子性以及扣减原子性：setNx和lua脚本
+//        long remainingSlot = initAndDecrSlot(target, validTime, availableKey);
+        long remainingSlot = initAndDecrSlotWithScript(target, validTime, availableKey);
+
+        log.debug("【TradeOrderRepository】扣减名额, availableKey: {}, remaining: {}", availableKey, remainingSlot);
+
+        // 如果名额不足（扣减后小于0），回滚
+        if (remainingSlot < 0) {
+            redisService.incr(availableKey); // 回滚
+            log.warn("【TradeOrderRepository】队伍名额不足, availableKey: {}, remaining: {}", availableKey, remainingSlot);
+            return false;
+        }
+
+        // 记录已锁定量（用于监控和审计，可选）
+        long locked = redisService.incr(lockedKey);
+        redisService.expire(lockedKey, validTime + 3600L, TimeUnit.SECONDS);
+
+        log.info("【TradeOrderRepository】队伍名额占用成功, availableKey: {}, remaining: {}, locked: {}",
+                availableKey, remainingSlot, locked);
+        return true;
+    }
+
+    private long initAndDecrSlot(Integer target, Integer validTime, String availableKey) {
+        //  初始化名额（仅首次）
         // validTime单位是秒，加上1小时(3600秒)的缓冲时间
         Boolean isInit = redisService.setNx(availableKey, target, validTime + 3600L, TimeUnit.SECONDS);
 
@@ -140,25 +164,41 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
             log.info("【TradeOrderRepository】成功初始化队伍名额（我是第一个）, availableKey: {}", availableKey);
         }
 
-        // 2. 尝试扣减名额（DECR 返回扣减后的值）
-        long remainingSlot = redisService.decr(availableKey);
+        // 尝试扣减名额（DECR 返回扣减后的值）
+      return redisService.decr(availableKey);
+    }
 
-        log.debug("【TradeOrderRepository】扣减名额, availableKey: {}, remaining: {}", availableKey, remainingSlot);
+    private long initAndDecrSlotWithScript(Integer target, Integer validTime, String availableKey) {
+        String luaScript =
+                "if redis.call('exists', KEYS[1]) == 0 then " +
+                        "    redis.call('setex', KEYS[1], ARGV[2], ARGV[1]) " +
+                        "end " +
+                        "return redis.call('decr', KEYS[1])";
+        long expireSeconds = TimeUnit.MINUTES.toSeconds(validTime + 60L);
+        return redisService.executeScript(
+                luaScript,
+                Collections.singletonList(availableKey), // 对应 KEYS[1]
+                target,       // 对应 ARGV[1] (初始库存)
+                expireSeconds // 对应 ARGV[2] (过期时间)
+        );
 
-        // 3. 如果名额不足（扣减后小于0），回滚
-        if (remainingSlot < 0) {
-            redisService.incr(availableKey); // 回滚
-            log.warn("【TradeOrderRepository】队伍名额不足, availableKey: {}, remaining: {}", availableKey, remainingSlot);
-            return false;
-        }
-
-        // 4. 记录已锁定量（用于监控和审计，可选）
-        long locked = redisService.incr(lockedKey);
-        redisService.expire(lockedKey, validTime + 3600L, TimeUnit.SECONDS);
-
-        log.info("【TradeOrderRepository】队伍名额占用成功, availableKey: {}, remaining: {}, locked: {}",
-                availableKey, remainingSlot, locked);
-        return true;
+        // 也可以把“回滚”也省掉
+//        String advancedLuaScript =
+//                // 1. 如果 key 不存在，初始化
+//                "if redis.call('exists', KEYS[1]) == 0 then " +
+//                        "    redis.call('setex', KEYS[1], ARGV[2], ARGV[1]) " +
+//                        "end " +
+//
+//                        // 2. 获取当前值（注意：redis取出的是string，lua需要转number）
+//                        "local current = tonumber(redis.call('get', KEYS[1])) " +
+//
+//                        // 3. 如果当前值 <= 0，直接返回 -1 (代表库存不足)
+//                        "if current <= 0 then " +
+//                        "    return -1 " +
+//                        "end " +
+//
+//                        // 4. 执行扣减并返回剩余值
+//                        "return redis.call('decr', KEYS[1])";
     }
 
     @Override
@@ -180,4 +220,6 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
         log.info("【TradeOrderRepository】恢复队伍名额, availableKey: {}, current available: {}",
                 availableKey, available);
     }
+
+
 }

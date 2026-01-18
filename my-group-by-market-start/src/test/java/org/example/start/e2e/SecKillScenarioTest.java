@@ -7,6 +7,7 @@ import org.example.application.service.trade.result.TradeOrderResult;
 import org.example.common.exception.BizException;
 import org.example.start.base.ConcurrentTestSupport;
 import org.example.start.base.IntegrationTestBase;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -404,4 +405,29 @@ public class SecKillScenarioTest extends IntegrationTestBase {
                                 .as("应该有495个用户失败")
                                 .isEqualTo(495);
         }
+
+        @AfterEach
+        void tearDownSecKillTestData() {
+                if (testOrderId != null) {
+                        try {
+                                // 1. 清理数据库数据 (按依赖反向清理)
+                                jdbcTemplate.update("DELETE FROM trade_order WHERE order_id = ?", testOrderId);
+                                jdbcTemplate.update("DELETE FROM account WHERE activity_id = ?", testActivityId);
+                                jdbcTemplate.update("DELETE FROM `order` WHERE order_id = ?", testOrderId);
+                                jdbcTemplate.update("DELETE FROM activity_goods WHERE activity_id = ?", testActivityId);
+                                jdbcTemplate.update("DELETE FROM sku WHERE spu_id = ?", testSpuId);
+                                jdbcTemplate.update("DELETE FROM spu WHERE spu_id = ?", testSpuId);
+                                jdbcTemplate.update("DELETE FROM activity WHERE activity_id = ?", testActivityId);
+
+                                // 2. 清理Redis缓存
+                                String slotKey = "team_slot:" + testOrderId + ":available";
+                                redisService.delete(slotKey);
+
+                                log.info("【测试清理】已清理测试数据: orderId={}, activityId={}", testOrderId, testActivityId);
+                        } catch (Exception e) {
+                                log.error("【测试清理】清理测试数据失败", e);
+                        }
+                }
+        }
+
 }

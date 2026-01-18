@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -144,6 +145,16 @@ public interface IRedisService {
      * @param key Redis key
      */
     void remove(String key);
+
+    /**
+     * 执行 Lua 脚本 (专门用于返回数值类型的操作，如 decr, incr 等)
+     *
+     * @param script Lua 脚本内容
+     * @param keys   Redis 键列表 (对应 Lua 中的 KEYS[1], KEYS[2]...)
+     * @param args   参数列表 (对应 Lua 中的 ARGV[1], ARGV[2]...)
+     * @return 脚本执行结果 (Long)
+     */
+    Long executeScript(String script, List<Object> keys, Object... args);
 
     /**
      * 将 userId 转换为 BitMap 索引

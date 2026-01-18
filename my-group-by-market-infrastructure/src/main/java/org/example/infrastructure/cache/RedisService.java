@@ -4,11 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBitSet;
 import org.redisson.api.RLock;
+import org.redisson.api.RScript;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.codec.StringCodec;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -108,6 +110,26 @@ public class RedisService implements IRedisService {
     @Override
     public void remove(String key) {
         redissonClient.getBucket(key).delete();
+    }
+
+    @Override
+    public Long executeScript(String script, List<Object> keys, Object... args) {
+        // 1. 获取脚本对象
+        // 【关键点】使用 StringCodec.INSTANCE
+        // 这确保了 Redis 中的数据是以普通字符串/数字存储的，而不是 Redisson 特有的二进制编码
+        // 这样 Lua 脚本中的 tonumber() 和 decr 才能正常工作
+        RScript rScript = redissonClient.getScript(StringCodec.INSTANCE);
+
+        // 2. 执行脚本
+        // Mode.READ_WRITE: 读写模式 (因为我们要 set 和 decr)
+        // ReturnType.INTEGER: 告诉 Redisson 脚本返回的是个整数 (Long)
+        return rScript.eval(
+                RScript.Mode.READ_WRITE,
+                script,
+                RScript.ReturnType.INTEGER,
+                keys,
+                args
+        );
     }
 
     /**
