@@ -304,7 +304,7 @@ public class ResourceReleaseService {
 
             // 2. 执行释放
             int result = skuRepository.unfreezeStock(skuId, UNFREEZE_QUANTITY);
-            if (result <= 0) {
+            if (result < 0) {
                 log.warn("【{}】库存释放失败（可能已释放）, skuId={}, tradeOrderId={}", scene, skuId, tradeOrderId);
                 throw new BizException("库存释放失败");
             }

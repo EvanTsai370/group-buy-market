@@ -128,14 +128,16 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
         log.debug("【TradeOrderRepository】占用队伍名额, teamSlotKey: {}, target: {}", teamSlotKey, target);
 
         // 从teamSlotKey中提取orderId，然后使用RedisKeyManager生成完整的key
-        String orderId = org.example.common.cache.RedisKeyManager.extractOrderIdFromTeamSlotKey(teamSlotKey);
-        String availableKey = org.example.common.cache.RedisKeyManager.teamSlotAvailableKey(orderId);
-        String lockedKey = org.example.common.cache.RedisKeyManager.teamSlotLockedKey(orderId);
+        String orderId = RedisKeyManager.extractOrderIdFromTeamSlotKey(teamSlotKey);
+        String availableKey = RedisKeyManager.teamSlotAvailableKey(orderId);
+        String lockedKey = RedisKeyManager.teamSlotLockedKey(orderId);
 
-        // 1. 初始化名额（仅首次，使用exists检查避免重复初始化）
-        if (!redisService.exists(availableKey)) {
-            redisService.setLong(availableKey, target.longValue(), validTime + 60L, TimeUnit.MINUTES);
-            log.info("【TradeOrderRepository】初始化队伍名额, availableKey: {}, target: {}", availableKey, target);
+        // 1. 初始化名额（仅首次）
+        // validTime单位是秒，加上1小时(3600秒)的缓冲时间
+        Boolean isInit = redisService.setNx(availableKey, target, validTime + 3600L, TimeUnit.SECONDS);
+
+        if (isInit) {
+            log.info("【TradeOrderRepository】成功初始化队伍名额（我是第一个）, availableKey: {}", availableKey);
         }
 
         // 2. 尝试扣减名额（DECR 返回扣减后的值）
@@ -152,7 +154,7 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
 
         // 4. 记录已锁定量（用于监控和审计，可选）
         long locked = redisService.incr(lockedKey);
-        redisService.expire(lockedKey, validTime + 60L, TimeUnit.MINUTES);
+        redisService.expire(lockedKey, validTime + 3600L, TimeUnit.SECONDS);
 
         log.info("【TradeOrderRepository】队伍名额占用成功, availableKey: {}, remaining: {}, locked: {}",
                 availableKey, remainingSlot, locked);
@@ -172,8 +174,8 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
 
         // 直接增加可用名额（原子操作）
         long available = redisService.incr(availableKey);
-        // 保持与初始化时一致的过期时间（validTime + 60分钟缓冲）
-        redisService.expire(availableKey, validTime + 60L, TimeUnit.MINUTES);
+        // 保持与初始化时一致的过期时间（validTime + 3600秒缓冲）
+        redisService.expire(availableKey, validTime + 3600L, TimeUnit.SECONDS);
 
         log.info("【TradeOrderRepository】恢复队伍名额, availableKey: {}, current available: {}",
                 availableKey, available);

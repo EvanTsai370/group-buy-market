@@ -5,8 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBitSet;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.redisson.client.codec.StringCodec;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -78,7 +80,16 @@ public class RedisService implements IRedisService {
 
     @Override
     public Boolean setNx(String key, long timeout, TimeUnit unit) {
-        return redissonClient.getBucket(key).trySet("1", timeout, unit);
+        return redissonClient.getBucket(key).setIfAbsent("1", Duration.of(timeout, toChronoUnit(unit)));
+    }
+
+    @Override
+    public Boolean setNx(String key, Object value, long timeout, TimeUnit unit) {
+        // 关键点：使用 StringCodec.INSTANCE
+        // 确保存入 Redis 的是 "5" 这样的字符串，而不是二进制对象
+        // 这样后续的 DECR 操作才能正常识别它是数字
+        return redissonClient.getBucket(key, StringCodec.INSTANCE)
+                .setIfAbsent(value, Duration.of(timeout, toChronoUnit(unit)));
     }
 
     @Override

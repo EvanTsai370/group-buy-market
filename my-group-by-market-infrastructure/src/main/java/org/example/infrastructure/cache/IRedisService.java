@@ -109,6 +109,18 @@ public interface IRedisService {
     Boolean setNx(String key, long timeout, TimeUnit unit);
 
     /**
+     * SET if Not eXists（带具体值）
+     * 用于初始化库存、计数器等场景
+     *
+     * @param key Redis key
+     * @param value 需要设置的值（如库存数量）
+     * @param timeout 过期时间
+     * @param unit 时间单位
+     * @return true=设置成功（我是第一个），false=key已存在
+     */
+    Boolean setNx(String key, Object value, long timeout, TimeUnit unit);
+
+    /**
      * 获取Long类型的值
      *
      * @param key Redis key
