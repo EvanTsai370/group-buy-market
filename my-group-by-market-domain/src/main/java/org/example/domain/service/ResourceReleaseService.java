@@ -94,7 +94,7 @@ public class ResourceReleaseService {
 
             // 2. 释放名额槽位（需要从orderId构造teamSlotKey）
             String teamSlotKey = orderId != null ? RedisKeyManager.teamSlotKey(orderId) : null;
-            releaseSlot(teamSlotKey, activityId, tradeOrderId, scene);
+            releaseSlot(teamSlotKey, activityId, tradeOrderId, userId, scene);
 
             // 3. 释放冻结库存
             releaseInventory(skuId, tradeOrderId, scene);
@@ -130,11 +130,11 @@ public class ResourceReleaseService {
      * @param scene        场景标识
      */
     public void releaseSlotAndInventory(String teamSlotKey, String activityId,
-            String skuId, String tradeOrderId, String scene) {
+            String skuId, String tradeOrderId, String userId, String scene) {
         log.info("【{}】开始释放槽位和库存, teamSlotKey={}, skuId={}", scene, teamSlotKey, skuId);
 
         // 1. 释放名额槽位（如果teamSlotKey为null会自动跳过）
-        releaseSlot(teamSlotKey, activityId, tradeOrderId, scene);
+        releaseSlot(teamSlotKey, activityId, tradeOrderId, userId, scene);
 
         // 2. 释放冻结库存（如果skuId为null会自动跳过）
         releaseInventory(skuId, tradeOrderId, scene);
@@ -226,7 +226,7 @@ public class ResourceReleaseService {
      * @param scene        场景标识
      */
     public void releaseSlot(String teamSlotKey, String activityId,
-            String tradeOrderId, String scene) {
+            String tradeOrderId, String userId, String scene) {
         if (teamSlotKey == null || teamSlotKey.isEmpty()) {
             log.warn("【{}】teamSlotKey为空，跳过槽位释放", scene);
             return;
@@ -245,7 +245,24 @@ public class ResourceReleaseService {
             // 2. 提取orderId（用于生成lockKey）
             String orderId = RedisKeyManager.extractOrderIdFromTeamSlotKey(teamSlotKey);
             Integer validTime = getValidTime(activityId);
-            String lockKey = RedisKeyManager.lockKey("resource-release", tradeOrderId != null ? tradeOrderId : orderId);
+
+            // 为了避免不同用户在无tradeOrderId时竞争同一个锁，使用 userId + orderId
+            // 场景说明：
+            // 1. 在锁单流程中，资源预占（Redis DECR）发生在创建 TradeOrder 之前。
+            // 2. 如果在资源预占成功后，创建 TradeOrder 之前发生异常（如 DB 故障），此时 tradeOrderId 为 null。
+            // 3. 在高并发抢单场景下（如 50 人抢 5 个名额），可能有多个用户同时触发回滚。
+            // 4. 如果仅使用 orderId 作为锁 Key，这多个用户的回滚线程会竞争同一把锁。
+            // 5. 导致只有一个线程能执行回滚，其他线程因获取锁失败而误判为“重复操作”直接跳过，从而导致名额泄漏。
+            // 6. 因此，必须引入 userId 维度，确保每个用户的回滚操作是独立的（Order + User 级别）。
+            String lockTarget = tradeOrderId;
+            if (lockTarget == null || lockTarget.isEmpty()) {
+                if (userId != null && !userId.isEmpty()) {
+                    lockTarget = orderId + ":" + userId;
+                } else {
+                    lockTarget = orderId;
+                }
+            }
+            String lockKey = RedisKeyManager.lockKey("resource-release", lockTarget);
 
             // 3. 尝试获取锁（30天过期，防止锁永久占用）
             Boolean lockAcquired = lockService.setNx(lockKey, 30 * 24 * 60, TimeUnit.MINUTES);

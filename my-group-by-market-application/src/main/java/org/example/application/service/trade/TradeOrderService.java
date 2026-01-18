@@ -404,6 +404,7 @@ public class TradeOrderService {
                 activityId,
                 recoverySkuId,
                 null, // tradeOrderId 还未生成
+                cmd.getUserId(), // ✅ 传递userId
                 "锁单失败回滚");
     }
 
