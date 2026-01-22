@@ -7,6 +7,7 @@ import org.example.application.service.goods.cmd.*;
 import org.example.application.service.goods.result.SkuResult;
 import org.example.application.service.goods.result.SpuResult;
 import org.example.common.exception.BizException;
+import org.example.common.model.PageResult;
 import org.example.domain.model.goods.Sku;
 import org.example.domain.model.goods.Spu;
 import org.example.domain.model.goods.repository.SkuRepository;
@@ -209,9 +210,12 @@ public class GoodsService {
     /**
      * 分页查询 SPU
      */
-    public List<SpuResult> listSpus(int page, int size) {
-        List<Spu> spus = spuRepository.findAll(page, size);
-        return goodsResultAssembler.toSpuResultList(spus);
+    public PageResult<SpuResult> listSpus(int page, int size) {
+        PageResult<Spu> pageResult = spuRepository.findAll(page, size);
+
+        List<SpuResult> list = goodsResultAssembler.toSpuResultList(pageResult.getList());
+
+        return PageResult.of(list, pageResult.getTotal(), pageResult.getPage(), pageResult.getSize());
     }
 
     /**

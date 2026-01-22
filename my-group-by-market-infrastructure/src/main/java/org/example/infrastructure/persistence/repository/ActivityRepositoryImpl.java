@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.model.PageResult;
 import org.example.domain.model.activity.Activity;
 import org.example.domain.model.activity.Discount;
 import org.example.domain.model.activity.repository.ActivityRepository;
@@ -35,6 +36,7 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     private final ActivityMapper activityMapper;
     private final ActivityGoodsMapper activityGoodsMapper;
     private final DiscountMapper discountMapper;
+    private final DiscountConverter discountConverter;
     private final IdGenerator idGenerator;
     private final Environment environment;
 
@@ -78,13 +80,14 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     }
 
     @Override
-    public List<Activity> findAll(int page, int size) {
+    public PageResult<Activity> findByPage(int page, int size) {
         Page<ActivityPO> pageParam = new Page<>(page, size);
         Page<ActivityPO> resultPage = activityMapper.selectPage(pageParam, null);
 
-        return resultPage.getRecords().stream()
+        List<Activity> list = resultPage.getRecords().stream()
                 .map(ActivityConverter.INSTANCE::toDomain)
                 .collect(Collectors.toList());
+        return new PageResult<>(list, resultPage.getTotal(), page, size);
     }
 
     @Override
@@ -126,7 +129,7 @@ public class ActivityRepositoryImpl implements ActivityRepository {
             return null;
         }
 
-        Discount discount = DiscountConverter.INSTANCE.toDomain(po);
+        Discount discount = discountConverter.toDomain(po);
         log.info("【ActivityRepository】查询折扣配置，discountId: {}, discountName: {}",
                 discountId, discount.getDiscountName());
         return discount;
@@ -134,7 +137,7 @@ public class ActivityRepositoryImpl implements ActivityRepository {
 
     @Override
     public void saveDiscount(Discount discount) {
-        DiscountPO po = DiscountConverter.INSTANCE.toPO(discount);
+        DiscountPO po = discountConverter.toPO(discount);
 
         // MyBatis-Plus 会根据主键是否存在自动判断 INSERT/UPDATE
         boolean success = discountMapper.insertOrUpdate(po);
@@ -217,5 +220,14 @@ public class ActivityRepositoryImpl implements ActivityRepository {
 
         log.debug("【ActivityRepository】商品无有效活动，spuId: {}", spuId);
         return Optional.empty();
+    }
+
+    @Override
+    public long countActive(java.time.LocalDateTime now) {
+        LambdaQueryWrapper<ActivityPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ActivityPO::getStatus, "ACTIVE");
+        wrapper.le(ActivityPO::getStartTime, now);
+        wrapper.ge(ActivityPO::getEndTime, now);
+        return activityMapper.selectCount(wrapper);
     }
 }

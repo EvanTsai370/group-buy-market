@@ -136,9 +136,9 @@ public class JwtTokenService implements TokenService {
     }
 
     private SecretKey getSigningKey() {
-        // 确保密钥至少32字节（256位）
+        // 确保密钥足够长（至少64字节）以满足截取要求
         String paddedSecret = secret;
-        while (paddedSecret.length() < 32) {
+        while (paddedSecret.length() < 64) {
             paddedSecret = paddedSecret + paddedSecret;
         }
         paddedSecret = paddedSecret.substring(0, 64);

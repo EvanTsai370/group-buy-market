@@ -106,4 +106,19 @@ public class CrowdTag {
     public boolean isAvailable() {
         return this.status == TagStatus.COMPLETED;
     }
+
+    /**
+     * 初始化
+     */
+    public void init() {
+        this.createTime = LocalDateTime.now();
+        this.updateTime = LocalDateTime.now();
+    }
+
+    /**
+     * 更新
+     */
+    public void update() {
+        this.updateTime = LocalDateTime.now();
+    }
 }

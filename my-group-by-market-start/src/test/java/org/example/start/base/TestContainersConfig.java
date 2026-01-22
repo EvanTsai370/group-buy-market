@@ -28,7 +28,7 @@ public class TestContainersConfig {
                 .withDatabaseName("test_db")
                 .withUsername("test_user")
                 .withPassword("test_password")
-                .withReuse(true);  // 重用容器，加速测试
+                .withReuse(true); // 重用容器，加速测试
         mysql.start();
         MYSQL_CONTAINER = mysql;
 
@@ -41,8 +41,12 @@ public class TestContainersConfig {
 
         // RabbitMQ 3.13 容器
         @SuppressWarnings("resource")
-        RabbitMQContainer rabbitmq = new RabbitMQContainer(DockerImageName.parse("rabbitmq:3.13-management-alpine"))
-                .withReuse(true);
+        RabbitMQContainer rabbitmq = new RabbitMQContainer(DockerImageName.parse("rabbitmq:3.13-management"))
+                .withReuse(true)
+                .withCopyToContainer(
+                        org.testcontainers.images.builder.Transferable.of(downloadPlugin()),
+                        "/plugins/rabbitmq_delayed_message_exchange.ez")
+                .withEnv("RABBITMQ_PLUGINS", "rabbitmq_delayed_message_exchange");
         rabbitmq.start();
         RABBITMQ_CONTAINER = rabbitmq;
 
@@ -101,8 +105,8 @@ public class TestContainersConfig {
      */
     public static String getRedisConnectionString() {
         return String.format("redis://%s:%d",
-            REDIS_CONTAINER.getHost(),
-            REDIS_CONTAINER.getFirstMappedPort());
+                REDIS_CONTAINER.getHost(),
+                REDIS_CONTAINER.getFirstMappedPort());
     }
 
     /**
@@ -117,5 +121,20 @@ public class TestContainersConfig {
      */
     public static String getRabbitmqHost() {
         return RABBITMQ_CONTAINER.getHost();
+    }
+
+    /**
+     * 下载 RabbitMQ 延迟消息插件
+     */
+    private static byte[] downloadPlugin() {
+        try {
+            java.net.URL url = new java.net.URL(
+                    "https://github.com/rabbitmq/rabbitmq-delayed-message-exchange/releases/download/v3.13.0/rabbitmq_delayed_message_exchange-3.13.0.ez");
+            try (java.io.InputStream in = url.openStream()) {
+                return in.readAllBytes();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to download RabbitMQ delayed message exchange plugin", e);
+        }
     }
 }

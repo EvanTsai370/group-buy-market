@@ -24,7 +24,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/admin/order")
+@RequestMapping("/api/admin/orders")
 @RequiredArgsConstructor
 @Tag(name = "订单管理", description = "管理后台订单管理接口")
 @PreAuthorize("hasRole('ADMIN')")
@@ -32,6 +32,31 @@ public class AdminOrderController {
 
     private final AdminOrderService adminOrderService;
     private final AdminOrderAssembler adminOrderAssembler;
+
+    // ============== 交易订单 ==============
+
+    @GetMapping
+    @Operation(summary = "交易订单列表", description = "分页查询交易订单")
+    public Result<org.example.common.model.PageResult<AdminTradeOrderResponse>> listOrders(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "startDate", required = false) @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd") java.time.LocalDate startDate,
+            @RequestParam(value = "endDate", required = false) @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd") java.time.LocalDate endDate) {
+        log.info("【AdminOrder】分页查询交易订单, page: {}, size: {}, keyword: {}, status: {}", page, size, keyword, status);
+        java.time.LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
+        java.time.LocalDateTime end = endDate != null ? endDate.atTime(java.time.LocalTime.MAX) : null;
+
+        org.example.common.model.PageResult<TradeOrderResult> result = adminOrderService.listTradeOrders(page, size,
+                keyword, status, start, end);
+
+        List<AdminTradeOrderResponse> responseList = adminOrderAssembler.toTradeOrderResponseList(result.getList());
+        org.example.common.model.PageResult<AdminTradeOrderResponse> pageResponse = new org.example.common.model.PageResult<>(
+                responseList, result.getTotal(), page, size);
+
+        return Result.success(pageResponse);
+    }
 
     // ============== 拼团订单 ==============
 

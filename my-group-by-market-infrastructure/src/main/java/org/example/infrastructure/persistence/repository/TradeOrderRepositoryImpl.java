@@ -134,7 +134,7 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
         String lockedKey = RedisKeyManager.teamSlotLockedKey(orderId);
 
         // 两种方法实现初始化原子性以及扣减原子性：setNx和lua脚本
-//        long remainingSlot = initAndDecrSlot(target, validTime, availableKey);
+        // long remainingSlot = initAndDecrSlot(target, validTime, availableKey);
         long remainingSlot = initAndDecrSlotWithScript(target, validTime, availableKey);
 
         log.debug("【TradeOrderRepository】扣减名额, availableKey: {}, remaining: {}", availableKey, remainingSlot);
@@ -156,7 +156,7 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
     }
 
     private long initAndDecrSlot(Integer target, Integer validTime, String availableKey) {
-        //  初始化名额（仅首次）
+        // 初始化名额（仅首次）
         // validTime单位是秒，加上1小时(3600秒)的缓冲时间
         Boolean isInit = redisService.setNx(availableKey, target, validTime + 3600L, TimeUnit.SECONDS);
 
@@ -165,40 +165,39 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
         }
 
         // 尝试扣减名额（DECR 返回扣减后的值）
-      return redisService.decr(availableKey);
+        return redisService.decr(availableKey);
     }
 
     private long initAndDecrSlotWithScript(Integer target, Integer validTime, String availableKey) {
-        String luaScript =
-                "if redis.call('exists', KEYS[1]) == 0 then " +
-                        "    redis.call('setex', KEYS[1], ARGV[2], ARGV[1]) " +
-                        "end " +
-                        "return redis.call('decr', KEYS[1])";
+        String luaScript = "if redis.call('exists', KEYS[1]) == 0 then " +
+                "    redis.call('setex', KEYS[1], ARGV[2], ARGV[1]) " +
+                "end " +
+                "return redis.call('decr', KEYS[1])";
         long expireSeconds = TimeUnit.MINUTES.toSeconds(validTime + 60L);
         return redisService.executeScript(
                 luaScript,
                 Collections.singletonList(availableKey), // 对应 KEYS[1]
-                target,       // 对应 ARGV[1] (初始库存)
+                target, // 对应 ARGV[1] (初始库存)
                 expireSeconds // 对应 ARGV[2] (过期时间)
         );
 
         // 也可以把“回滚”也省掉
-//        String advancedLuaScript =
-//                // 1. 如果 key 不存在，初始化
-//                "if redis.call('exists', KEYS[1]) == 0 then " +
-//                        "    redis.call('setex', KEYS[1], ARGV[2], ARGV[1]) " +
-//                        "end " +
-//
-//                        // 2. 获取当前值（注意：redis取出的是string，lua需要转number）
-//                        "local current = tonumber(redis.call('get', KEYS[1])) " +
-//
-//                        // 3. 如果当前值 <= 0，直接返回 -1 (代表库存不足)
-//                        "if current <= 0 then " +
-//                        "    return -1 " +
-//                        "end " +
-//
-//                        // 4. 执行扣减并返回剩余值
-//                        "return redis.call('decr', KEYS[1])";
+        // String advancedLuaScript =
+        // // 1. 如果 key 不存在，初始化
+        // "if redis.call('exists', KEYS[1]) == 0 then " +
+        // " redis.call('setex', KEYS[1], ARGV[2], ARGV[1]) " +
+        // "end " +
+        //
+        // // 2. 获取当前值（注意：redis取出的是string，lua需要转number）
+        // "local current = tonumber(redis.call('get', KEYS[1])) " +
+        //
+        // // 3. 如果当前值 <= 0，直接返回 -1 (代表库存不足)
+        // "if current <= 0 then " +
+        // " return -1 " +
+        // "end " +
+        //
+        // // 4. 执行扣减并返回剩余值
+        // "return redis.call('decr', KEYS[1])";
     }
 
     @Override
@@ -221,5 +220,76 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
                 availableKey, available);
     }
 
+    @Override
+    public java.math.BigDecimal sumPayPriceByPayTimeBetween(java.time.LocalDateTime start,
+            java.time.LocalDateTime end) {
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TradeOrderPO> wrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+        wrapper.select(TradeOrderPO::getPayPrice);
+        wrapper.ge(TradeOrderPO::getPayTime, start);
+        wrapper.le(TradeOrderPO::getPayTime, end);
+        wrapper.eq(TradeOrderPO::getStatus, "PAID"); // 仅统计已支付
 
+        List<TradeOrderPO> list = tradeOrderMapper.selectList(wrapper);
+        return list.stream()
+                .map(TradeOrderPO::getPayPrice)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+    }
+
+    @Override
+    public long countByCreateTimeBetween(java.time.LocalDateTime start, java.time.LocalDateTime end) {
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TradeOrderPO> wrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+        wrapper.ge(TradeOrderPO::getCreateTime, start);
+        wrapper.le(TradeOrderPO::getCreateTime, end);
+        return tradeOrderMapper.selectCount(wrapper);
+    }
+
+    @Override
+    public List<TradeOrder> findLatest(int limit) {
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TradeOrderPO> wrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+        wrapper.orderByDesc(TradeOrderPO::getCreateTime);
+        wrapper.last("LIMIT " + limit);
+
+        List<TradeOrderPO> list = tradeOrderMapper.selectList(wrapper);
+        return list.stream()
+                .map(tradeOrderConverter::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public org.example.common.model.PageResult<TradeOrder> findByPage(int page, int size, String keyword, String status,
+            java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<TradeOrderPO> pageParam = new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(
+                page, size);
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TradeOrderPO> wrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+
+        // Keyword search (Order ID or User ID)
+        if (StringUtils.isNotBlank(keyword)) {
+            wrapper.and(w -> w.eq(TradeOrderPO::getTradeOrderId, keyword)
+                    .or().eq(TradeOrderPO::getUserId, keyword));
+        }
+
+        // Status filter
+        if (StringUtils.isNotBlank(status)) {
+            wrapper.eq(TradeOrderPO::getStatus, status);
+        }
+
+        // Date range filter
+        if (startDate != null) {
+            wrapper.ge(TradeOrderPO::getCreateTime, startDate);
+        }
+        if (endDate != null) {
+            wrapper.le(TradeOrderPO::getCreateTime, endDate);
+        }
+
+        wrapper.orderByDesc(TradeOrderPO::getCreateTime);
+
+        com.baomidou.mybatisplus.core.metadata.IPage<TradeOrderPO> resultPage = tradeOrderMapper.selectPage(pageParam,
+                wrapper);
+
+        List<TradeOrder> list = resultPage.getRecords().stream()
+                .map(tradeOrderConverter::toDomain)
+                .collect(Collectors.toList());
+
+        return new org.example.common.model.PageResult<>(list, resultPage.getTotal(), page, size);
+    }
 }

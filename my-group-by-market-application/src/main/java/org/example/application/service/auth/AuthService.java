@@ -33,7 +33,7 @@ public class AuthService {
     /**
      * 用户名密码登录
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResult login(LoginCmd cmd) {
         log.info("【AuthService】用户登录, username: {}", cmd.getUsername());
 

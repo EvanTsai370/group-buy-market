@@ -1,5 +1,6 @@
 package org.example.domain.model.activity.repository;
 
+import org.example.common.model.PageResult;
 import org.example.domain.model.activity.Activity;
 import org.example.domain.model.activity.ActivityGoods;
 import org.example.domain.model.activity.Discount;
@@ -39,9 +40,9 @@ public interface ActivityRepository {
      *
      * @param page 页码（从1开始）
      * @param size 每页数量
-     * @return 活动列表
+     * @return 活动列表分页结果
      */
-    List<Activity> findAll(int page, int size);
+    PageResult<Activity> findByPage(int page, int size);
 
     /**
      * 根据SPU ID、来源、渠道查询活动ID
@@ -124,4 +125,12 @@ public interface ActivityRepository {
      * @return 有效的活动（可能为空）
      */
     Optional<Activity> findActiveBySpuId(String spuId);
+
+    /**
+     * 统计当前活跃的活动数量
+     *
+     * @param now 当前时间
+     * @return 活跃活动数量
+     */
+    long countActive(java.time.LocalDateTime now);
 }

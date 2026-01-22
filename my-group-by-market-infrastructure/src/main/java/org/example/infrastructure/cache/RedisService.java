@@ -122,11 +122,11 @@ public class RedisService implements IRedisService {
 
         // 2. 执行脚本
         // Mode.READ_WRITE: 读写模式 (因为我们要 set 和 decr)
-        // ReturnType.INTEGER: 告诉 Redisson 脚本返回的是个整数 (Long)
+        // ReturnType.Long: 告诉 Redisson 脚本返回的是个整数 (Long)
         return rScript.eval(
                 RScript.Mode.READ_WRITE,
                 script,
-                RScript.ReturnType.INTEGER,
+                RScript.ReturnType.LONG,
                 keys,
                 args
         );

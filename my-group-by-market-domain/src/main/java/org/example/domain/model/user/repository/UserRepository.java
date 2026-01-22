@@ -67,4 +67,22 @@ public interface UserRepository {
      * 分页查询用户
      */
     List<User> findAll(int page, int size);
+
+    /**
+     * 统计指定时间范围内的注册用户数量
+     *
+     * @param start 开始时间
+     * @param end   结束时间
+     * @return 用户数量
+     */
+    long countByCreateTimeBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
+
+    /**
+     * 分页查询用户
+     * 
+     * @param page 页码
+     * @param size 每页大小
+     * @return 分页结果
+     */
+    org.example.common.model.PageResult<User> findByPage(int page, int size);
 }

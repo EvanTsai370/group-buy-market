@@ -453,3 +453,13 @@ CREATE TABLE inventory_record (
 -- 17. 插入默认管理员账户（密码: admin123，BCrypt加密）
 INSERT INTO `user` (user_id, username, password, nickname, role, status) VALUES
 ('ADMIN001', 'admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt7I6Je', '系统管理员', 'ADMIN', 'ACTIVE');
+
+-- V6__add_unique_constraints_for_discount_and_spu.sql
+-- 为折扣和SPU添加唯一约束，确保名称不重复
+
+-- 1. 为 discount 表的 discount_name 添加唯一约束
+ALTER TABLE discount ADD UNIQUE INDEX uk_discount_name (discount_name);
+
+-- 2. 为 spu 表的 spu_name 添加唯一约束
+ALTER TABLE spu ADD UNIQUE INDEX uk_spu_name (spu_name);
+

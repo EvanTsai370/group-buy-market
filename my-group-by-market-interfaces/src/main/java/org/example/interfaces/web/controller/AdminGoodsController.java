@@ -10,6 +10,7 @@ import org.example.application.service.goods.cmd.*;
 import org.example.application.service.goods.result.SkuResult;
 import org.example.application.service.goods.result.SpuResult;
 import org.example.common.api.Result;
+import org.example.common.model.PageResult;
 import org.example.interfaces.web.assembler.AdminGoodsAssembler;
 import org.example.interfaces.web.dto.admin.SkuResponse;
 import org.example.interfaces.web.dto.admin.SpuResponse;
@@ -86,11 +87,11 @@ public class AdminGoodsController {
 
     @GetMapping("/spu")
     @Operation(summary = "分页查询SPU", description = "分页查询商品SPU列表")
-    public Result<List<SpuResponse>> listSpus(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        List<SpuResult> results = goodsService.listSpus(page, size);
-        return Result.success(adminGoodsAssembler.toSpuResponseList(results));
+    public Result<PageResult<SpuResponse>> listSpus(
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size) {
+        PageResult<SpuResult> result = goodsService.listSpus(page, size);
+        return Result.success(adminGoodsAssembler.toSpuResponsePage(result));
     }
 
     // ============== SKU 管理 ==============

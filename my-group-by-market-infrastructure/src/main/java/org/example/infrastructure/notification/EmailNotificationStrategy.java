@@ -2,7 +2,7 @@ package org.example.infrastructure.notification;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.domain.model.trade.message.RefundNotificationMessage;
-import org.example.domain.service.notification.NotificationStrategy;
+import org.example.domain.service.notification.MessageNotificationStrategy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-public class EmailNotificationStrategy implements NotificationStrategy {
+public class EmailNotificationStrategy implements MessageNotificationStrategy {
 
     @Override
     public void send(RefundNotificationMessage message) {

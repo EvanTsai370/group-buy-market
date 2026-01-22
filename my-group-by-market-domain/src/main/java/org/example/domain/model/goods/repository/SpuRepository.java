@@ -1,5 +1,6 @@
 package org.example.domain.model.goods.repository;
 
+import org.example.common.model.PageResult;
 import org.example.domain.model.goods.Spu;
 import org.example.domain.model.goods.valueobject.GoodsStatus;
 
@@ -47,7 +48,12 @@ public interface SpuRepository {
     /**
      * 分页查询
      */
-    List<Spu> findAll(int page, int size);
+    PageResult<Spu> findAll(int page, int size);
+
+    /**
+     * 根据 SPU 名称查询（用于唯一性校验）
+     */
+    Optional<Spu> findBySpuName(String spuName);
 
     /**
      * 删除（软删除）

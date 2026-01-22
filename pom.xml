@@ -17,7 +17,7 @@
     <fastjson.version>2.0.28</fastjson.version>
     <slf4j-api.version>2.0.9</slf4j-api.version>
     <commons-lang3.version>3.14.0</commons-lang3.version>
-    <redisson.version>3.26.0</redisson.version>
+    <redisson.version>4.1.0</redisson.version>
     <amqp.version>3.2.0</amqp.version>
     <jjwt.version>0.12.5</jjwt.version>
   </properties>
@@ -125,6 +125,9 @@
         <configuration>
           <source>21</source>
           <target>21</target>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
           <annotationProcessorPaths>
             <path>
               <groupId>org.projectlombok</groupId>

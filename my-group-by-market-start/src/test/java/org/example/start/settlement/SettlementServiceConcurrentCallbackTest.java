@@ -88,6 +88,9 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
     @Autowired
     private NotificationTaskRepository notificationTaskRepository;
 
+    @Autowired
+    private org.example.domain.model.goods.repository.SkuRepository skuRepository;
+
     /**
      * 测试1：并发支付回调的数据一致性和原子性
      *
@@ -241,6 +244,9 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
         // 等待所有线程完成
         boolean completed = doneLatch.await(30, TimeUnit.SECONDS);
         executor.shutdown();
+
+        // 等待事件被消费
+        Thread.sleep(1500);
 
         assertThat(completed).isTrue();
         log.info("【并发测试】所有线程执行完成，成功: {}, 失败: {}", successCount.get(), failureCount.get());
@@ -427,7 +433,7 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
     @Test
     @DisplayName("测试3：成团后支付回调应该具有幂等性")
     @DirtiesContext
-    public void testPaymentCallback_idempotentAfterCompletion() {
+    public void testPaymentCallback_idempotentAfterCompletion() throws InterruptedException {
         log.info("========== 【Test 5-3】开始测试：成团后的幂等性 ==========");
 
         // 创建拼团订单（3 人团）
@@ -486,6 +492,9 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
         // 第一次处理用户2的支付回调（触发成团）
         log.info("【幂等性测试】第一次处理用户2的支付回调（触发成团）");
         paymentCallbackApplicationService.handlePaymentSuccess("OUT_IDEMPOTENT2_2", BigDecimal.valueOf(40.00));
+
+        // 等待支付事件被消费
+        Thread.sleep(1500);
 
         // 验证成团后的状态
         Order orderAfterCompletion = orderRepository.findById(orderId).orElseThrow();
@@ -882,6 +891,13 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
         String skuId = "SKU_RACE9";
         String goodsName = "测试商品";
         String outTradeNo = "OUT_RACE9_1";
+
+        // 创建 SKU 并预冻结库存（模拟已锁单）
+        org.example.domain.model.goods.Sku sku = org.example.domain.model.goods.Sku.create(skuId, spuId, goodsName,
+                BigDecimal.valueOf(100.00), 100);
+        sku.freezeStock(1);
+        skuRepository.save(sku);
+        log.info("【准备数据】创建SKU成功：skuId={}, frozenStock=1", skuId);
 
         TradeOrder tradeOrder = TradeOrder.create(
                 tradeOrderId,

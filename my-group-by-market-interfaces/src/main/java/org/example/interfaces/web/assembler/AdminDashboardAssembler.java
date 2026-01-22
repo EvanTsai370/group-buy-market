@@ -51,5 +51,20 @@ public interface AdminDashboardAssembler {
     /**
      * UserDetailResult 列表转换
      */
+    /**
+     * UserDetailResult 列表转换
+     */
     List<UserDetailResponse> toUserResponseList(List<UserDetailResult> results);
+
+    /**
+     * TradeOrderResult → AdminTradeOrderResponse
+     */
+    AdminTradeOrderResponse toAdminTradeOrderResponse(
+            org.example.application.service.admin.result.TradeOrderResult result);
+
+    /**
+     * TradeOrderResult 列表转换
+     */
+    List<AdminTradeOrderResponse> toAdminTradeOrderResponseList(
+            List<org.example.application.service.admin.result.TradeOrderResult> results);
 }

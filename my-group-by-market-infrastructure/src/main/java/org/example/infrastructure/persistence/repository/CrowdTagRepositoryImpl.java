@@ -1,8 +1,11 @@
 package org.example.infrastructure.persistence.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.model.PageResult;
 import org.example.domain.model.tag.CrowdTag;
 import org.example.domain.model.tag.repository.CrowdTagRepository;
 import org.example.domain.shared.IdGenerator;
@@ -15,6 +18,7 @@ import org.example.infrastructure.persistence.po.CrowdTagDetailPO;
 import org.example.infrastructure.persistence.po.CrowdTagPO;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -103,7 +107,7 @@ public class CrowdTagRepositoryImpl implements CrowdTagRepository {
      * 全量替换标签用户（同时写入数据库和缓存）
      * 先删除旧数据，再插入新数据，保证幂等性
      *
-     * @param tagId 标签ID
+     * @param tagId   标签ID
      * @param userIds 用户ID列表
      */
     @Override
@@ -209,7 +213,7 @@ public class CrowdTagRepositoryImpl implements CrowdTagRepository {
      * 批量检查用户是否在标签内
      *
      * @param userIds 用户ID列表
-     * @param tagId 标签ID
+     * @param tagId   标签ID
      * @return 在标签内的用户ID列表
      */
     public List<String> batchCheckUsersInTag(List<String> userIds, String tagId) {
@@ -261,6 +265,34 @@ public class CrowdTagRepositoryImpl implements CrowdTagRepository {
         } catch (Exception e) {
             log.error("【CrowdTagRepository】删除缓存失败, tagId: {}", tagId, e);
         }
+    }
+
+    @Override
+    public PageResult<CrowdTag> findByPage(int page, int size, String keyword, String status) {
+        LambdaQueryWrapper<CrowdTagPO> wrapper = new LambdaQueryWrapper<>();
+
+        // 关键词查询（标签名）
+        if (StringUtils.hasText(keyword)) {
+            wrapper.like(CrowdTagPO::getTagName, keyword);
+        }
+
+        // 状态查询
+        if (StringUtils.hasText(status)) {
+            wrapper.eq(CrowdTagPO::getStatus, status);
+        }
+
+        // 按创建时间倒序
+        wrapper.orderByDesc(CrowdTagPO::getCreateTime);
+
+        // 分页查询
+        IPage<CrowdTagPO> pageResult = crowdTagMapper.selectPage(new Page<>(page, size), wrapper);
+
+        // 转换为 Domain 对象
+        List<CrowdTag> list = pageResult.getRecords().stream()
+                .map(CrowdTagConverter.INSTANCE::toDomain)
+                .collect(Collectors.toList());
+
+        return new PageResult<>(list, pageResult.getTotal(), page, size);
     }
 
     /**

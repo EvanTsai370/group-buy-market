@@ -69,7 +69,11 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
 
                 // 添加 JWT 过滤器
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // 异常处理
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint()));
 
         return http.build();
     }

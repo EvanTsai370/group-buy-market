@@ -5,16 +5,17 @@ import org.example.domain.model.notification.NotificationTask;
 /**
  * 通知策略接口
  *
- * <p>使用策略模式处理不同类型的通知：
+ * <p>
+ * 使用策略模式处理不同类型的通知：
  * <ul>
- *   <li>HTTP - HTTP回调通知</li>
- *   <li>MQ - 消息队列通知</li>
+ * <li>HTTP - HTTP回调通知</li>
+ * <li>MQ - 消息队列通知</li>
  * </ul>
  *
  * @author 开发团队
  * @since 2026-01-06
  */
-public interface NotificationStrategy {
+public interface CallbackNotificationStrategy {
 
     /**
      * 执行通知

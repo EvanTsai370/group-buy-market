@@ -44,6 +44,14 @@ public class AdminDashboardController {
         return Result.success(adminDashboardAssembler.toDashboardOverviewResponse(result));
     }
 
+    @GetMapping("/dashboard/stats")
+    @Operation(summary = "仪表盘统计", description = "获取系统详细统计数据（今日数据、最近订单等）")
+    public Result<DashboardOverviewResponse> getDashboardStats() {
+        log.info("【AdminDashboard】获取仪表盘统计数据");
+        DashboardOverviewResult result = adminStatisticsService.getDashboardOverview();
+        return Result.success(adminDashboardAssembler.toDashboardOverviewResponse(result));
+    }
+
     @GetMapping("/statistics/users")
     @Operation(summary = "用户统计", description = "获取用户统计数据")
     public Result<UserStatisticsResponse> getUserStatistics() {
@@ -61,16 +69,6 @@ public class AdminDashboardController {
     }
 
     // ============== 用户管理 ==============
-
-    @GetMapping("/users")
-    @Operation(summary = "用户列表", description = "分页查询用户列表")
-    public Result<List<UserDetailResponse>> listUsers(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        log.info("【AdminDashboard】查询用户列表, page: {}, size: {}", page, size);
-        List<UserDetailResult> results = adminUserService.listUsers(page, size);
-        return Result.success(adminDashboardAssembler.toUserResponseList(results));
-    }
 
     @GetMapping("/users/{userId}")
     @Operation(summary = "用户详情", description = "获取用户详情")

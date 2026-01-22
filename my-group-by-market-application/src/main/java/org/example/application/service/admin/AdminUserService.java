@@ -78,10 +78,12 @@ public class AdminUserService {
     /**
      * 获取用户列表
      */
-    public List<UserDetailResult> listUsers(int page, int size) {
+    public org.example.common.model.PageResult<UserDetailResult> listUsers(int page, int size) {
         log.info("【AdminUser】查询用户列表, page: {}, size: {}", page, size);
-        List<User> users = userRepository.findAll(page, size);
-        return userResultAssembler.toResultList(users);
+        org.example.common.model.PageResult<User> pageResult = userRepository.findByPage(page, size);
+
+        List<UserDetailResult> list = userResultAssembler.toResultList(pageResult.getList());
+        return new org.example.common.model.PageResult<>(list, pageResult.getTotal(), page, size);
     }
 
     /**

@@ -19,7 +19,7 @@ import org.example.domain.model.trade.message.RefundNotificationMessage;
  * @author 开发团队
  * @since 2026-01-09
  */
-public interface NotificationStrategy {
+public interface MessageNotificationStrategy {
 
     /**
      * 发送通知

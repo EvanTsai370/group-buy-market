@@ -3,6 +3,7 @@ package org.example.interfaces.web.assembler;
 import org.example.application.service.goods.cmd.*;
 import org.example.application.service.goods.result.SkuResult;
 import org.example.application.service.goods.result.SpuResult;
+import org.example.common.model.PageResult;
 import org.example.interfaces.web.dto.admin.SkuResponse;
 import org.example.interfaces.web.dto.admin.SpuResponse;
 import org.example.interfaces.web.request.CreateSkuRequest;
@@ -59,6 +60,14 @@ public interface AdminGoodsAssembler {
      * SpuResult 列表转换
      */
     List<SpuResponse> toSpuResponseList(List<SpuResult> results);
+
+    /**
+     * PageResult<SpuResult> → PageResult<SpuResponse>
+     */
+    default PageResult<SpuResponse> toSpuResponsePage(PageResult<SpuResult> result) {
+        List<SpuResponse> list = toSpuResponseList(result.getList());
+        return PageResult.of(list, result.getTotal(), result.getPage(), result.getSize());
+    }
 
     /**
      * SkuResult → SkuResponse

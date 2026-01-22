@@ -3,13 +3,17 @@ package org.example.application.service.admin;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.common.exception.BizException;
+import org.example.common.model.PageResult;
 import org.example.domain.model.activity.Activity;
 import org.example.domain.model.activity.ActivityGoods;
 import org.example.domain.model.activity.Discount;
 import org.example.domain.model.activity.repository.ActivityRepository;
+import org.example.domain.model.activity.repository.DiscountRepository;
 import org.example.domain.model.activity.valueobject.DiscountType;
 import org.example.domain.model.activity.valueobject.GroupType;
 import org.example.domain.model.activity.valueobject.TagScope;
+import org.example.domain.model.goods.Spu;
+import org.example.domain.model.goods.repository.SpuRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,15 +34,17 @@ import java.util.Optional;
 public class AdminActivityService {
 
     private final ActivityRepository activityRepository;
+    private final DiscountRepository discountRepository;
+    private final SpuRepository spuRepository;
 
     // ==================== 活动管理 ====================
 
     /**
-     * 获取活动列表
+     * 活动列表
      */
-    public List<Activity> listActivities(int page, int size) {
+    public PageResult<Activity> listActivities(int page, int size) {
         log.info("【AdminActivity】查询活动列表, page: {}, size: {}", page, size);
-        return activityRepository.findAll(page, size);
+        return activityRepository.findByPage(page, size);
     }
 
     /**
@@ -109,6 +115,49 @@ public class AdminActivityService {
         log.info("【AdminActivity】活动已下架, activityId: {}", activityId);
     }
 
+    /**
+     * 更新活动
+     */
+    @Transactional
+    public Activity updateActivity(String activityId, UpdateActivityCmd cmd) {
+        log.info("【AdminActivity】更新活动, activityId: {}", activityId);
+
+        Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new BizException("活动不存在"));
+
+        activity.update(
+                cmd.getActivityName(),
+                cmd.getActivityDesc(),
+                cmd.getDiscountId(),
+                cmd.getTagId(),
+                cmd.getTagScope(),
+                cmd.getGroupType(),
+                cmd.getTarget(),
+                cmd.getValidTime(),
+                cmd.getParticipationLimit(),
+                cmd.getStartTime(),
+                cmd.getEndTime());
+
+        activityRepository.update(activity);
+        return activity;
+    }
+
+    /**
+     * 更新活动状态
+     */
+    @Transactional
+    public void updateActivityStatus(String activityId, String status) {
+        log.info("【AdminActivity】更新活动状态, activityId: {}, status: {}", activityId, status);
+
+        if ("ACTIVE".equals(status)) {
+            activateActivity(activityId);
+        } else if ("CLOSED".equals(status)) {
+            closeActivity(activityId);
+        } else {
+            throw new BizException("不支持的状态变更: " + status);
+        }
+    }
+
     // ==================== 折扣管理 ====================
 
     /**
@@ -156,15 +205,15 @@ public class AdminActivityService {
      * 添加活动商品关联
      */
     @Transactional
-    public void addActivityGoods(String activityId, String skuId,
+    public void addActivityGoods(String activityId, String spuId,
             String source, String channel, String discountId) {
-        log.info("【AdminActivity】添加活动商品关联, activityId: {}, skuId: {}", activityId, skuId);
+        log.info("【AdminActivity】添加活动商品关联, activityId: {}, spuId: {}", activityId, spuId);
 
         // 检查活动是否存在
         activityRepository.findById(activityId)
                 .orElseThrow(() -> new BizException("活动不存在"));
 
-        ActivityGoods activityGoods = new ActivityGoods(activityId, skuId, source, channel, discountId);
+        ActivityGoods activityGoods = new ActivityGoods(activityId, spuId, source, channel, discountId);
         activityRepository.saveActivityGoods(activityGoods);
 
         log.info("【AdminActivity】活动商品关联添加成功");
@@ -173,15 +222,66 @@ public class AdminActivityService {
     /**
      * 查询活动商品关联
      */
-    public ActivityGoods getActivityGoods(String activityId, String skuId,
+    public ActivityGoods getActivityGoods(String activityId, String spuId,
             String source, String channel) {
-        return activityRepository.queryActivityGoods(activityId, skuId, source, channel);
+        return activityRepository.queryActivityGoods(activityId, spuId, source, channel);
+    }
+
+    // ==================== 选择器接口 ====================
+
+    /**
+     * 获取所有折扣列表（用于下拉选择）
+     */
+    public List<Discount> listAllDiscounts() {
+        log.info("【AdminActivity】查询所有折扣列表");
+        return discountRepository.findAll();
+    }
+
+    /**
+     * 分页查询折扣列表
+     */
+    public PageResult<Discount> listDiscounts(int page, int size) {
+        log.info("【AdminActivity】分页查询折扣列表, page: {}, size: {}", page, size);
+        return discountRepository.findAll(page, size);
+    }
+
+    /**
+     * 获取所有 SPU 列表（用于下拉选择）
+     * 注：管理后台应显示所有 SPU，包括下架的，以便为即将上架的商品创建活动
+     */
+    public List<Spu> listAllOnSaleSpu() {
+        log.info("【AdminActivity】查询所有SPU列表（包含下架）");
+        PageResult<Spu> pageResult = spuRepository.findAll(1, 1000); // 获取前1000个
+        return pageResult.getList();
+    }
+
+    /**
+     * 分页查询 SPU 列表
+     */
+    public PageResult<Spu> listSpuPage(int page, int size) {
+        log.info("【AdminActivity】分页查询SPU列表, page: {}, size: {}", page, size);
+        return spuRepository.findAll(page, size);
     }
 
     // ==================== 命令对象 ====================
 
     @lombok.Data
     public static class CreateActivityCmd {
+        private String activityName;
+        private String activityDesc;
+        private String discountId;
+        private String tagId;
+        private TagScope tagScope;
+        private GroupType groupType;
+        private Integer target;
+        private Integer validTime;
+        private Integer participationLimit;
+        private LocalDateTime startTime;
+        private LocalDateTime endTime;
+    }
+
+    @lombok.Data
+    public static class UpdateActivityCmd {
         private String activityName;
         private String activityDesc;
         private String discountId;

@@ -34,7 +34,14 @@ public interface CrowdTagConverter {
      */
     @Named("stringToTagStatus")
     default TagStatus stringToTagStatus(String status) {
-        return status == null ? null : TagStatus.valueOf(status);
+        if (status == null || status.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return TagStatus.valueOf(status);
+        } catch (IllegalArgumentException e) {
+            return null; // 或者返回默认状态，如 DRAFT
+        }
     }
 
     /**

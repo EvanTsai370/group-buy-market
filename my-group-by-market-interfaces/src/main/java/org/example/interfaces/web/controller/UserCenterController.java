@@ -58,8 +58,8 @@ public class UserCenterController {
     @GetMapping("/orders")
     @Operation(summary = "订单列表", description = "获取当前用户的订单列表（分页）")
     public Result<List<UserOrderResponse>> getOrders(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
 
         // 从认证上下文获取当前用户ID
         String userId = authContextService.getCurrentUserId();

@@ -74,6 +74,9 @@ public class RefundServiceDistributedLockTest extends IntegrationTestBase {
     @Autowired
     private OrderRepository orderRepository;
 
+    @Autowired
+    private org.example.domain.model.goods.repository.SkuRepository skuRepository;
+
     @MockBean
     private IPaymentRefundGateway paymentRefundGateway;
 
@@ -217,14 +220,22 @@ public class RefundServiceDistributedLockTest extends IntegrationTestBase {
         log.info("创建测试 Order: orderId={}, targetCount={}, completeCount={}",
                 testOrderId, 3, order.getCompleteCount());
 
-        // 2. 创建已支付的 TradeOrder
+        // 2. 创建 SKU 并预冻结库存（模拟已锁单）
+        String skuId = "SKU_TEST8";
+        org.example.domain.model.goods.Sku sku = org.example.domain.model.goods.Sku.create(skuId, spuId,
+                "iPhone 15 Pro", BigDecimal.valueOf(100.00), 100);
+        sku.freezeStock(1);
+        skuRepository.save(sku);
+        log.info("【准备数据】创建SKU成功：skuId={}, frozenStock=1", skuId);
+
+        // 3. 创建已支付的 TradeOrder
         TradeOrder tradeOrder = TradeOrder.create(
                 testTradeOrderId,
                 teamId,
                 testOrderId,
                 activityId,
                 "USER_TEST8_2",
-                "SKU_TEST8",
+                skuId,
                 "iPhone 15 Pro",
                 BigDecimal.valueOf(99.99),
                 BigDecimal.valueOf(20.00),

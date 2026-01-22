@@ -28,4 +28,9 @@ public interface AdminUserAssembler {
      * 结果对象 → 响应对象
      */
     UserDetailResponse toResponse(UserDetailResult result);
+
+    /**
+     * 结果列表 → 响应列表
+     */
+    java.util.List<UserDetailResponse> toResponseList(java.util.List<UserDetailResult> resultList);
 }

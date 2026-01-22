@@ -14,7 +14,7 @@ import java.util.Map;
  * 提供配置的增删改查功能
  */
 @RestController
-@RequestMapping("/api/v1/gbm/config")
+@RequestMapping("/api/admin/config")
 public class ConfigController {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigController.class);

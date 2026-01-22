@@ -75,4 +75,17 @@ public class AdminOrderService {
         List<Order> orders = orderRepository.findPendingOrdersByActivity(activityId);
         return orderResultAssembler.toOrderResultList(orders);
     }
+
+    /**
+     * 分页查询交易订单
+     */
+    public org.example.common.model.PageResult<TradeOrderResult> listTradeOrders(int page, int size, String keyword,
+            String status, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
+        log.info("【AdminOrder】分页查询交易订单, page: {}, size: {}, keyword: {}, status: {}", page, size, keyword, status);
+        org.example.common.model.PageResult<TradeOrder> pageResult = tradeOrderRepository.findByPage(page, size,
+                keyword, status, startDate, endDate);
+
+        List<TradeOrderResult> results = orderResultAssembler.toTradeOrderResultList(pageResult.getList());
+        return new org.example.common.model.PageResult<>(results, pageResult.getTotal(), page, size);
+    }
 }

@@ -1,0 +1,60 @@
+version: '3.8' # 格式版本号，不用太关注
+
+services:
+  # 定义要启动哪些服务（这里有三个：redis, rabbitmq, mysql）
+
+  # === 第一个服务：Redis ===
+  redis:
+    image: redis:7.2 # 直接使用官方 Redis 7.2 镜像，不需要定制
+    container_name: market-redis # 给容器起个名字，方便以后查看
+    ports:
+      - "6379:6379" # 【关键】端口映射：左边是你要用的(主机)，右边是容器里的
+      # 意思是：访问你电脑的 6379 端口，就等于访问这个容器的 6379
+    volumes:
+      - redis_data:/data # 【关键】数据挂载：把容器里的数据存到外面来
+      # 就算你删了容器，下次启动 Redis 里的数据还在
+    restart: always # 如果它崩了，自动重启
+
+  # === 第二个服务：RabbitMQ ===
+  rabbitmq:
+    build:
+      # 这里不是直接用 image，而是告诉 Docker "去现做"
+      context: . # 在当前目录下找材料
+      dockerfile: docker/rabbitmq/Dockerfile # 用我们刚才写的那个"菜谱"
+    container_name: market-rabbitmq
+    ports:
+      - "5672:5672" # 代码连接用的端口 (发消息)
+      - "15672:15672" # 网页管理界面用的端口 (你可以访问 http://localhost:15672)
+    environment:
+      # 设置环境变量（相当于在配置文件里写参数）
+      RABBITMQ_DEFAULT_USER: guest # 账号
+      RABBITMQ_DEFAULT_PASS: guest # 密码
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq # 同样，把消息存到硬盘，重启不丢失
+    restart: always
+    healthcheck:
+      # 健康检查：定期问一下 "你活着吗？"
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 10s # 每10秒查一次
+      timeout: 5s # 超过5秒没回应当作卡死
+      retries: 5 # 连续5次卡死就重启它
+
+  # === 第三个服务：MySQL ===
+  mysql:
+    image: mysql:8.2.0 # 使用与项目匹配的 MySQL 8.2 版本
+    container_name: market-mysql
+    ports:
+      - "3306:3306" # 数据库端口映射
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456" # 设置 root 密码（与 application-dev.yml 一致）
+      MYSQL_DATABASE: "group_buy_market" # 自动创建数据库
+    volumes:
+      - mysql_data:/var/lib/mysql # 挂载数据目录，确保数据不丢失
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci # 设置字符集，支持 Emoji
+    restart: always
+
+volumes:
+  # 在这里注册刚才用到的三个数据仓库
+  redis_data:
+  rabbitmq_data:
+  mysql_data:

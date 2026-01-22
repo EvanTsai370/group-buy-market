@@ -4,7 +4,7 @@ import com.rabbitmq.client.Channel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.domain.model.trade.message.RefundNotificationMessage;
-import org.example.domain.service.notification.NotificationStrategy;
+import org.example.domain.service.notification.MessageNotificationStrategy;
 import org.example.infrastructure.mq.config.NotificationQueueConfig;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -31,7 +31,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RefundNotificationConsumer {
 
-    private final List<NotificationStrategy> notificationStrategies;
+    private final List<MessageNotificationStrategy> notificationStrategies;
 
     /**
      * 处理通知消息
@@ -50,7 +50,7 @@ public class RefundNotificationConsumer {
                     notificationMessage.getTradeOrderId(), notificationMessage.getNotificationType());
 
             // 根据通知类型选择策略
-            NotificationStrategy strategy = notificationStrategies.stream()
+            MessageNotificationStrategy strategy = notificationStrategies.stream()
                     .filter(s -> s.supports(notificationMessage.getNotificationType()))
                     .findFirst()
                     .orElse(null);

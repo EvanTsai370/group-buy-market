@@ -43,4 +43,13 @@ public interface TradeOrderResultAssembler {
      * @return TradeOrderResult 列表
      */
     List<TradeOrderResult> toResultList(List<TradeOrder> tradeOrders);
+
+    /**
+     * Domain → Admin Result 转换
+     *
+     * @param tradeOrder 交易订单领域对象
+     * @return Admin TradeOrderResult
+     */
+    @Mapping(target = "status", expression = "java(tradeOrder.getStatus().getCode())")
+    org.example.application.service.admin.result.TradeOrderResult toAdminResult(TradeOrder tradeOrder);
 }

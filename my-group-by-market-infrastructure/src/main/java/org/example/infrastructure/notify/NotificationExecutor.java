@@ -12,11 +12,12 @@ import java.util.List;
 /**
  * 通知执行器
  *
- * <p>职责：
+ * <p>
+ * 职责：
  * <ul>
- *   <li>根据通知类型选择合适的策略</li>
- *   <li>执行通知并更新任务状态</li>
- *   <li>处理异常和重试逻辑</li>
+ * <li>根据通知类型选择合适的策略</li>
+ * <li>执行通知并更新任务状态</li>
+ * <li>处理异常和重试逻辑</li>
  * </ul>
  *
  * @author 开发团队
@@ -27,7 +28,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationExecutor implements NotificationService {
 
-    private final List<NotificationStrategy> strategies;
+    private final List<CallbackNotificationStrategy> strategies;
     private final NotificationTaskRepository notificationTaskRepository;
 
     /**
@@ -46,7 +47,7 @@ public class NotificationExecutor implements NotificationService {
             notificationTaskRepository.update(task);
 
             // 查找支持的策略
-            NotificationStrategy strategy = findStrategy(task);
+            CallbackNotificationStrategy strategy = findStrategy(task);
             if (strategy == null) {
                 throw new IllegalStateException("未找到支持的通知策略: " + task.getNotifyConfig().getNotifyType());
             }
@@ -85,8 +86,8 @@ public class NotificationExecutor implements NotificationService {
      * @param task 通知任务
      * @return 通知策略
      */
-    private NotificationStrategy findStrategy(NotificationTask task) {
-        for (NotificationStrategy strategy : strategies) {
+    private CallbackNotificationStrategy findStrategy(NotificationTask task) {
+        for (CallbackNotificationStrategy strategy : strategies) {
             if (strategy.supports(task)) {
                 return strategy;
             }

@@ -7,12 +7,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.application.service.admin.AdminActivityService;
 import org.example.common.api.Result;
+import org.example.common.model.PageResult;
 import org.example.domain.model.activity.Activity;
 import org.example.domain.model.activity.ActivityGoods;
 import org.example.domain.model.activity.Discount;
 import org.example.domain.model.activity.valueobject.DiscountType;
 import org.example.domain.model.activity.valueobject.GroupType;
 import org.example.domain.model.activity.valueobject.TagScope;
+import org.example.domain.model.goods.Spu;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +30,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/admin/activity")
+@RequestMapping("/api/admin/activities")
 @RequiredArgsConstructor
 @Tag(name = "活动管理", description = "管理后台活动管理接口")
 @PreAuthorize("hasRole('ADMIN')")
@@ -40,12 +42,12 @@ public class AdminActivityController {
 
     @GetMapping
     @Operation(summary = "活动列表", description = "分页查询活动列表")
-    public Result<List<Activity>> listActivities(
+    public Result<PageResult<Activity>> listActivities(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
         log.info("【AdminActivity】查询活动列表, page: {}, size: {}", page, size);
-        List<Activity> activities = adminActivityService.listActivities(page, size);
-        return Result.success(activities);
+        PageResult<Activity> result = adminActivityService.listActivities(page, size);
+        return Result.success(result);
     }
 
     @GetMapping("/{activityId}")
@@ -89,9 +91,44 @@ public class AdminActivityController {
     @PostMapping("/{activityId}/close")
     @Operation(summary = "下架活动", description = "下架拼团活动")
     public Result<String> closeActivity(@PathVariable String activityId) {
-        log.info("【AdminActivity】下架活动, activityId: {}", activityId);
+
+        log.info("【AdminActivity】活动已下架, activityId: {}", activityId);
         adminActivityService.closeActivity(activityId);
         return Result.success("活动已下架");
+    }
+
+    @PutMapping("/{activityId}")
+    @Operation(summary = "更新活动", description = "更新活动信息")
+    public Result<Activity> updateActivity(
+            @PathVariable String activityId,
+            @RequestBody UpdateActivityRequest request) {
+        log.info("【AdminActivity】更新活动, activityId: {}", activityId);
+
+        AdminActivityService.UpdateActivityCmd cmd = new AdminActivityService.UpdateActivityCmd();
+        cmd.setActivityName(request.getActivityName());
+        cmd.setActivityDesc(request.getActivityDesc());
+        cmd.setDiscountId(request.getDiscountId());
+        cmd.setTagId(request.getTagId());
+        cmd.setTagScope(request.getTagScope());
+        cmd.setGroupType(request.getGroupType());
+        cmd.setTarget(request.getTarget());
+        cmd.setValidTime(request.getValidTime());
+        cmd.setParticipationLimit(request.getParticipationLimit());
+        cmd.setStartTime(request.getStartTime());
+        cmd.setEndTime(request.getEndTime());
+
+        Activity activity = adminActivityService.updateActivity(activityId, cmd);
+        return Result.success(activity);
+    }
+
+    @PutMapping("/{activityId}/status")
+    @Operation(summary = "更新活动状态", description = "更新活动状态")
+    public Result<String> updateActivityStatus(
+            @PathVariable String activityId,
+            @RequestBody UpdateStatusRequest request) {
+        log.info("【AdminActivity】更新活动状态, activityId: {}, status: {}", activityId, request.getStatus());
+        adminActivityService.updateActivityStatus(activityId, request.getStatus());
+        return Result.success("活动状态更新成功");
     }
 
     // ==================== 折扣管理 ====================
@@ -122,6 +159,50 @@ public class AdminActivityController {
         return Result.success(discount);
     }
 
+    @GetMapping("/discounts")
+    @Operation(summary = "折扣列表", description = "查询所有折扣（用于下拉选择）")
+    public Result<List<Discount>> listDiscounts() {
+        log.info("【AdminActivity】查询所有折扣列表");
+        List<Discount> discounts = adminActivityService.listAllDiscounts();
+        return Result.success(discounts);
+    }
+
+    @GetMapping("/discounts/page")
+    @Operation(summary = "折扣分页列表", description = "分页查询折扣列表")
+    public Result<PageResult<Discount>> listDiscountsPage(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        log.info("【AdminActivity】分页查询折扣列表, page: {}, size: {}", page, size);
+        PageResult<Discount> result = adminActivityService.listDiscounts(page, size);
+        return Result.success(result);
+    }
+
+    // ==================== SPU 选择器 ====================
+
+    @GetMapping("/spu/options")
+    @Operation(summary = "SPU选项列表", description = "查询所有在售SPU（用于下拉选择）")
+    public Result<List<SpuOption>> listSpuOptions() {
+        log.info("【AdminActivity】查询所有在售SPU列表");
+        List<Spu> spuList = adminActivityService.listAllOnSaleSpu();
+
+        // 转换为简化的选项对象
+        List<SpuOption> options = spuList.stream()
+                .map(spu -> new SpuOption(spu.getSpuId(), spu.getSpuName()))
+                .collect(java.util.stream.Collectors.toList());
+
+        return Result.success(options);
+    }
+
+    @GetMapping("/spu/page")
+    @Operation(summary = "SPU分页列表", description = "分页查询SPU列表")
+    public Result<PageResult<Spu>> listSpuPage(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        log.info("【AdminActivity】分页查询SPU列表, page: {}, size: {}", page, size);
+        PageResult<Spu> result = adminActivityService.listSpuPage(page, size);
+        return Result.success(result);
+    }
+
     // ==================== 活动商品关联 ====================
 
     @PostMapping("/{activityId}/goods")
@@ -130,11 +211,11 @@ public class AdminActivityController {
             @PathVariable String activityId,
             @RequestBody AddActivityGoodsRequest request) {
         log.info("【AdminActivity】添加活动商品关联, activityId: {}, skuId: {}",
-                activityId, request.getSkuId());
+                activityId, request.getSpuId());
 
         adminActivityService.addActivityGoods(
                 activityId,
-                request.getSkuId(),
+                request.getSpuId(),
                 request.getSource(),
                 request.getChannel(),
                 request.getDiscountId());
@@ -146,14 +227,14 @@ public class AdminActivityController {
     @Operation(summary = "查询活动商品", description = "查询活动商品关联")
     public Result<ActivityGoods> getActivityGoods(
             @PathVariable String activityId,
-            @RequestParam String skuId,
+            @RequestParam String spuId,
             @RequestParam String source,
             @RequestParam String channel) {
         log.info("【AdminActivity】查询活动商品关联, activityId: {}, skuId: {}",
-                activityId, skuId);
+                activityId, spuId);
 
         ActivityGoods activityGoods = adminActivityService.getActivityGoods(
-                activityId, skuId, source, channel);
+                activityId, spuId, source, channel);
         return Result.success(activityGoods);
     }
 
@@ -187,9 +268,57 @@ public class AdminActivityController {
 
     @Data
     public static class AddActivityGoodsRequest {
-        private String skuId;
+        private String spuId;
         private String source; // 来源（如：s01-小程序）
         private String channel; // 渠道（如：c01-首页）
         private String discountId; // 可选，为空则使用活动默认折扣
+    }
+
+    @Data
+    public static class UpdateActivityRequest {
+        private String activityName;
+        private String activityDesc;
+        private String discountId;
+        private String tagId;
+        private TagScope tagScope;
+        private GroupType groupType;
+        private Integer target;
+        private Integer validTime;
+        private Integer participationLimit;
+        private LocalDateTime startTime;
+        private LocalDateTime endTime;
+    }
+
+    @Data
+    public static class UpdateStatusRequest {
+        private String status;
+    }
+
+    /**
+     * SPU 选项（用于下拉列表）
+     */
+    @Data
+    public static class SpuOption {
+        private String spuId;
+        private String spuName;
+
+        public SpuOption(String spuId, String spuName) {
+            this.spuId = spuId;
+            this.spuName = spuName;
+        }
+    }
+
+    /**
+     * Discount 选项（用于下拉列表）
+     */
+    @Data
+    public static class DiscountOption {
+        private String discountId;
+        private String discountName;
+
+        public DiscountOption(String discountId, String discountName) {
+            this.discountId = discountId;
+            this.discountName = discountName;
+        }
     }
 }

@@ -8,15 +8,17 @@ import org.springframework.stereotype.Component;
 /**
  * MQ通知策略
  *
- * <p>通过消息队列发送通知
- * <p>TODO: 集成实际的MQ客户端（RabbitMQ/RocketMQ）
+ * <p>
+ * 通过消息队列发送通知
+ * <p>
+ * TODO: 集成实际的MQ客户端（RabbitMQ/RocketMQ）
  *
  * @author 开发团队
  * @since 2026-01-06
  */
 @Slf4j
 @Component
-public class MqNotificationStrategy implements NotificationStrategy {
+public class MqNotificationStrategy implements CallbackNotificationStrategy {
 
     @Override
     public void execute(NotificationTask task) throws Exception {

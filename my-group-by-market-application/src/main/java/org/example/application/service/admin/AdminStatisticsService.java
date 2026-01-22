@@ -33,7 +33,10 @@ public class AdminStatisticsService {
         private final UserRepository userRepository;
         private final SpuRepository spuRepository;
         private final SkuRepository skuRepository;
+        private final org.example.domain.model.trade.repository.TradeOrderRepository tradeOrderRepository;
+        private final org.example.domain.model.activity.repository.ActivityRepository activityRepository;
         private final UserResultAssembler userResultAssembler;
+        private final org.example.application.assembler.TradeOrderResultAssembler tradeOrderResultAssembler;
 
         /**
          * 获取仪表盘概览数据
@@ -41,11 +44,15 @@ public class AdminStatisticsService {
         public DashboardOverviewResult getDashboardOverview() {
                 log.info("【AdminStatistics】获取仪表盘概览");
 
+                LocalDateTime now = LocalDateTime.now();
+                LocalDateTime todayStart = LocalDateTime.of(now.toLocalDate(), java.time.LocalTime.MIN);
+                LocalDateTime todayEnd = LocalDateTime.of(now.toLocalDate(), java.time.LocalTime.MAX);
+
                 // 用户统计
                 long totalUsers = userRepository.count();
 
                 // 商品统计
-                List<Spu> allSpus = spuRepository.findAll(1, 10000);
+                List<Spu> allSpus = spuRepository.findAll(1, 10000).getList();
                 List<Spu> onSaleSpus = spuRepository.findAllOnSale();
                 List<Sku> allSkus = skuRepository.findAll(1, 10000);
                 List<Sku> onSaleSkus = skuRepository.findAllOnSale();
@@ -55,6 +62,23 @@ public class AdminStatisticsService {
                                 .filter(sku -> sku.getAvailableStock() < 10)
                                 .count();
 
+                // 统计今日数据
+                long todayOrders = tradeOrderRepository.countByCreateTimeBetween(todayStart, todayEnd);
+                java.math.BigDecimal todayGMV = tradeOrderRepository.sumPayPriceByPayTimeBetween(todayStart, todayEnd);
+                if (todayGMV == null) {
+                        todayGMV = java.math.BigDecimal.ZERO;
+                }
+                long todayUsers = userRepository.countByCreateTimeBetween(todayStart, todayEnd);
+                long activeActivities = activityRepository.countActive(now);
+
+                // 获取最近订单
+                List<org.example.domain.model.trade.TradeOrder> recentOrderDomains = tradeOrderRepository
+                                .findLatest(10);
+                List<org.example.application.service.admin.result.TradeOrderResult> recentOrders = recentOrderDomains
+                                .stream()
+                                .map(tradeOrderResultAssembler::toAdminResult)
+                                .toList();
+
                 return DashboardOverviewResult.builder()
                                 .totalUsers(totalUsers)
                                 .totalSpus(allSpus.size())
@@ -62,6 +86,11 @@ public class AdminStatisticsService {
                                 .totalSkus(allSkus.size())
                                 .onSaleSkus(onSaleSkus.size())
                                 .lowStockCount(lowStockCount)
+                                .todayOrders(todayOrders)
+                                .todayGMV(todayGMV)
+                                .todayUsers(todayUsers)
+                                .activeActivities(activeActivities)
+                                .recentOrders(recentOrders)
                                 .updateTime(LocalDateTime.now())
                                 .build();
         }
@@ -90,7 +119,7 @@ public class AdminStatisticsService {
         public GoodsStatisticsResult getGoodsStatistics() {
                 log.info("【AdminStatistics】获取商品统计");
 
-                List<Spu> allSpus = spuRepository.findAll(1, 10000);
+                List<Spu> allSpus = spuRepository.findAll(1, 10000).getList();
                 List<Spu> onSaleSpus = spuRepository.findAllOnSale();
                 List<Sku> allSkus = skuRepository.findAll(1, 10000);
 

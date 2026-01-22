@@ -42,6 +42,21 @@ public class DashboardOverviewResponse {
     @Schema(description = "低库存SKU数")
     private long lowStockCount;
 
+    @Schema(description = "今日订单数")
+    private long todayOrders;
+
+    @Schema(description = "今日GMV")
+    private java.math.BigDecimal todayGMV;
+
+    @Schema(description = "今日新增用户")
+    private long todayUsers;
+
+    @Schema(description = "进行中活动")
+    private long activeActivities;
+
+    @Schema(description = "最近订单")
+    private java.util.List<AdminTradeOrderResponse> recentOrders;
+
     @Schema(description = "更新时间")
     private LocalDateTime updateTime;
 }

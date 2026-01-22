@@ -191,4 +191,44 @@ public interface TradeOrderRepository {
      * @param validTime   有效时间（分钟）
      */
     void recoveryTeamSlot(String teamSlotKey, Integer validTime);
+
+    /**
+     * 统计指定时间范围内的订单总金额
+     *
+     * @param start 开始时间
+     * @param end   结束时间
+     * @return 总金额
+     */
+    java.math.BigDecimal sumPayPriceByPayTimeBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
+
+    /**
+     * 统计指定时间范围内创建的订单数量
+     *
+     * @param start 开始时间
+     * @param end   结束时间
+     * @return 订单数量
+     */
+    long countByCreateTimeBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
+
+    /**
+     * 查询最新的交易订单
+     *
+     * @param limit 数量限制
+     * @return 交易订单列表
+     */
+    List<TradeOrder> findLatest(int limit);
+
+    /**
+     * 分页查询交易订单
+     *
+     * @param page      页码
+     * @param size      每页大小
+     * @param keyword   关键词（订单号/用户ID）
+     * @param status    状态
+     * @param startDate 开始时间
+     * @param endDate   结束时间
+     * @return 分页结果
+     */
+    org.example.common.model.PageResult<TradeOrder> findByPage(int page, int size, String keyword, String status,
+            java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
 }

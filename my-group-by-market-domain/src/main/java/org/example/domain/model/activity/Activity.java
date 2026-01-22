@@ -115,6 +115,48 @@ public class Activity {
     }
 
     /**
+     * 更新活动信息
+     */
+    public void update(
+            String activityName,
+            String activityDesc,
+            String discountId,
+            String tagId,
+            TagScope tagScope,
+            GroupType groupType,
+            Integer target,
+            Integer validTime,
+            Integer participationLimit,
+            LocalDateTime startTime,
+            LocalDateTime endTime) {
+
+        // 强不变式：折扣ID不能为空
+        if (discountId == null || discountId.isEmpty()) {
+            throw new BizException("折扣配置不能为空");
+        }
+
+        // 强不变式：时间校验
+        if (startTime.isAfter(endTime)) {
+            throw new BizException("活动开始时间不能晚于结束时间");
+        }
+
+        this.activityName = activityName;
+        this.activityDesc = activityDesc;
+        this.discountId = discountId;
+        this.tagId = tagId;
+        this.tagScope = tagScope != null ? tagScope : TagScope.STRICT;
+        this.groupType = groupType;
+        this.target = target;
+        this.validTime = validTime;
+        this.participationLimit = participationLimit;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.updateTime = LocalDateTime.now();
+
+        log.info("【Activity聚合】活动更新成功, activityId: {}", activityId);
+    }
+
+    /**
      * 激活活动
      * 状态转换：DRAFT → ACTIVE
      */

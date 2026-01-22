@@ -3,6 +3,7 @@ package org.example.infrastructure.persistence.repository;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
+import org.example.common.model.PageResult;
 import org.example.domain.model.goods.Spu;
 import org.example.domain.model.goods.repository.SpuRepository;
 import org.example.domain.model.goods.valueobject.GoodsStatus;
@@ -63,11 +64,24 @@ public class SpuRepositoryImpl implements SpuRepository {
     }
 
     @Override
-    public List<Spu> findAll(int page, int size) {
+    public PageResult<Spu> findAll(int page, int size) {
         Page<SpuPO> pageResult = spuMapper.selectPage(
                 new Page<>(page, size),
                 new LambdaQueryWrapper<SpuPO>().orderByDesc(SpuPO::getSortOrder));
-        return spuConverter.toDomainList(pageResult.getRecords());
+
+        return PageResult.of(
+                spuConverter.toDomainList(pageResult.getRecords()),
+                pageResult.getTotal(),
+                page,
+                size);
+    }
+
+    @Override
+    public Optional<Spu> findBySpuName(String spuName) {
+        LambdaQueryWrapper<SpuPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SpuPO::getSpuName, spuName);
+        SpuPO po = spuMapper.selectOne(wrapper);
+        return Optional.ofNullable(po).map(spuConverter::toDomain);
     }
 
     @Override

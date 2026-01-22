@@ -17,14 +17,15 @@ import java.util.Map;
 /**
  * HTTP通知策略
  *
- * <p>通过HTTP POST方式回调业务方接口
+ * <p>
+ * 通过HTTP POST方式回调业务方接口
  *
  * @author 开发团队
  * @since 2026-01-06
  */
 @Slf4j
 @Component
-public class HttpNotificationStrategy implements NotificationStrategy {
+public class HttpNotificationStrategy implements CallbackNotificationStrategy {
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
