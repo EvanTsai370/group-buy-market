@@ -40,6 +40,14 @@ export const adminApi = {
     return request.post('/admin/activities/discount', data)
   },
 
+  updateDiscount(discountId, data) {
+    return request.put(`/admin/activities/discount/${discountId}`, data)
+  },
+
+  deleteDiscount(discountId) {
+    return request.delete(`/admin/activities/discount/${discountId}`)
+  },
+
   // ========== SPU 选择器 ==========
   getSpuOptions() {
     return request.get('/admin/activities/spu/options')
@@ -47,6 +55,19 @@ export const adminApi = {
 
   getSpuPage(params = {}) {
     return request.get('/admin/activities/spu/page', { params })
+  },
+
+  // ========== 活动商品关联 ==========
+  getActivityGoods(activityId) {
+    return request.get(`/admin/activities/${activityId}/goods/list`)
+  },
+
+  addActivityGoods(activityId, data) {
+    return request.post(`/admin/activities/${activityId}/goods`, data)
+  },
+
+  updateActivityGoods(activityId, data) {
+    return request.put(`/admin/activities/${activityId}/goods`, data)
   },
 
   // ========== 商品管理 ==========
@@ -88,6 +109,25 @@ export const adminApi = {
 
   addSkuStock(skuId, quantity) {
     return request.post(`/admin/goods/sku/${skuId}/add-stock`, null, { params: { quantity } })
+  },
+
+  // 图片上传
+  uploadImage(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return request.post('/admin/goods/upload/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+
+  uploadImages(files) {
+    const formData = new FormData()
+    files.forEach(file => {
+      formData.append('files', file)
+    })
+    return request.post('/admin/goods/upload/images', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
   },
 
   // ========== 订单管理 ==========

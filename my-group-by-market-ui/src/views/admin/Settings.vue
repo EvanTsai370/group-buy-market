@@ -24,7 +24,7 @@
             show-input 
             @change="handleRangeChange"
           />
-          <span class="form-hint">%（0表示全部放行，100表示全部拒绝）（Key: activity.cut.range）</span>
+          <span class="form-hint">%（0表示全部拒绝，100表示全量放行）（Key: activity.cut.range）</span>
         </el-form-item>
 
         <el-form-item>

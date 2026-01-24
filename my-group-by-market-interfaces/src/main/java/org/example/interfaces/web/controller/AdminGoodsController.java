@@ -10,7 +10,9 @@ import org.example.application.service.goods.cmd.*;
 import org.example.application.service.goods.result.SkuResult;
 import org.example.application.service.goods.result.SpuResult;
 import org.example.common.api.Result;
+import org.example.common.exception.BizException;
 import org.example.common.model.PageResult;
+import org.example.domain.service.storage.FileStorageService;
 import org.example.interfaces.web.assembler.AdminGoodsAssembler;
 import org.example.interfaces.web.dto.admin.SkuResponse;
 import org.example.interfaces.web.dto.admin.SpuResponse;
@@ -20,7 +22,9 @@ import org.example.interfaces.web.request.UpdateSkuRequest;
 import org.example.interfaces.web.request.UpdateSpuRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -39,11 +43,88 @@ public class AdminGoodsController {
 
     private final GoodsService goodsService;
     private final AdminGoodsAssembler adminGoodsAssembler;
+    private final FileStorageService fileStorageService;
+
+    // ============== 图片上传 ==============
+
+    @PostMapping("/upload/image")
+    @Operation(summary = "上传商品图片", description = "上传商品主图或详情图，返回图片URL")
+    public Result<String> uploadImage(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                throw new BizException("文件不能为空");
+            }
+
+            String fileUrl = fileStorageService.upload(
+                file.getInputStream(),
+                file.getOriginalFilename(),
+                file.getContentType()
+            );
+
+            log.info("【商品图片上传】上传成功, fileName: {}, fileUrl: {}",
+                file.getOriginalFilename(), fileUrl);
+
+            return Result.success(fileUrl);
+
+        } catch (Exception e) {
+            log.error("【商品图片上传】上传失败", e);
+            throw new BizException("图片上传失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/upload/images")
+    @Operation(summary = "批量上传商品图片", description = "批量上传详情图，返回图片URL列表")
+    public Result<List<String>> uploadImages(@RequestParam("files") MultipartFile[] files) {
+        try {
+            if (files == null || files.length == 0) {
+                throw new BizException("文件不能为空");
+            }
+
+            List<String> fileUrls = new ArrayList<>();
+            for (MultipartFile file : files) {
+                if (!file.isEmpty()) {
+                    String fileUrl = fileStorageService.upload(
+                        file.getInputStream(),
+                        file.getOriginalFilename(),
+                        file.getContentType()
+                    );
+                    fileUrls.add(fileUrl);
+                }
+            }
+
+            log.info("【商品图片批量上传】上传成功, 数量: {}", fileUrls.size());
+            return Result.success(fileUrls);
+
+        } catch (Exception e) {
+            log.error("【商品图片批量上传】上传失败", e);
+            throw new BizException("图片批量上传失败: " + e.getMessage());
+        }
+    }
 
     // ============== SPU 管理 ==============
 
     @PostMapping("/spu")
-    @Operation(summary = "创建SPU", description = "创建商品SPU")
+    @Operation(
+        summary = "创建SPU",
+        description = """
+            创建商品SPU
+
+            使用步骤：
+            1. 先调用 POST /api/admin/goods/upload/image 上传主图，获取 mainImage URL
+            2. 再调用 POST /api/admin/goods/upload/images 批量上传详情图，获取 detailImages URL 列表
+            3. 将获取的图片 URL 填入本接口的 mainImage 和 detailImages 字段
+
+            示例：
+            {
+              "spuName": "iPhone 15 Pro",
+              "categoryId": "CAT001",
+              "brand": "Apple",
+              "description": "最新款 iPhone",
+              "mainImage": "http://localhost:8080/files/2026/01/22/uuid.jpg",
+              "detailImages": "[\\"http://localhost:8080/files/2026/01/22/uuid2.jpg\\"]"
+            }
+            """
+    )
     public Result<SpuResponse> createSpu(@Valid @RequestBody CreateSpuRequest request) {
         log.info("【AdminGoods】创建SPU, spuName: {}", request.getSpuName());
         CreateSpuCmd cmd = adminGoodsAssembler.toCommand(request);
@@ -97,7 +178,26 @@ public class AdminGoodsController {
     // ============== SKU 管理 ==============
 
     @PostMapping("/sku")
-    @Operation(summary = "创建SKU", description = "创建商品SKU")
+    @Operation(
+        summary = "创建SKU",
+        description = """
+            创建商品SKU
+
+            使用步骤：
+            1. 先调用 POST /api/admin/goods/upload/image 上传 SKU 图片，获取 skuImage URL
+            2. 将获取的图片 URL 填入本接口的 skuImage 字段
+
+            示例：
+            {
+              "spuId": "SPU001",
+              "goodsName": "iPhone 15 Pro 256GB 黑色",
+              "specInfo": "{\\"颜色\\":\\"黑色\\",\\"容量\\":\\"256GB\\"}",
+              "originalPrice": 7999.00,
+              "stock": 100,
+              "skuImage": "http://localhost:8080/files/2026/01/22/uuid.jpg"
+            }
+            """
+    )
     public Result<SkuResponse> createSku(@Valid @RequestBody CreateSkuRequest request) {
         log.info("【AdminGoods】创建SKU, goodsName: {}", request.getGoodsName());
         CreateSkuCmd cmd = adminGoodsAssembler.toCommand(request);

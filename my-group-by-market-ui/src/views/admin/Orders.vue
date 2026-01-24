@@ -149,7 +149,8 @@ const fetchList = async () => {
     }
 
     const res = await adminApi.getOrders(params)
-    if (res.code === 0) {
+    // 后端返回的成功码是字符串 "00000"
+    if (res.code === '00000') {
       orderList.value = res.data.list || []
       pagination.total = res.data.total || 0
     }
@@ -175,7 +176,8 @@ const handleReset = () => {
 const handleViewDetail = async (row) => {
   try {
     const res = await adminApi.getOrder(row.tradeOrderId || row.orderId)
-    if (res.code === 0) {
+    // 后端返回的成功码是字符串 "00000"
+    if (res.code === '00000') {
       currentOrder.value = res.data
       detailDialogVisible.value = true
     }

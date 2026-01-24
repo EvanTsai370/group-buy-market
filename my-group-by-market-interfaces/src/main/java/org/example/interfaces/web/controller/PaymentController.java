@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -146,10 +147,13 @@ public class PaymentController {
             }
 
             log.info("【PaymentController】回调参数: {}", params);
+            log.info("【PaymentController】参数详情 - sign参数: {}, app_id: {}, trade_status: {}, out_trade_no: {}",
+                    params.get("sign"), params.get("app_id"), params.get("trade_status"), params.get("out_trade_no"));
+            log.info("【PaymentController】参数总数: {}, 参数名列表: {}", params.size(), params.keySet());
 
             // 2. 验证签名
             if (!alipayPaymentService.verifyCallback(params)) {
-                log.error("【PaymentController】验签失败");
+                log.error("【PaymentController】验签失败 - 完整参数: {}", params);
                 return "fail";
             }
 
@@ -220,7 +224,7 @@ public class PaymentController {
      */
     @GetMapping("/return")
     @Operation(summary = "支付跳转", description = "支付完成同步跳转")
-    public Result<String> paymentReturn(HttpServletRequest request) {
+    public void paymentReturn(HttpServletRequest request, HttpServletResponse response) throws java.io.IOException {
         log.info("【PaymentController】支付同步跳转");
 
         String outTradeNo = request.getParameter("out_trade_no");
@@ -228,6 +232,20 @@ public class PaymentController {
 
         log.info("【PaymentController】支付跳转, outTradeNo: {}, tradeNo: {}", outTradeNo, tradeNo);
 
-        return Result.success("支付完成，订单号: " + outTradeNo);
+        try {
+            // 查询交易订单获取 orderId
+            TradeOrder tradeOrder = tradeOrderRepository.findByOutTradeNo(outTradeNo)
+                    .orElseThrow(() -> new BizException("交易订单不存在"));
+
+            // 重定向到前端拼团进度页 (Vue Router history 模式)
+            String redirectUrl = "http://localhost:8888/customer/progress/" + tradeOrder.getOrderId();
+            log.info("【PaymentController】重定向到前端: {}", redirectUrl);
+            response.sendRedirect(redirectUrl);
+
+        } catch (Exception e) {
+            log.error("【PaymentController】支付跳转失败", e);
+            // 失败时重定向回订单列表
+            response.sendRedirect("http://localhost:8888/customer/orders");
+        }
     }
 }

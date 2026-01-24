@@ -96,8 +96,19 @@
         <el-form-item label="商品描述" prop="description">
           <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入商品描述" />
         </el-form-item>
-        <el-form-item label="主图URL" prop="mainImage">
-          <el-input v-model="form.mainImage" placeholder="请输入主图URL" />
+        <el-form-item label="主图" prop="mainImage">
+          <el-upload
+            class="main-image-uploader"
+            :action="uploadUrl"
+            :headers="uploadHeaders"
+            :show-file-list="false"
+            :on-success="handleMainImageSuccess"
+            :before-upload="beforeMainImageUpload"
+          >
+            <img v-if="form.mainImage" :src="form.mainImage" class="main-image" />
+            <el-icon v-else class="main-image-uploader-icon"><Plus /></el-icon>
+          </el-upload>
+          <div class="upload-tip">建议尺寸：800x800px，支持jpg/png/gif，最大5MB</div>
         </el-form-item>
         <el-form-item label="分类ID" prop="categoryId">
           <el-input v-model="form.categoryId" placeholder="请输入分类ID" />
@@ -128,7 +139,18 @@
           <el-input-number v-model="skuForm.stock" :min="0" :step="1" />
         </el-form-item>
         <el-form-item label="SKU图片" prop="skuImage">
-          <el-input v-model="skuForm.skuImage" placeholder="图片URL" />
+          <el-upload
+            class="sku-image-uploader"
+            :action="uploadUrl"
+            :headers="uploadHeaders"
+            :show-file-list="false"
+            :on-success="handleSkuImageSuccess"
+            :before-upload="beforeSkuImageUpload"
+          >
+            <img v-if="skuForm.skuImage" :src="skuForm.skuImage" class="sku-image" />
+            <el-icon v-else class="sku-image-uploader-icon"><Plus /></el-icon>
+          </el-upload>
+          <div class="upload-tip">建议尺寸：400x400px</div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -185,10 +207,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import { adminApi } from '@/api/admin'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const loading = ref(false)
 const goodsList = ref([])
 // SPU Dialogs
@@ -259,6 +284,62 @@ const skuRules = {
 
 const stockRules = {
   quantity: [{ required: true, message: '请输入增加数量', trigger: 'blur' }]
+}
+
+// 图片上传配置
+const uploadUrl = '/api/admin/goods/upload/image'  // 使用相对路径，通过 Vite 代理
+const uploadHeaders = computed(() => ({
+  Authorization: `Bearer ${userStore.token}`
+}))
+
+// 主图上传处理
+const beforeMainImageUpload = (file) => {
+  const isImage = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
+  const isLt5M = file.size / 1024 / 1024 < 5
+
+  if (!isImage) {
+    ElMessage.error('只能上传 JPG/PNG/GIF/WEBP 格式的图片!')
+    return false
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB!')
+    return false
+  }
+  return true
+}
+
+const handleMainImageSuccess = (response) => {
+  if (response.code === '00000') {
+    form.mainImage = response.data
+    ElMessage.success('主图上传成功')
+  } else {
+    ElMessage.error(response.msg || '上传失败')
+  }
+}
+
+// SKU图片上传处理
+const beforeSkuImageUpload = (file) => {
+  const isImage = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
+  const isLt5M = file.size / 1024 / 1024 < 5
+
+  if (!isImage) {
+    ElMessage.error('只能上传 JPG/PNG/GIF/WEBP 格式的图片!')
+    return false
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB!')
+    return false
+  }
+  return true
+}
+
+const handleSkuImageSuccess = (response) => {
+  if (response.code === '00000') {
+    skuForm.skuImage = response.data
+    ElMessage.success('SKU图片上传成功')
+  } else {
+    ElMessage.error(response.msg || '上传失败')
+  }
 }
 
 const fetchList = async () => {
@@ -504,6 +585,75 @@ onMounted(() => {
 
   .sku-toolbar {
     margin-bottom: 16px;
+  }
+
+  // 图片上传样式
+  .main-image-uploader,
+  .sku-image-uploader {
+    :deep(.el-upload) {
+      border: 1px dashed #d9d9d9;
+      border-radius: 6px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+
+      &:hover {
+        border-color: #409eff;
+      }
+    }
+  }
+
+  .main-image-uploader {
+    :deep(.el-upload) {
+      width: 178px;
+      height: 178px;
+    }
+
+    .main-image {
+      width: 178px;
+      height: 178px;
+      display: block;
+      object-fit: cover;
+    }
+
+    .main-image-uploader-icon {
+      font-size: 28px;
+      color: #8c939d;
+      width: 178px;
+      height: 178px;
+      line-height: 178px;
+      text-align: center;
+    }
+  }
+
+  .sku-image-uploader {
+    :deep(.el-upload) {
+      width: 100px;
+      height: 100px;
+    }
+
+    .sku-image {
+      width: 100px;
+      height: 100px;
+      display: block;
+      object-fit: cover;
+    }
+
+    .sku-image-uploader-icon {
+      font-size: 24px;
+      color: #8c939d;
+      width: 100px;
+      height: 100px;
+      line-height: 100px;
+      text-align: center;
+    }
+  }
+
+  .upload-tip {
+    font-size: 12px;
+    color: #999;
+    margin-top: 8px;
   }
 }
 </style>

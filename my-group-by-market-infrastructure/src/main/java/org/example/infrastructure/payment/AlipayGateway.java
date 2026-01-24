@@ -77,7 +77,8 @@ public class AlipayGateway implements PaymentGateway {
     @Override
     public String createPaymentPage(String outTradeNo, BigDecimal amount,
             String subject, String returnUrl, String notifyUrl) {
-        log.info("【AlipayGateway】创建支付页面, outTradeNo: {}, amount: {}", outTradeNo, amount);
+        log.info("【AlipayGateway】创建支付页面, outTradeNo: {}, amount: {}, notifyUrl: {}, returnUrl: {}",
+                outTradeNo, amount, notifyUrl, returnUrl);
 
         try {
             AlipayTradePagePayRequest request = new AlipayTradePagePayRequest();

@@ -42,10 +42,10 @@ public class PropertyRefreshManager {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     public PropertyRefreshManager(DynamicRedisPropertySource propertySource,
-                                   StringRedisTemplate redisTemplate,
-                                   ConfigurableEnvironment environment,
-                                   ApplicationEventPublisher eventPublisher,
-                                   String redisKeyPrefix) {
+            StringRedisTemplate redisTemplate,
+            ConfigurableEnvironment environment,
+            ApplicationEventPublisher eventPublisher,
+            String redisKeyPrefix) {
         this.propertySource = propertySource;
         this.redisTemplate = redisTemplate;
         this.environment = environment;
@@ -280,6 +280,13 @@ public class PropertyRefreshManager {
         }
 
         return String.class;
+    }
+
+    /**
+     * 获取 PropertySource（供外部访问所有配置）
+     */
+    public DynamicRedisPropertySource getPropertySource() {
+        return propertySource;
     }
 
     /**

@@ -25,6 +25,8 @@ public interface GoodsResultAssembler {
      * Spu → SpuResult 转换
      */
     @Mapping(target = "status", expression = "java(spu.getStatus() != null ? spu.getStatus().name() : null)")
+    @Mapping(target = "minPrice", ignore = true)
+    @Mapping(target = "skuCount", ignore = true)
     SpuResult toResult(Spu spu);
 
     /**
@@ -35,6 +37,7 @@ public interface GoodsResultAssembler {
     /**
      * Sku → SkuResult 转换
      */
+    @Mapping(target = "price", source = "originalPrice")
     SkuResult toResult(Sku sku);
 
     /**

@@ -43,8 +43,8 @@ public class AdminActivityController {
     @GetMapping
     @Operation(summary = "活动列表", description = "分页查询活动列表")
     public Result<PageResult<Activity>> listActivities(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size) {
         log.info("【AdminActivity】查询活动列表, page: {}, size: {}", page, size);
         PageResult<Activity> result = adminActivityService.listActivities(page, size);
         return Result.success(result);
@@ -159,6 +159,34 @@ public class AdminActivityController {
         return Result.success(discount);
     }
 
+    @PutMapping("/discount/{discountId}")
+    @Operation(summary = "更新折扣", description = "更新折扣配置")
+    public Result<Discount> updateDiscount(
+            @PathVariable String discountId,
+            @RequestBody CreateDiscountRequest request) {
+        log.info("【AdminActivity】更新折扣, discountId: {}", discountId);
+
+        AdminActivityService.CreateDiscountCmd cmd = new AdminActivityService.CreateDiscountCmd();
+        cmd.setDiscountName(request.getDiscountName());
+        cmd.setDiscountDesc(request.getDiscountDesc());
+        cmd.setDiscountAmount(request.getDiscountAmount());
+        cmd.setDiscountType(request.getDiscountType());
+        cmd.setMarketPlan(request.getMarketPlan());
+        cmd.setMarketExpr(request.getMarketExpr());
+        cmd.setTagId(request.getTagId());
+
+        Discount discount = adminActivityService.updateDiscount(discountId, cmd);
+        return Result.success(discount);
+    }
+
+    @DeleteMapping("/discount/{discountId}")
+    @Operation(summary = "删除折扣", description = "删除折扣配置")
+    public Result<String> deleteDiscount(@PathVariable String discountId) {
+        log.info("【AdminActivity】删除折扣, discountId: {}", discountId);
+        adminActivityService.deleteDiscount(discountId);
+        return Result.success("折扣删除成功");
+    }
+
     @GetMapping("/discounts")
     @Operation(summary = "折扣列表", description = "查询所有折扣（用于下拉选择）")
     public Result<List<Discount>> listDiscounts() {
@@ -170,8 +198,8 @@ public class AdminActivityController {
     @GetMapping("/discounts/page")
     @Operation(summary = "折扣分页列表", description = "分页查询折扣列表")
     public Result<PageResult<Discount>> listDiscountsPage(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size) {
         log.info("【AdminActivity】分页查询折扣列表, page: {}, size: {}", page, size);
         PageResult<Discount> result = adminActivityService.listDiscounts(page, size);
         return Result.success(result);
@@ -196,8 +224,8 @@ public class AdminActivityController {
     @GetMapping("/spu/page")
     @Operation(summary = "SPU分页列表", description = "分页查询SPU列表")
     public Result<PageResult<Spu>> listSpuPage(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size) {
         log.info("【AdminActivity】分页查询SPU列表, page: {}, size: {}", page, size);
         PageResult<Spu> result = adminActivityService.listSpuPage(page, size);
         return Result.success(result);
@@ -236,6 +264,32 @@ public class AdminActivityController {
         ActivityGoods activityGoods = adminActivityService.getActivityGoods(
                 activityId, spuId, source, channel);
         return Result.success(activityGoods);
+    }
+
+    @GetMapping("/{activityId}/goods/list")
+    @Operation(summary = "查询活动关联的所有商品", description = "查询活动关联的所有SPU列表")
+    public Result<List<ActivityGoods>> listActivityGoods(@PathVariable String activityId) {
+        log.info("【AdminActivity】查询活动关联商品列表, activityId: {}", activityId);
+        List<ActivityGoods> goodsList = adminActivityService.listActivityGoods(activityId);
+        return Result.success(goodsList);
+    }
+
+    @PutMapping("/{activityId}/goods")
+    @Operation(summary = "更新活动商品关联", description = "更新活动关联的SPU（删除旧关联，创建新关联）")
+    public Result<String> updateActivityGoods(
+            @PathVariable String activityId,
+            @RequestBody AddActivityGoodsRequest request) {
+        log.info("【AdminActivity】更新活动商品关联, activityId: {}, spuId: {}",
+                activityId, request.getSpuId());
+
+        adminActivityService.updateActivityGoods(
+                activityId,
+                request.getSpuId(),
+                request.getSource(),
+                request.getChannel(),
+                request.getDiscountId());
+
+        return Result.success("活动商品关联更新成功");
     }
 
     // ==================== 请求对象 ====================

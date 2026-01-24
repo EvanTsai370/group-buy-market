@@ -26,12 +26,8 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3000,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true
-      }
-    }
+    port: 3000
+    // 代理配置已移除，由 Nginx 统一代理
+    // 访问地址：http://localhost（Nginx 端口 80）
   }
 })

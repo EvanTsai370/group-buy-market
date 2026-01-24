@@ -18,6 +18,8 @@ import org.example.domain.model.goods.repository.SkuRepository;
 import org.example.domain.model.order.Order;
 import org.example.domain.model.order.repository.OrderRepository;
 import org.example.domain.model.order.valueobject.Money;
+import org.example.domain.model.goods.Spu;
+import org.example.domain.model.goods.repository.SpuRepository;
 import org.example.domain.model.trade.TradeOrder;
 import org.example.domain.model.trade.message.TradeOrderTimeoutMessage;
 import org.example.domain.model.trade.filter.*;
@@ -61,6 +63,7 @@ public class TradeOrderService {
 
     private final ActivityRepository activityRepository;
     private final SkuRepository skuRepository;
+    private final SpuRepository spuRepository;
     private final OrderRepository orderRepository;
     private final TradeOrderRepository tradeOrderRepository;
     private final AccountRepository accountRepository;
@@ -83,6 +86,7 @@ public class TradeOrderService {
 
     public TradeOrderService(ActivityRepository activityRepository,
             SkuRepository skuRepository,
+            SpuRepository spuRepository,
             OrderRepository orderRepository,
             TradeOrderRepository tradeOrderRepository,
             AccountRepository accountRepository,
@@ -97,6 +101,7 @@ public class TradeOrderService {
             ITimeoutMessageProducer timeoutProducer) {
         this.activityRepository = activityRepository;
         this.skuRepository = skuRepository;
+        this.spuRepository = spuRepository;
         this.orderRepository = orderRepository;
         this.tradeOrderRepository = tradeOrderRepository;
         this.accountRepository = accountRepository;
@@ -181,8 +186,9 @@ public class TradeOrderService {
             // 5. 构建通知配置
             NotifyConfig notifyConfig = buildNotifyConfig(cmd);
 
-            // 6. 加载或创建Account,并扣减参团次数
-            Account account = loadOrCreateAccount(cmd.getUserId(), cmd.getActivityId());
+            // 6. 加载Account（已在过滤链中创建），并扣减参团次数
+            Account account = accountRepository.findByUserAndActivity(cmd.getUserId(), cmd.getActivityId())
+                    .orElseThrow(() -> new IllegalStateException("Account应该已在过滤链中创建"));
             account.deductCount(activity);
             accountRepository.save(account);
 
@@ -191,6 +197,10 @@ public class TradeOrderService {
 
             // 7. 调用锁单领域服务
             String tradeOrderId = "TRD" + idGenerator.nextId();
+            Spu spu = spuRepository.findBySpuId(sku.getSpuId())
+                    .orElseThrow(() -> new BizException("商品SPU不存在"));
+            String fullGoodsName = spu.getSpuName() + " " + sku.getGoodsName();
+
             TradeOrder tradeOrder = lockOrderService.lockOrder(
                     tradeOrderId,
                     orderId,
@@ -198,7 +208,7 @@ public class TradeOrderService {
                     cmd.getUserId(),
                     cmd.getSkuId(),
                     sku.getSpuId(), // 传入 spuId 进行校验
-                    sku.getGoodsName(),
+                    fullGoodsName,
                     priceResult.originalPrice,
                     priceResult.deductionPrice,
                     priceResult.payPrice,
@@ -553,25 +563,6 @@ public class TradeOrderService {
                 .notifyUrl(cmd.getNotifyUrl())
                 .notifyMq(cmd.getNotifyMq())
                 .build();
-    }
-
-    /**
-     * 加载或创建用户账户
-     *
-     * @param userId     用户ID
-     * @param activityId 活动ID
-     * @return Account聚合
-     */
-    private Account loadOrCreateAccount(String userId, String activityId) {
-        return accountRepository.findByUserAndActivity(userId, activityId)
-                .orElseGet(() -> {
-                    String accountId = accountRepository.nextId();
-                    Account newAccount = Account.create(accountId, userId, activityId, null);
-                    accountRepository.save(newAccount);
-                    log.info("【TradeOrderService】创建新账户, accountId: {}, userId: {}, activityId: {}",
-                            accountId, userId, activityId);
-                    return newAccount;
-                });
     }
 
     /**

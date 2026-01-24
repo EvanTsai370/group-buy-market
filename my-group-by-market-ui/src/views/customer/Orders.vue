@@ -120,7 +120,8 @@ const fetchOrders = async () => {
     }
 
     const res = await userApi.getOrders(params)
-    if (res.code === 0) {
+    // 后端返回的成功码是字符串 "00000"
+    if (res.code === '00000') {
       orderList.value = res.data.list || []
       total.value = res.data.total || 0
     }
@@ -177,7 +178,8 @@ const handleRefund = async (order) => {
     })
 
     const res = await tradeApi.refund(order.tradeOrderId, { reason: '用户申请退款' })
-    if (res.code === 0) {
+    // 后端返回的成功码是字符串 "00000"
+    if (res.code === '00000') {
       ElMessage.success('退款申请成功')
       fetchOrders()
     } else {

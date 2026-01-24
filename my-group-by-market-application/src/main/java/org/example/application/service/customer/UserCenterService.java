@@ -37,6 +37,8 @@ public class UserCenterService {
     private final TradeOrderRepository tradeOrderRepository;
     private final ActivityRepository activityRepository;
     private final SkuRepository skuRepository;
+    private final org.example.domain.model.goods.repository.SpuRepository spuRepository;
+    private final org.example.domain.model.order.repository.OrderRepository orderRepository;
 
     /**
      * 获取用户资料
@@ -70,12 +72,13 @@ public class UserCenterService {
      * @param userId 用户ID
      * @param page   页码
      * @param size   每页数量
-     * @return 订单列表
+     * @return 订单分页结果
      */
-    public List<UserOrderResult> getUserOrders(String userId, int page, int size) {
+    public org.example.common.model.PageResult<UserOrderResult> getUserOrders(String userId, int page, int size) {
         log.info("【UserCenterService】查询用户订单，userId: {}, page: {}, size: {}", userId, page, size);
 
         List<TradeOrder> tradeOrders = tradeOrderRepository.findByUserId(userId, page, size);
+        long total = tradeOrderRepository.countByUserId(userId);
         List<UserOrderResult> results = new ArrayList<>();
 
         for (TradeOrder tradeOrder : tradeOrders) {
@@ -86,23 +89,41 @@ public class UserCenterService {
             result.setActivityId(tradeOrder.getActivityId());
             result.setOrderId(tradeOrder.getOrderId());
             result.setTradeAmount(tradeOrder.getPayPrice());
+            result.setPayPrice(tradeOrder.getPayPrice());
+            result.setOriginalPrice(tradeOrder.getOriginalPrice());
             result.setTradeStatus(tradeOrder.getStatus() != null ? tradeOrder.getStatus().name() : null);
+            result.setStatus(tradeOrder.getStatus() != null ? tradeOrder.getStatus().name() : null);
             result.setCreateTime(tradeOrder.getCreateTime());
             result.setPayTime(tradeOrder.getPayTime());
 
-            // 查询商品名称
+            // 查询SKU信息（规格名称、主图、SPU ID）
             skuRepository.findBySkuId(tradeOrder.getSkuId())
-                    .ifPresent(sku -> result.setGoodsName(sku.getGoodsName()));
+                    .ifPresent(sku -> {
+                        result.setGoodsName(sku.getGoodsName());
+                        result.setSkuName(sku.getSpecInfo());
+                        result.setMainImage(sku.getSkuImage());
+
+                        // 查询SPU名称
+                        spuRepository.findBySpuId(sku.getSpuId())
+                                .ifPresent(spu -> result.setSpuName(spu.getSpuName()));
+                    });
 
             // 查询活动名称
             activityRepository.findById(tradeOrder.getActivityId())
                     .ifPresent(activity -> result.setActivityName(activity.getActivityName()));
 
+            // 查询拼团进度
+            orderRepository.findById(tradeOrder.getOrderId())
+                    .ifPresent(order -> {
+                        result.setCompleteCount(order.getCompleteCount());
+                        result.setTargetCount(order.getTargetCount());
+                    });
+
             results.add(result);
         }
 
-        log.info("【UserCenterService】查询用户订单完成，userId: {}, count: {}", userId, results.size());
-        return results;
+        log.info("【UserCenterService】查询用户订单完成，userId: {}, count: {}, total: {}", userId, results.size(), total);
+        return org.example.common.model.PageResult.of(results, total, page, size);
     }
 
     /**

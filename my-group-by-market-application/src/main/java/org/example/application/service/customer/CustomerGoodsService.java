@@ -1,6 +1,5 @@
 package org.example.application.service.customer;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.application.service.customer.query.PriceTrialQuery;
 import org.example.application.service.customer.result.*;
@@ -18,6 +17,7 @@ import org.example.domain.service.discount.DiscountCalculator;
 import org.example.domain.service.validation.CrowdTagValidationResult;
 import org.example.domain.service.validation.CrowdTagValidationService;
 import org.example.domain.service.validation.FlowControlService;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -42,7 +42,6 @@ import java.util.Optional;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class CustomerGoodsService {
 
     private final SkuRepository skuRepository;
@@ -54,6 +53,23 @@ public class CustomerGoodsService {
     // 流控和人群标签校验服务
     private final FlowControlService flowControlService;
     private final CrowdTagValidationService crowdTagValidationService;
+
+    public CustomerGoodsService(
+            SkuRepository skuRepository,
+            SpuRepository spuRepository,
+            ActivityRepository activityRepository,
+            OrderRepository orderRepository,
+            @Qualifier("discountCalculatorMap") Map<String, DiscountCalculator> discountCalculatorMap,
+            FlowControlService flowControlService,
+            CrowdTagValidationService crowdTagValidationService) {
+        this.skuRepository = skuRepository;
+        this.spuRepository = spuRepository;
+        this.activityRepository = activityRepository;
+        this.orderRepository = orderRepository;
+        this.discountCalculatorMap = discountCalculatorMap;
+        this.flowControlService = flowControlService;
+        this.crowdTagValidationService = crowdTagValidationService;
+    }
 
     /**
      * 查询在售 SPU 列表（新版首页）

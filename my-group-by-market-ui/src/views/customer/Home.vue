@@ -25,13 +25,20 @@
             <p class="goods-desc">{{ item.description }}</p>
             <div class="goods-price">
               <span class="current-price">
-                ¥{{ item.activity?.discountPrice || item.minPrice }}
+                <template v-if="item.hasActivity && item.minGroupPrice">
+                  ¥{{ item.minGroupPrice }}
+                </template>
+                <template v-else>
+                  ¥{{ item.minOriginalPrice }}
+                </template>
+                <span class="price-suffix">起</span>
               </span>
-              <span v-if="item.activity" class="original-price">¥{{ item.minPrice }}</span>
+              <span v-if="item.hasActivity && item.minGroupPrice" class="original-price">
+                ¥{{ item.minOriginalPrice }}
+              </span>
             </div>
-            <div v-if="item.activity" class="activity-info">
-              <el-icon><Clock /></el-icon>
-              <span>剩余 {{ formatTime(item.activity.endTime) }}</span>
+            <div v-if="item.hasActivity" class="activity-info">
+              <el-tag type="danger" size="small" effect="dark">拼团活动</el-tag>
             </div>
           </div>
         </div>
@@ -45,7 +52,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { goodsApi } from '@/api/goods'
-import dayjs from 'dayjs'
 
 const router = useRouter()
 
@@ -170,6 +176,12 @@ onMounted(() => {
         font-size: 20px;
         font-weight: bold;
         color: #f56c6c;
+
+        .price-suffix {
+          font-size: 14px;
+          font-weight: normal;
+          margin-left: 2px;
+        }
       }
 
       .original-price {
@@ -184,8 +196,6 @@ onMounted(() => {
       display: flex;
       align-items: center;
       gap: 4px;
-      font-size: 12px;
-      color: #f56c6c;
     }
   }
 }

@@ -1,5 +1,5 @@
 <template>
-  <div v-loading="loading" class="lock-order-page">
+  <div class="lock-order-page">
     <div class="page-header">
       <h2>确认订单</h2>
     </div>
@@ -80,13 +80,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { goodsApi } from '@/api/goods'
 import { tradeApi } from '@/api/trade'
 
 const route = useRoute()
 const router = useRouter()
 
-const loading = ref(false)
 const submitting = ref(false)
 const orderInfo = ref(null)
 const defaultImage = 'https://via.placeholder.com/120x120?text=No+Image'
@@ -96,29 +94,24 @@ const skuId = computed(() => route.query.skuId)
 const activityId = computed(() => route.query.activityId)
 const orderId = computed(() => route.query.orderId) // 参团时存在
 
-// 获取订单预览信息
-const fetchOrderInfo = async () => {
-  if (!skuId.value) {
+// 构建订单信息（从路由参数）
+const buildOrderInfo = () => {
+  // 校验必要参数
+  if (!skuId.value || !activityId.value) {
     ElMessage.error('参数错误')
     router.back()
     return
   }
 
-  loading.value = true
-  try {
-    // 获取价格试算结果
-    const trialRes = await goodsApi.trialPrice(skuId.value, { activityId: activityId.value })
-    if (trialRes.code === 0) {
-      orderInfo.value = trialRes.data
-    } else {
-      ElMessage.error(trialRes.message || '获取订单信息失败')
-      router.back()
-    }
-  } catch (error) {
-    console.error('获取订单信息失败:', error)
-    router.back()
-  } finally {
-    loading.value = false
+  // 从路由参数构建订单信息
+  orderInfo.value = {
+    spuName: route.query.spuName || '',
+    skuName: route.query.skuName || '',
+    mainImage: route.query.mainImage || defaultImage,
+    originalPrice: parseFloat(route.query.originalPrice) || 0,
+    payPrice: parseFloat(route.query.payPrice) || 0,
+    targetCount: parseInt(route.query.targetCount) || 0,
+    validHours: parseInt(route.query.validHours) || 24
   }
 }
 
@@ -132,7 +125,14 @@ const handleSubmit = async () => {
       skuId: skuId.value,
       activityId: activityId.value,
       orderId: orderId.value || null,
-      outTradeNo: generateOutTradeNo()
+      outTradeNo: generateOutTradeNo(),
+      // 添加后端必需的价格字段
+      originalPrice: orderInfo.value.originalPrice,
+      deductionPrice: orderInfo.value.originalPrice - orderInfo.value.payPrice,
+      payPrice: orderInfo.value.payPrice,
+      // 营销归因字段
+      source: route.query.source || 'WEB',
+      channel: route.query.channel || 'UNKNOWN'
     }
 
     const res = await tradeApi.lockOrder(data)
@@ -158,7 +158,7 @@ const generateOutTradeNo = () => {
 }
 
 onMounted(() => {
-  fetchOrderInfo()
+  buildOrderInfo()
 })
 </script>
 

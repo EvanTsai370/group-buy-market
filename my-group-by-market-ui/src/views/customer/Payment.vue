@@ -26,11 +26,7 @@
           </div>
           <div class="info-row">
             <span class="label">商品名称</span>
-            <span class="value">{{ tradeOrder.spuName }}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">商品规格</span>
-            <span class="value">{{ tradeOrder.skuName }}</span>
+            <span class="value">{{ tradeOrder.goodsName }}</span>
           </div>
           <div class="info-row total">
             <span class="label">支付金额</span>
@@ -104,7 +100,7 @@ const fetchTradeOrder = async () => {
   loading.value = true
   try {
     const res = await tradeApi.getTradeOrder(tradeOrderId)
-    if (res.code === 0) {
+    if (res.code === '00000') {
       tradeOrder.value = res.data
 
       // 计算剩余时间
@@ -162,14 +158,14 @@ const handlePay = async () => {
   paying.value = true
   try {
     const res = await paymentApi.createPayment({
-      tradeOrderId: tradeOrderId
+      outTradeNo: tradeOrder.value.outTradeNo
     })
-    if (res.code === '00000' && res.data.formHtml) {
+    if (res.code === '00000' && res.data) {
       // 显示确认弹窗
       showStatusDialog.value = true
 
       // 插入支付宝表单并自动提交
-      payForm.value = res.data.formHtml
+      payForm.value = res.data
       setTimeout(() => {
         const form = document.querySelector('.pay-form-container form')
         if (form) {
@@ -190,9 +186,9 @@ const handlePay = async () => {
 // 检查支付状态
 const checkPaymentStatus = async () => {
   try {
-    const res = await paymentApi.queryPayment(tradeOrderId)
-    if (res.code === 0) {
-      if (res.data.status === 'PAID' || res.data.status === 'SETTLED') {
+    const res = await paymentApi.queryPayment(tradeOrder.value.outTradeNo)
+    if (res.code === '00000') {
+      if (res.data.tradeStatus === 'TRADE_SUCCESS' || res.data.tradeStatus === 'TRADE_FINISHED') {
         ElMessage.success('支付成功')
         router.push(`/customer/progress/${tradeOrder.value.orderId}`)
       } else {
@@ -213,7 +209,7 @@ const handleCancel = async () => {
     })
 
     const res = await tradeApi.refund(tradeOrderId, { reason: '用户取消' })
-    if (res.code === 0) {
+    if (res.code === '00000') {
       ElMessage.success('订单已取消')
       router.push('/customer/orders')
     } else {

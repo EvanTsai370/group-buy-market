@@ -163,6 +163,44 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     }
 
     @Override
+    public List<ActivityGoods> listActivityGoods(String activityId) {
+        LambdaQueryWrapper<ActivityGoodsPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ActivityGoodsPO::getActivityId, activityId);
+
+        List<ActivityGoodsPO> poList = activityGoodsMapper.selectList(wrapper);
+        if (poList == null || poList.isEmpty()) {
+            log.debug("【ActivityRepository】活动无关联商品，activityId: {}", activityId);
+            return List.of();
+        }
+
+        List<ActivityGoods> result = poList.stream()
+                .map(po -> new ActivityGoods(
+                        po.getActivityId(),
+                        po.getSpuId(),
+                        po.getSource(),
+                        po.getChannel(),
+                        po.getDiscountId()))
+                .collect(Collectors.toList());
+
+        log.info("【ActivityRepository】查询活动关联商品列表，activityId: {}, count: {}",
+                activityId, result.size());
+        return result;
+    }
+
+    @Override
+    public void deleteActivityGoods(String activityId, String spuId, String source, String channel) {
+        LambdaQueryWrapper<ActivityGoodsPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ActivityGoodsPO::getActivityId, activityId)
+                .eq(ActivityGoodsPO::getSpuId, spuId)
+                .eq(ActivityGoodsPO::getSource, source)
+                .eq(ActivityGoodsPO::getChannel, channel);
+
+        int deleted = activityGoodsMapper.delete(wrapper);
+        log.info("【ActivityRepository】删除活动商品关联，activityId: {}, spuId: {}, deleted: {}",
+                activityId, spuId, deleted);
+    }
+
+    @Override
     public boolean isDowngraded() {
         // 使用动态配置读取降级开关
         boolean isDowngraded = environment.getProperty("activity.downgrade.switch", Boolean.class, false);

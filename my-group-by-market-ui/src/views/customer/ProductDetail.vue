@@ -15,11 +15,11 @@
           <div class="price-section">
             <div class="group-price">
               <span class="label">拼团价</span>
-              <span class="price">¥{{ trialResult?.payPrice || product.activity?.discountPrice || '--' }}</span>
+              <span class="price">¥{{ trialResult?.discountPrice || selectedSku?.groupPrice || '--' }}</span>
             </div>
             <div class="original-price">
               <span class="label">原价</span>
-              <span class="price">¥{{ selectedSku?.price || product.minPrice }}</span>
+              <span class="price">¥{{ selectedSku?.originalPrice || '--' }}</span>
             </div>
           </div>
 
@@ -34,7 +34,7 @@
                 :class="{ active: selectedSku?.skuId === sku.skuId, disabled: sku.availableStock <= 0 }"
                 @click="selectSku(sku)"
               >
-                {{ sku.skuName }}
+                {{ sku.goodsName }}
                 <span v-if="sku.availableStock <= 0" class="sold-out">售罄</span>
               </div>
             </div>
@@ -165,10 +165,22 @@ const fetchProduct = async () => {
   try {
     const res = await goodsApi.getSpuDetail(spuId.value)
     if (res.code === '00000') {
-      product.value = res.data
+      // 将后端返回的扁平活动字段转换为嵌套的 activity 对象
+      const data = res.data
+      if (data.hasActivity && data.activityId) {
+        data.activity = {
+          activityId: data.activityId,
+          activityName: data.activityName,
+          target: data.targetCount,
+          endTime: data.activityEndTime,
+          validTime: data.validTime
+        }
+      }
+      product.value = data
+      
       // 默认选中第一个有库存的 SKU
-      if (res.data.skuList?.length > 0) {
-        const availableSku = res.data.skuList.find(s => s.availableStock > 0)
+      if (data.skuList?.length > 0) {
+        const availableSku = data.skuList.find(s => s.availableStock > 0)
         if (availableSku) {
           selectedSku.value = availableSku
         }
@@ -225,12 +237,27 @@ const handleCreateTeam = () => {
     ElMessage.warning('请选择商品规格')
     return
   }
+  if (!product.value.activity?.activityId) {
+    ElMessage.warning('当前商品没有进行中的拼团活动')
+    return
+  }
   router.push({
     path: '/customer/lock-order',
     query: {
       spuId: spuId.value,
       skuId: selectedSku.value.skuId,
-      activityId: product.value.activity?.activityId
+      activityId: product.value.activity.activityId,
+      // 传递商品信息，避免 LockOrder 页面再次调用 API
+      spuName: product.value.spuName,
+      skuName: selectedSku.value.goodsName,
+      mainImage: product.value.mainImage,
+      originalPrice: selectedSku.value.originalPrice,
+      payPrice: trialResult.value?.discountPrice || selectedSku.value.groupPrice,
+      targetCount: product.value.activity.target,
+      validHours: Math.floor((product.value.activity.validTime || 86400) / 3600),
+      // 营销归因字段
+      source: 'WEB',
+      channel: 'PRODUCT_DETAIL'
     }
   })
 }
@@ -241,14 +268,29 @@ const handleJoinTeam = (team) => {
     ElMessage.warning('请选择商品规格')
     return
   }
+  if (!product.value.activity?.activityId) {
+    ElMessage.warning('当前商品没有进行中的拼团活动')
+    return
+  }
   showTeamDialog.value = false
   router.push({
     path: '/customer/lock-order',
     query: {
       spuId: spuId.value,
       skuId: selectedSku.value.skuId,
-      activityId: product.value.activity?.activityId,
-      orderId: team.orderId
+      activityId: product.value.activity.activityId,
+      orderId: team.orderId,
+      // 传递商品信息,避免 LockOrder 页面再次调用 API
+      spuName: product.value.spuName,
+      skuName: selectedSku.value.goodsName,
+      mainImage: product.value.mainImage,
+      originalPrice: selectedSku.value.originalPrice,
+      payPrice: trialResult.value?.discountPrice || selectedSku.value.groupPrice,
+      targetCount: product.value.activity.target,
+      validHours: Math.floor((product.value.activity.validTime || 86400) / 3600),
+      // 营销归因字段
+      source: 'WEB',
+      channel: 'JOIN_TEAM'
     }
   })
 }

@@ -40,6 +40,9 @@ public class SkuResponse {
     @Schema(description = "原价")
     private BigDecimal originalPrice;
 
+    @Schema(description = "价格")
+    private BigDecimal price;
+
     @Schema(description = "库存")
     private int stock;
 

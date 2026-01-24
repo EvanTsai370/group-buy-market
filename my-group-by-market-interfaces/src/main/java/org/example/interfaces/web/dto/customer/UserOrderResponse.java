@@ -26,6 +26,15 @@ public class UserOrderResponse {
     /** 商品名称 */
     private String goodsName;
 
+    /** SPU名称 */
+    private String spuName;
+
+    /** SKU名称（规格） */
+    private String skuName;
+
+    /** 商品主图 */
+    private String mainImage;
+
     /** 活动ID */
     private String activityId;
 
@@ -38,8 +47,23 @@ public class UserOrderResponse {
     /** 交易金额 */
     private BigDecimal tradeAmount;
 
+    /** 支付价格 */
+    private BigDecimal payPrice;
+
+    /** 原价 */
+    private BigDecimal originalPrice;
+
     /** 交易状态 */
     private String tradeStatus;
+
+    /** 订单状态（用于前端显示） */
+    private String status;
+
+    /** 已完成人数 */
+    private Integer completeCount;
+
+    /** 目标人数 */
+    private Integer targetCount;
 
     /** 创建时间 */
     private LocalDateTime createTime;

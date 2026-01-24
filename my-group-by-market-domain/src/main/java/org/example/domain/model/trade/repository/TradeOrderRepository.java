@@ -128,6 +128,17 @@ public interface TradeOrderRepository {
     List<TradeOrder> findByUserId(String userId, int page, int size);
 
     /**
+     * 统计用户的交易订单总数
+     *
+     * <p>
+     * 用途：分页查询时获取总数
+     *
+     * @param userId 用户ID
+     * @return 订单总数
+     */
+    long countByUserId(String userId);
+
+    /**
      * 占用组队名额（Redis名额扣减模式）
      *
      * <p>

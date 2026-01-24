@@ -98,6 +98,12 @@ const routes = [
         meta: { title: '活动管理' }
       },
       {
+        path: 'discounts',
+        name: 'AdminDiscounts',
+        component: () => import('@/views/admin/Discounts.vue'),
+        meta: { title: '折扣管理' }
+      },
+      {
         path: 'goods',
         name: 'AdminGoods',
         component: () => import('@/views/admin/Goods.vue'),
@@ -154,7 +160,7 @@ router.beforeEach((to, from, next) => {
   const isLoggedIn = userStore.isLoggedIn
   const userRole = userStore.role
 
-  // 公开页面直接放行
+  // 公开页面直接放行（优先检查，即使父路由需要认证）
   if (to.meta.public) {
     next()
     return
@@ -190,6 +196,7 @@ router.beforeEach((to, from, next) => {
       }
 
       next(targetPath)
+      return
     }
   }
 

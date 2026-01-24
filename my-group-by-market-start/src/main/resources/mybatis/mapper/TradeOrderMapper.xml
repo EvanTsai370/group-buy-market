@@ -114,4 +114,21 @@
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
+    <!--
+    统计用户的交易订单总数
+
+    业务场景：
+    - 用户中心订单列表分页时获取总数
+    - 配合selectByUserId使用
+
+    性能说明：
+    - user_id 字段有索引
+    - COUNT(*) 使用覆盖索引，性能良好
+    -->
+    <select id="countByUserId" resultType="long">
+        SELECT COUNT(*)
+        FROM trade_order
+        WHERE user_id = #{userId}
+    </select>
+
 </mapper>

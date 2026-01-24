@@ -53,6 +53,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/payment/callback/**").permitAll()
+                        .requestMatchers("/api/payment/return/**").permitAll()
 
                         // API 文档
                         .requestMatchers("/doc.html", "/swagger-ui/**", "/v3/api-docs/**",

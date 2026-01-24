@@ -9,6 +9,7 @@ import org.example.application.service.customer.CustomerGoodsService;
 import org.example.application.service.customer.query.PriceTrialQuery;
 import org.example.application.service.customer.result.*;
 import org.example.common.api.Result;
+import org.example.domain.shared.AuthContextService;
 import org.example.interfaces.web.assembler.CustomerGoodsAssembler;
 import org.example.interfaces.web.dto.customer.*;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +33,7 @@ public class CustomerGoodsController {
 
     private final CustomerGoodsService customerGoodsService;
     private final CustomerGoodsAssembler customerGoodsAssembler;
+    private final AuthContextService authContextService;
 
     /**
      * 价格试算
@@ -41,8 +43,7 @@ public class CustomerGoodsController {
     public Result<PriceTrialResponse> trialPrice(
             @Parameter(description = "SKU ID", required = true) @PathVariable String skuId,
             @Parameter(description = "来源") @RequestParam(required = false) String source,
-            @Parameter(description = "渠道") @RequestParam(required = false) String channel,
-            @Parameter(description = "用户ID") @RequestParam(required = false) String userId) {
+            @Parameter(description = "渠道") @RequestParam(required = false) String channel) {
 
         log.info("【CustomerGoodsController】价格试算, skuId: {}, source: {}, channel: {}",
                 skuId, source, channel);
@@ -51,7 +52,7 @@ public class CustomerGoodsController {
         query.setSkuId(skuId);
         query.setSource(source);
         query.setChannel(channel);
-        query.setUserId(userId);
+        query.setUserId(authContextService.getCurrentUserId());
 
         PriceTrialResult result = customerGoodsService.trialPrice(query);
         PriceTrialResponse response = customerGoodsAssembler.toPriceTrialResponse(result);

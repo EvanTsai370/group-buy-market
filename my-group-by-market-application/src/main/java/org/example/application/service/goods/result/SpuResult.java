@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -51,6 +52,12 @@ public class SpuResult {
 
     @Schema(description = "SKU列表")
     private List<SkuResult> skuList;
+
+    @Schema(description = "最低价")
+    private BigDecimal minPrice;
+
+    @Schema(description = "SKU数量")
+    private Integer skuCount;
 
     @Schema(description = "创建时间")
     private LocalDateTime createTime;

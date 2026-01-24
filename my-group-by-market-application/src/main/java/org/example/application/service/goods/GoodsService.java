@@ -213,7 +213,30 @@ public class GoodsService {
     public PageResult<SpuResult> listSpus(int page, int size) {
         PageResult<Spu> pageResult = spuRepository.findAll(page, size);
 
-        List<SpuResult> list = goodsResultAssembler.toSpuResultList(pageResult.getList());
+        // 为每个 SPU 加载 SKU 列表并计算 minPrice 和 skuCount
+        List<SpuResult> list = pageResult.getList().stream()
+                .map(spu -> {
+                    // 加载 SKU 列表
+                    List<Sku> skuList = skuRepository.findBySpuId(spu.getSpuId());
+
+                    // 转换为 SpuResult
+                    SpuResult result = goodsResultAssembler.toResult(spu);
+
+                    // 计算 minPrice（所有 SKU 中的最低价）
+                    if (skuList != null && !skuList.isEmpty()) {
+                        result.setMinPrice(skuList.stream()
+                                .map(Sku::getOriginalPrice)
+                                .min(java.math.BigDecimal::compareTo)
+                                .orElse(null));
+                        result.setSkuCount(skuList.size());
+                    } else {
+                        result.setMinPrice(null);
+                        result.setSkuCount(0);
+                    }
+
+                    return result;
+                })
+                .collect(java.util.stream.Collectors.toList());
 
         return PageResult.of(list, pageResult.getTotal(), pageResult.getPage(), pageResult.getSize());
     }

@@ -18,6 +18,6 @@ export const tradeApi = {
 
   // 查询拼团进度
   getOrderProgress(orderId) {
-    return request.get(`/order/${orderId}/progress`)
+    return request.get(`/trade/order/${orderId}/progress`)
   }
 }

@@ -57,7 +57,7 @@ public class UserCenterController {
      */
     @GetMapping("/orders")
     @Operation(summary = "订单列表", description = "获取当前用户的订单列表（分页）")
-    public Result<List<UserOrderResponse>> getOrders(
+    public Result<org.example.common.model.PageResult<UserOrderResponse>> getOrders(
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size) {
 
@@ -66,9 +66,13 @@ public class UserCenterController {
 
         log.info("【UserCenterController】获取用户订单, userId: {}, page: {}, size: {}", userId, page, size);
 
-        List<UserOrderResult> results = userCenterService.getUserOrders(userId, page, size);
-        List<UserOrderResponse> responses = userCenterAssembler.toOrderListResponse(results);
+        org.example.common.model.PageResult<UserOrderResult> pageResult = userCenterService.getUserOrders(userId, page,
+                size);
+        List<UserOrderResponse> responses = userCenterAssembler.toOrderListResponse(pageResult.getList());
 
-        return Result.success(responses);
+        org.example.common.model.PageResult<UserOrderResponse> result = org.example.common.model.PageResult.of(
+                responses, pageResult.getTotal(), pageResult.getPage(), pageResult.getSize());
+
+        return Result.success(result);
     }
 }

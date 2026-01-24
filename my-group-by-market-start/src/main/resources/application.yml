@@ -10,6 +10,10 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
     default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      adjust-dates-to-context-time-zone: false
   
   messages:
     basename: i18n/messages
@@ -98,20 +102,22 @@ alipay:
   # 沙箱环境网关
   gateway-url: https://openapi-sandbox.dl.alipaydev.com/gateway.do
   # 沙箱应用ID（请替换为您的沙箱AppID）
-  app-id: ${ALIPAY_APP_ID:}
+  app-id: ${ALIPAY_APP_ID:9021000159616161}
   # 商户PID
-  seller-id: ${ALIPAY_SELLER_ID:}
+  seller-id: ${ALIPAY_SELLER_ID:2088721092558894}
   # 应用私钥（请替换为您的应用私钥）
-  private-key: ${ALIPAY_PRIVATE_KEY:}
+  private-key: ${ALIPAY_PRIVATE_KEY:MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDgYJFgwKmyIUxDObQ+tRSTdGP/otEDUDJTMlA6kQzGiixmxityX/Oj5exsPc82YZ4utn24dlCiPQwS9y+c5oQijoo6UURQ1c5V3LEeAGyccsbaNbiY2NLIRaEVUD/vf8iDl9o7A1B305GgUZxHYRt82Jkz6yOE1+AMGMIeHIhD/chEQeZ8e0eAj/Emf6I5RJQurRX3UgYXIB/a5JVMV9vE+IalOyvPNRLXanBWYb9hWApFvnveODL9uivmmd0FSbbZ4pwkBICTix80VE7aWf/Zwr7jvD5Mt5qK7LhCCjLB3dn/qP//jxjey01AXDCiSemy+kUP9sOxvVq7hwmYeizlAgMBAAECggEBAKr+zSwYB/s5xx3gZw33AGRTqjXSxkkpIAEpcd0AV+Uivi3gzpGOsGXyvpfLDxSZlmxxJSSj/lV2ArKdcMq5HnAbgxpofpDAMExdMRn1JtCf5A2+LR1G+HQqJFXS37bNAmnPG0AoCXYYZX3xVBFN3x3pD/ByPZJq1lNBtwYtpmdxHgN7Q+tosxk8Yh3HevcDmkv7mwL/nZROIoVidcq1sQ5/tUbKUdpK2nHJlIn6k4UNPu9QTskuuTnSneH7Co6s+y5H1bG1ssN5dPXUtk81TUrSwQY2/LPlVEQZO6gXNhsFthOhGvzni/wQ3ir6vZdx3aWy/sMOFNArDXmisujQhY0CgYEA/XoBodylApcxvHIxnpyftISezULYa/c1tKSyGYsv5YnDpfXpmB8wDc67i9uEDHABRjXFtc5Dl+QQCnFuW5k6gAc840WcCXB1cDmiPrSygpvuS3Ub8FfX1tcgV4HnxmtC6ULbtk6JgmZ4q9b8FYoOSgCtpOxwCabBqwvpEatJyNcCgYEA4pxmmcScOp6g61xYgfIywpAizU1ZXSvF0+fDyLsAuz1ErREt7g9H9jugc6/6L0rpIOfD2IhZV9LNrbJ9BAzqIYJUGgMgSfGDdlL54f8KKQrB/ogoLORDAEkCHHsBcu8Ni0TEzpA4WkgYrckjX9VpqW1bL2PNdhIOpdisKzdVlKMCgYEAy0sZGApwxX0hxLQJm96eMBfVjWa5UQ46IqGcvePmDEDLi8WJDhqlXc2amXb7l0YVn4vs//1oNOATBW0oR4rDYn9rlBP2K5PofJOczpH6Qcpx+k74k3DAiWyMYeKsU3UfexnGQZcHrnAlBB0unM/W2f9lRUrkKLl3xomM6kDoso0CgYEArZ4MUbU7yQGt4oT+3phUYZKSx16CoAqgZ6kC7HCxr8LSMhKecOzOQo4OcXQbJ06qbGaFOwnEAbBlmrXMaGUIoKG8k61feKeMBASwpICFJUqztLJWrYY4+yf0cSOgyZDzfIc0jdobAriIB+W5r3vPl1pMaXN6gAJ3rILj7bxYWicCgYATTznW8EtE/VjAh86RjTfSZ185fG+IUU9MLwOuBBlVzmo0o5xAmALz1wyRiKsQD72WWS1Mq3OT+s9dwek5YlzQCxFn6HFjEKFO03zs9m9zEgXgTz+i6jna8+6bn0u6aq2tRDQsoFsgLRuX4jg8o+jJM24p8PCnt6hHmWpl7bWetQ==}
   # 支付宝公钥（请替换为您的支付宝公钥）
-  alipay-public-key: ${ALIPAY_PUBLIC_KEY:}
+  alipay-public-key: ${ALIPAY_PUBLIC_KEY:MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsblKgI6GJK7gYBVWWc0lIxVU+oc4fMFGt1u7+L93UqMWKEVIlxOV2yS/0UqFl6u9I/f8Xw1l7guXdFwBZC2aGtUvlLWoo/rpiNv5K9sZEZLRjK5FLg1T19tyg6CYHNjXkn1sbZN2V50nPpkTk4bxkyaIeawbvIExpPNO2LPdSNTguh4nUR+okaCS6Nu+Yys3CN6DC+hJl/nVXg4unpgLTCrS/YrUrI9dpPHF6woY1GY+2DF4MPoU9VYxm+9EOH1hO3nTgc2AVKRuVWzAnG79+qqgZJc+klphLv63lSKXQyqqQ6kephYYgc3JGdy+b+WelOVNS2OWOz6JmgFTLOuXsQIDAQAB}
   # 签名类型
   sign-type: RSA2
   charset: UTF-8
-  # 同步跳转地址
-  return-url: ${ALIPAY_RETURN_URL:http://localhost:8080/api/payment/return}
-  # 异步通知地址（生产环境需要公网可访问）
-  notify-url: ${ALIPAY_NOTIFY_URL:http://localhost:8080/api/payment/callback/alipay}
+  # 同步跳转地址（浏览器直接访问，可以用 localhost）
+  return-url: ${ALIPAY_RETURN_URL:http://localhost:8888/api/payment/return}
+  # 异步通知地址（支付宝服务器回调，必须是公网地址）
+  # 开发环境：使用 natapp 等内网穿透工具提供的公网地址
+  # 生产环境：使用真实的公网域名
+  notify-url: ${ALIPAY_NOTIFY_URL:http://cyb.natapp1.cc/api/payment/callback/alipay}
 
 # 活动动态配置
 activity:
@@ -119,3 +125,17 @@ activity:
     switch: false  # 降级开关，默认关闭
   cut:
     range: 100     # 切量范围（0-100），100表示100%全量放行，10表示10%切量
+
+# 文件上传配置
+file:
+  upload:
+    # 文件存储路径（本地磁盘）
+    # 开发环境示例：/Users/bin/upload
+    # 生产环境示例：/var/www/upload
+    path: ${FILE_UPLOAD_PATH:/tmp/my-group-buy-market/upload}
+    # 文件访问URL前缀
+    url-prefix: ${FILE_UPLOAD_URL_PREFIX:http://localhost:8080/files}
+    # 允许的文件类型
+    allowed-types: jpg,jpeg,png,gif,webp
+    # 最大文件大小（5MB）
+    max-size: 5242880

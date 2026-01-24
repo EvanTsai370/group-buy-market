@@ -125,6 +125,11 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
     }
 
     @Override
+    public long countByUserId(String userId) {
+        return tradeOrderMapper.countByUserId(userId);
+    }
+
+    @Override
     public boolean occupyTeamSlot(String teamSlotKey, Integer target, Integer validTime) {
         log.debug("【TradeOrderRepository】占用队伍名额, teamSlotKey: {}, target: {}", teamSlotKey, target);
 

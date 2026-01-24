@@ -199,6 +199,50 @@ public class AdminActivityService {
         return discount;
     }
 
+    /**
+     * 更新折扣配置
+     */
+    @Transactional
+    public Discount updateDiscount(String discountId, CreateDiscountCmd cmd) {
+        log.info("【AdminActivity】更新折扣, discountId: {}", discountId);
+
+        Discount discount = activityRepository.queryDiscountById(discountId);
+        if (discount == null) {
+            throw new BizException("折扣配置不存在");
+        }
+
+        discount.setDiscountName(cmd.getDiscountName());
+        discount.setDiscountDesc(cmd.getDiscountDesc());
+        discount.setDiscountAmount(cmd.getDiscountAmount());
+        discount.setDiscountType(cmd.getDiscountType() != null ? cmd.getDiscountType() : DiscountType.BASE);
+        discount.setMarketPlan(cmd.getMarketPlan());
+        discount.setMarketExpr(cmd.getMarketExpr());
+        discount.setTagId(cmd.getTagId());
+        discount.setUpdateTime(LocalDateTime.now());
+
+        activityRepository.saveDiscount(discount);
+
+        log.info("【AdminActivity】折扣更新成功, discountId: {}", discountId);
+        return discount;
+    }
+
+    /**
+     * 删除折扣配置
+     */
+    @Transactional
+    public void deleteDiscount(String discountId) {
+        log.info("【AdminActivity】删除折扣, discountId: {}", discountId);
+
+        Discount discount = activityRepository.queryDiscountById(discountId);
+        if (discount == null) {
+            throw new BizException("折扣配置不存在");
+        }
+
+        discountRepository.deleteById(discountId);
+
+        log.info("【AdminActivity】折扣删除成功, discountId: {}", discountId);
+    }
+
     // ==================== 活动商品关联 ====================
 
     /**
@@ -225,6 +269,43 @@ public class AdminActivityService {
     public ActivityGoods getActivityGoods(String activityId, String spuId,
             String source, String channel) {
         return activityRepository.queryActivityGoods(activityId, spuId, source, channel);
+    }
+
+    /**
+     * 查询活动关联的所有商品列表
+     */
+    public List<ActivityGoods> listActivityGoods(String activityId) {
+        log.info("【AdminActivity】查询活动关联商品列表, activityId: {}", activityId);
+        return activityRepository.listActivityGoods(activityId);
+    }
+
+    /**
+     * 更新活动商品关联
+     * 先删除旧关联，再创建新关联
+     */
+    @Transactional
+    public void updateActivityGoods(String activityId, String spuId,
+            String source, String channel, String discountId) {
+        log.info("【AdminActivity】更新活动商品关联, activityId: {}, spuId: {}", activityId, spuId);
+
+        // 检查活动是否存在
+        activityRepository.findById(activityId)
+                .orElseThrow(() -> new BizException("活动不存在"));
+
+        // 删除旧关联（使用相同的 source 和 channel）
+        List<ActivityGoods> existingGoods = activityRepository.listActivityGoods(activityId);
+        for (ActivityGoods goods : existingGoods) {
+            if (goods.getSource().equals(source) && goods.getChannel().equals(channel)) {
+                activityRepository.deleteActivityGoods(
+                        activityId, goods.getSpuId(), source, channel);
+            }
+        }
+
+        // 创建新关联
+        ActivityGoods activityGoods = new ActivityGoods(activityId, spuId, source, channel, discountId);
+        activityRepository.saveActivityGoods(activityGoods);
+
+        log.info("【AdminActivity】活动商品关联更新成功");
     }
 
     // ==================== 选择器接口 ====================

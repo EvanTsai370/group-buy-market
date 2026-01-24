@@ -25,6 +25,11 @@
           <template #title>活动管理</template>
         </el-menu-item>
 
+        <el-menu-item index="/admin/discounts">
+          <el-icon><Discount /></el-icon>
+          <template #title>折扣管理</template>
+        </el-menu-item>
+
         <el-menu-item index="/admin/goods">
           <el-icon><Goods /></el-icon>
           <template #title>商品管理</template>

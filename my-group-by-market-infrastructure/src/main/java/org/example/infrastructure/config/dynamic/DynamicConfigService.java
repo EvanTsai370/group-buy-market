@@ -21,8 +21,8 @@ public class DynamicConfigService {
     private final String redisTopic;
 
     public DynamicConfigService(PropertyRefreshManager refreshManager,
-                                 StringRedisTemplate redisTemplate,
-                                 String redisTopic) {
+            StringRedisTemplate redisTemplate,
+            String redisTopic) {
         this.refreshManager = refreshManager;
         this.redisTemplate = redisTemplate;
         this.redisTopic = redisTopic;
@@ -79,9 +79,20 @@ public class DynamicConfigService {
      * 获取所有配置
      */
     public Map<String, String> getAllConfigs() {
-        // 从 refreshManager 的 propertySource 获取所有配置
         Map<String, String> configs = new HashMap<>();
-        // 这里简化实现，实际可以从 PropertySource 遍历
+
+        // 从 PropertySource 获取所有配置
+        DynamicRedisPropertySource propertySource = refreshManager.getPropertySource();
+        String[] propertyNames = propertySource.getPropertyNames();
+
+        for (String key : propertyNames) {
+            ConfigValue configValue = propertySource.getConfigValue(key);
+            if (configValue != null) {
+                configs.put(key, configValue.getRawValue());
+            }
+        }
+
+        log.debug("获取所有配置: {} 个配置项", configs.size());
         return configs;
     }
 

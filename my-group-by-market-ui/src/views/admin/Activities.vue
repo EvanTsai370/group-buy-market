@@ -30,7 +30,7 @@
         <el-table-column prop="target" label="成团人数" width="100" />
         <el-table-column prop="validTime" label="拼团有效期" width="120">
           <template #default="{ row }">
-            {{ row.validTime }} 小时
+            {{ Math.floor(row.validTime / 3600) }} 小时
           </template>
         </el-table-column>
         <el-table-column prop="participationLimit" label="参与限制" width="120">
@@ -164,12 +164,22 @@
           <span class="form-hint">小时（用户锁单后的成团倒计时）</span>
         </el-form-item>
 
-        <el-form-item label="活动时间" prop="timeRange">
+        <el-form-item label="开始时间" prop="startTime">
           <el-date-picker
-            v-model="form.timeRange"
-            type="datetimerange"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            v-model="form.startTime"
+            type="datetime"
+            placeholder="选择开始时间"
+            format="YYYY-MM-DD HH:mm"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            style="width: 100%;"
+          />
+        </el-form-item>
+
+        <el-form-item label="结束时间" prop="endTime">
+          <el-date-picker
+            v-model="form.endTime"
+            type="datetime"
+            placeholder="选择结束时间"
             format="YYYY-MM-DD HH:mm"
             value-format="YYYY-MM-DD HH:mm:ss"
             style="width: 100%;"
@@ -177,7 +187,7 @@
         </el-form-item>
 
         <el-form-item label="参与限制" prop="participationLimit">
-          <el-input-number v-model="form.participationLimit" :min="1" :max="10" />
+          <el-input-number v-model="form.participationLimit" :min="1" />
           <span class="form-hint">每人最多参与次数</span>
         </el-form-item>
       </el-form>
@@ -275,7 +285,8 @@ const form = reactive({
   discountId: '',
   target: 3,
   validTime: 24,
-  timeRange: [],
+  startTime: '',
+  endTime: '',
   participationLimit: 1
 })
 
@@ -292,7 +303,8 @@ const rules = {
   spuId: [{ required: true, message: '请选择SPU', trigger: 'change' }],
   discountId: [{ required: true, message: '请选择折扣配置', trigger: 'change' }],
   target: [{ required: true, message: '请输入成团人数', trigger: 'blur' }],
-  timeRange: [{ required: true, message: '请选择活动时间', trigger: 'change' }]
+  startTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
+  endTime: [{ required: true, message: '请选择结束时间', trigger: 'change' }]
 }
 
 const discountRules = {
@@ -372,24 +384,36 @@ const handleAdd = () => {
     discountId: '',
     target: 3,
     validTime: 24,
-    timeRange: [],
+    startTime: '',
+    endTime: '',
     participationLimit: 1
   })
   dialogVisible.value = true
 }
 
-const handleEdit = (row) => {
+const handleEdit = async (row) => {
   isEdit.value = true
   Object.assign(form, {
     activityId: row.activityId,
     activityName: row.activityName,
-    spuId: row.spuId,
+    spuId: '', // 先清空，等待加载
     discountId: row.discountId,
     target: row.target,
-    validTime: row.validTime,
-    timeRange: [row.startTime, row.endTime],
+    validTime: Math.floor(row.validTime / 3600), // 秒转小时
+    startTime: row.startTime,
+    endTime: row.endTime,
     participationLimit: row.participationLimit
   })
+  
+  // 预加载 SPU 和折扣选项（确保下拉框能正确显示名称）
+  await Promise.all([
+    loadSpuOptions(),
+    loadDiscountOptions()
+  ])
+  
+  // 加载已关联的 SPU
+  await loadActivitySpu(row.activityId)
+  
   dialogVisible.value = true
 }
 
@@ -400,11 +424,15 @@ const handleSubmit = async () => {
   submitting.value = true
   try {
     const data = {
-      ...form,
-      startTime: form.timeRange[0],
-      endTime: form.timeRange[1]
+      activityName: form.activityName,
+      activityDesc: form.activityDesc,
+      discountId: form.discountId,
+      target: form.target,
+      validTime: form.validTime * 3600, // 小时转秒
+      participationLimit: form.participationLimit,
+      startTime: form.startTime,
+      endTime: form.endTime
     }
-    delete data.timeRange
 
     let res
     if (isEdit.value) {
@@ -414,6 +442,23 @@ const handleSubmit = async () => {
     }
 
     if (res.code === '00000') {
+      // 保存或更新活动商品关联
+      if (form.spuId) {
+        const goodsData = {
+          spuId: form.spuId,
+          source: 's01', // 默认来源
+          channel: 'c01' // 默认渠道
+        }
+        
+        if (isEdit.value) {
+          // 编辑时更新关联（删除旧的，创建新的）
+          await adminApi.updateActivityGoods(form.activityId, goodsData)
+        } else {
+          // 创建时添加关联
+          await adminApi.addActivityGoods(res.data.activityId, goodsData)
+        }
+      }
+      
       ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
       dialogVisible.value = false
       fetchList()
@@ -529,6 +574,19 @@ const getStatusText = (status) => {
     case 'ACTIVE': return '进行中'
     case 'CLOSED': return '已结束'
     default: return status
+  }
+}
+
+// 加载活动关联的 SPU
+const loadActivitySpu = async (activityId) => {
+  try {
+    const res = await adminApi.getActivityGoods(activityId)
+    if (res.code === '00000' && res.data && res.data.length > 0) {
+      // 取第一个关联的 SPU（简化方案）
+      form.spuId = res.data[0].spuId
+    }
+  } catch (error) {
+    console.error('加载活动商品失败:', error)
   }
 }
 

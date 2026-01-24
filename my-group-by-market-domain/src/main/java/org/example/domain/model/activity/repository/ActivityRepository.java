@@ -89,6 +89,24 @@ public interface ActivityRepository {
     void saveActivityGoods(ActivityGoods activityGoods);
 
     /**
+     * 查询活动关联的所有商品
+     *
+     * @param activityId 活动ID
+     * @return 活动商品关联列表
+     */
+    List<ActivityGoods> listActivityGoods(String activityId);
+
+    /**
+     * 删除活动商品关联
+     *
+     * @param activityId 活动ID
+     * @param spuId      商品SPU ID
+     * @param source     来源
+     * @param channel    渠道
+     */
+    void deleteActivityGoods(String activityId, String spuId, String source, String channel);
+
+    /**
      * 判断是否在降级开关范围内
      *
      * @return true-降级，false-正常

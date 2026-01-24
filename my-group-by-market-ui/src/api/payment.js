@@ -7,7 +7,7 @@ export const paymentApi = {
   },
 
   // 查询支付状态
-  queryPayment(tradeOrderId) {
-    return request.get('/payment/query', { params: { tradeOrderId } })
+  queryPayment(outTradeNo) {
+    return request.get('/payment/query', { params: { outTradeNo } })
   }
 }
