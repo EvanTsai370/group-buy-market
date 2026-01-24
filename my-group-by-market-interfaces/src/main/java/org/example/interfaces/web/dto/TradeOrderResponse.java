@@ -23,8 +23,6 @@ import java.time.LocalDateTime;
  * <li>通过 Assembler 从 TradeOrderResult 转换而来</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 @Data
 @Builder

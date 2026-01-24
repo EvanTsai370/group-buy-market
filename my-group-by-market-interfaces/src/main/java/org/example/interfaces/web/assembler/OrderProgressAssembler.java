@@ -15,8 +15,6 @@ import java.util.List;
  *
  * 负责将 Application 层的 Result 转换为 Interfaces 层的 Response/DTO
  *
- * @author 开发团队
- * @since 2026-01-13
  */
 @Mapper(componentModel = "spring")
 public interface OrderProgressAssembler {

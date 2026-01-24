@@ -21,8 +21,6 @@ import java.util.List;
  * <p>
  * 职责：Request → Cmd 和 Result → Response 转换
  *
- * @author 开发团队
- * @since 2026-01-10
  */
 @Mapper(componentModel = "spring")
 public interface AdminGoodsAssembler {

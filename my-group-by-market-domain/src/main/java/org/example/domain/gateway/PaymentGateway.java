@@ -10,8 +10,6 @@ import java.math.BigDecimal;
  * 支持多种支付渠道（支付宝、微信等）
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 public interface PaymentGateway {
 

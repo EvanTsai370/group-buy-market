@@ -13,8 +13,6 @@ import org.springframework.stereotype.Component;
  * <p>
  * TODO: 集成实际的MQ客户端（RabbitMQ/RocketMQ）
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 @Slf4j
 @Component

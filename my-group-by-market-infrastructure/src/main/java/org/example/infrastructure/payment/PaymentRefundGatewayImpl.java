@@ -16,8 +16,6 @@ import java.math.BigDecimal;
  * 委托给 PaymentGateway 执行实际退款
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Slf4j
 @Component

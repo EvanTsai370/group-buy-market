@@ -23,8 +23,6 @@ import org.example.domain.model.tag.repository.CrowdTagRepository;
  * <li>OPEN - 开放模式：所有用户可见可参与（慎用）</li>
  * </ul>
  * 
- * @author 开发团队
- * @since 2026-01-14
  */
 @Slf4j
 public class CrowdTagValidationService {

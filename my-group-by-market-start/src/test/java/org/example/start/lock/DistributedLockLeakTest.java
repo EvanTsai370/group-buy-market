@@ -39,8 +39,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <li>添加健康检查，定期清理过期锁</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-17
  */
 @Slf4j
 public class DistributedLockLeakTest extends IntegrationTestBase {

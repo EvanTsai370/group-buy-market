@@ -25,8 +25,6 @@ import org.example.domain.service.ResourceReleaseService;
  * <li>调用支付网关退款接口</li>
  * </ol>
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 @Slf4j
 public class PaidRefundStrategy implements RefundStrategy {

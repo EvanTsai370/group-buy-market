@@ -8,8 +8,6 @@ package org.example.domain.gateway;
  * 用于对接外部电商系统的库存服务
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 // TODO: 使用使用 MQ + 事件驱动架构
 public interface InventoryGateway {

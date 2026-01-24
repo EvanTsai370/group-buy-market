@@ -12,8 +12,6 @@ import org.testcontainers.utility.DockerImageName;
  * 所有容器使用单例模式，避免重复启动导致测试缓慢。
  * 容器会在所有测试完成后自动关闭。
  *
- * @author 测试团队
- * @since 2026-01-13
  */
 public class TestContainersConfig {
 

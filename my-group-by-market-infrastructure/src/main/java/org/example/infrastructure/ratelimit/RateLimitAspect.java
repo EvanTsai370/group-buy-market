@@ -20,8 +20,6 @@ import org.springframework.stereotype.Component;
  * <p>
  * 拦截带有@RateLimit注解的方法，执行限流检查
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 @Slf4j
 @Aspect

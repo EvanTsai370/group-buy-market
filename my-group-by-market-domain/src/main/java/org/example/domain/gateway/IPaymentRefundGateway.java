@@ -10,8 +10,6 @@ import java.math.BigDecimal;
  * 用于调用外部支付系统的退款服务
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 public interface IPaymentRefundGateway {
 

@@ -8,8 +8,6 @@ import java.math.BigDecimal;
 /**
  * SPU列表响应
  *
- * @author 开发团队
- * @since 2026-01-12
  */
 @Data
 @Schema(description = "SPU列表响应")

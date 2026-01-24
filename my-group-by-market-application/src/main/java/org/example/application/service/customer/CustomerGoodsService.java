@@ -37,8 +37,6 @@ import java.util.Optional;
  * - 价格试算
  * - 拼团队伍列表
  * 
- * @author 开发团队
- * @since 2026-01-11
  */
 @Slf4j
 @Service

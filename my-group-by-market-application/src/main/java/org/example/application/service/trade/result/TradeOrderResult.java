@@ -15,8 +15,6 @@ import java.time.LocalDateTime;
  * <p>
  * 用例输出对象，表示交易订单的查询结果
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Data
 @Builder

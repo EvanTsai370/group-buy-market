@@ -38,8 +38,6 @@ import java.util.stream.Collectors;
  * - 成员列表按团长优先 → 加入时间升序排序
  * - 不脱敏,显示完整昵称和头像(增强社交氛围)
  *
- * @author 开发团队
- * @since 2026-01-13
  */
 @Slf4j
 @Service

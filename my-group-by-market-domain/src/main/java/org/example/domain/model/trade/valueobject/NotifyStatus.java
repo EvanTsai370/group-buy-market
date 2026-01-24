@@ -5,8 +5,6 @@ package org.example.domain.model.trade.valueobject;
  *
  * <p>用于追踪回调通知的执行状态
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 public enum NotifyStatus {
 

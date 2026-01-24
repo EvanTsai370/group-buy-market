@@ -29,8 +29,6 @@ import java.util.List;
  *   <li>工厂类保持无状态，所有策略实例通过构造函数注入</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 @Slf4j
 public class RefundStrategyFactory {

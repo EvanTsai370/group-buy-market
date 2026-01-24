@@ -16,8 +16,6 @@ import java.time.LocalDateTime;
  *
  * 注意:本系统采用SPU拼团模式,不同SKU的用户可以在同一队伍中一起拼团
  *
- * @author 开发团队
- * @since 2026-01-13
  */
 @Data
 public class OrderMemberResult {

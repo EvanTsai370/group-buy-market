@@ -14,8 +14,6 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * 实现Domain层定义的IDistributedLockService接口
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 @Slf4j
 @Service

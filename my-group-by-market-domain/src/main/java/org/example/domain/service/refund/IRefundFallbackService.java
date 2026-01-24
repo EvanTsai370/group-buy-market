@@ -14,8 +14,6 @@ import org.example.domain.model.trade.message.RefundMessage;
  * <p>
  * 职责：当同步退款失败时，将退款请求发送到MQ进行异步重试
  *
- * @author 开发团队
- * @since 2026-01-09
  */
 public interface IRefundFallbackService {
 

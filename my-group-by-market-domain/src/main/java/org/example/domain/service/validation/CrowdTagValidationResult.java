@@ -16,8 +16,6 @@ import lombok.NoArgsConstructor;
  * <li>原因（reason）- 不可参与的原因说明</li>
  * </ul>
  * 
- * @author 开发团队
- * @since 2026-01-14
  */
 @Data
 @Builder

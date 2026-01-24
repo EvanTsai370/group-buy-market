@@ -44,8 +44,6 @@ import java.util.concurrent.TimeUnit;
  * <li>TeamRefundStrategy - 拼团退单（批量退单）</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Slf4j
 public class RefundService {

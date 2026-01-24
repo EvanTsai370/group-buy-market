@@ -22,8 +22,6 @@ import java.util.Map;
 /**
  * 管理后台统计服务
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Slf4j
 @Service

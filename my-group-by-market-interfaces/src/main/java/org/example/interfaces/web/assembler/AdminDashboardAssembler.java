@@ -12,8 +12,6 @@ import java.util.List;
  * <p>
  * 职责：应用层结果 → 协议层响应转换
  *
- * @author 开发团队
- * @since 2026-01-10
  */
 @Mapper(componentModel = "spring")
 public interface AdminDashboardAssembler {

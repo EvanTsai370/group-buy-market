@@ -23,8 +23,6 @@ import java.util.List;
  * <li>发送通知（短信/邮件/推送）</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-09
  */
 @Slf4j
 @Component

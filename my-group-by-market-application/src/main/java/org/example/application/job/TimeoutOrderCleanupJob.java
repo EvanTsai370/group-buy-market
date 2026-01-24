@@ -43,8 +43,6 @@ import java.util.stream.Collectors;
  *   <li>日志记录：详细记录扫描数量、成功数、失败数</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 @Slf4j
 @Component

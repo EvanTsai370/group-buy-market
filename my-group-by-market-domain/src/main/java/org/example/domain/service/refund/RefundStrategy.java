@@ -19,8 +19,6 @@ import org.example.domain.model.trade.TradeOrder;
  *   <li>通过 RefundStrategyFactory 根据订单状态选择合适的策略</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 public interface RefundStrategy {
 

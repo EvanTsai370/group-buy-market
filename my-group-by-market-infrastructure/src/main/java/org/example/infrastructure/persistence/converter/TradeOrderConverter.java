@@ -15,8 +15,6 @@ import org.mapstruct.Named;
  *
  * <p>职责：Domain对象 ↔ PO对象 的转换
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Mapper(componentModel = "spring")
 public interface TradeOrderConverter {

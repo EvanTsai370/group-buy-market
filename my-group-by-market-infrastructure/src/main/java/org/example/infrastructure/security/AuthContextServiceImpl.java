@@ -16,8 +16,6 @@ import java.util.Optional;
  * 基于 Spring Security 的 SecurityContextHolder 实现
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-12
  */
 @Service
 @RequiredArgsConstructor

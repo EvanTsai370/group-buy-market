@@ -13,8 +13,6 @@ import java.io.Serializable;
  * <p>
  * 用于RabbitMQ延迟队列，处理用户锁单后超时未支付的场景
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 @Data
 @NoArgsConstructor

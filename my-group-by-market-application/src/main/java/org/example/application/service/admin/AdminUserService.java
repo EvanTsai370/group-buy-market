@@ -19,8 +19,6 @@ import java.util.UUID;
 /**
  * 用户管理服务（管理后台）
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Slf4j
 @Service

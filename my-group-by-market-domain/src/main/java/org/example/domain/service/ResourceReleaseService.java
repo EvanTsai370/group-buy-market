@@ -38,8 +38,6 @@ import java.util.concurrent.TimeUnit;
  * <li>已支付退单（PaidRefundStrategy）</li>
  * </ol>
  *
- * @author 开发团队
- * @since 2026-01-12
  */
 @Slf4j
 public class ResourceReleaseService {

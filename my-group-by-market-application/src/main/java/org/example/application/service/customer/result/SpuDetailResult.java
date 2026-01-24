@@ -9,8 +9,6 @@ import java.util.List;
 /**
  * SPU详情结果
  *
- * @author 开发团队
- * @since 2026-01-12
  */
 @Data
 public class SpuDetailResult {

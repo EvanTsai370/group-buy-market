@@ -31,8 +31,6 @@ import java.util.concurrent.Executors;
  *   <li>使用固定线程池（5个线程）执行通知</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 @Slf4j
 @Component

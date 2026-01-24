@@ -11,8 +11,6 @@ import lombok.Data;
  * <p>
  * 用于接收HTTP层的退款请求参数
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 @Data
 @Schema(description = "退款申请")

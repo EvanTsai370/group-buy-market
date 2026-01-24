@@ -10,8 +10,6 @@ import lombok.NoArgsConstructor;
  *
  * <p>封装锁单前需要校验的参数信息
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Data
 @Builder

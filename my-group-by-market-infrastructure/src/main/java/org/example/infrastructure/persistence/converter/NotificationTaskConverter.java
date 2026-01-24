@@ -10,8 +10,6 @@ import org.mapstruct.Mapping;
 /**
  * 通知任务转换器
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 @Mapper(componentModel = "spring")
 public interface NotificationTaskConverter {

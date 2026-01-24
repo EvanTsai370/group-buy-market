@@ -33,8 +33,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - NumberFormatException 未捕获 → 整个锁单流程崩溃
  * - 业务逻辑：解析失败时应记录日志并返回原价（优雅降级）
  *
- * @author 测试团队
- * @since 2026-01-14
  */
 @Slf4j
 @DisplayName("Test 14: 折扣计算器非法表达式测试（发现解析崩溃 Bug）")

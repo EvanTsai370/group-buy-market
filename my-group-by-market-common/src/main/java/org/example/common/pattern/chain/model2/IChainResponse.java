@@ -37,8 +37,6 @@ package org.example.common.pattern.chain.model2;
  * }
  * }</pre>
  *
- * @author 开发团队
- * @since 2026-01-05
  */
 public interface IChainResponse {
 

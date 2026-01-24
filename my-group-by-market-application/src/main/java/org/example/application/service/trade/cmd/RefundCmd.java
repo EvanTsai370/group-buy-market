@@ -9,8 +9,6 @@ import lombok.Data;
  * <p>
  * 表达"执行退款"的用例输入
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 @Data
 @Builder

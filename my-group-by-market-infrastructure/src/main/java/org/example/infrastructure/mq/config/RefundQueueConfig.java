@@ -22,8 +22,6 @@ import java.util.Map;
  * <li>最大重试次数：3次</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-09
  */
 @Configuration
 public class RefundQueueConfig {

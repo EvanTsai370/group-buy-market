@@ -18,8 +18,6 @@ import java.util.Optional;
  * <li>校验活动是否在有效期内</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Slf4j
 public class ActivityAvailabilityHandler

@@ -30,8 +30,6 @@ import java.util.List;
 /**
  * 商品管理控制器（管理后台）
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Slf4j
 @RestController

@@ -9,8 +9,6 @@ import lombok.Getter;
  * PENDING（待处理） → PROCESSING（处理中） → SUCCESS（成功）
  *                                        → FAILED（失败，重试超过最大次数）
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 @Getter
 public enum NotificationStatus {

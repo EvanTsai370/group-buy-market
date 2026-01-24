@@ -13,8 +13,6 @@ import java.time.LocalDateTime;
 /**
  * 通知任务持久化对象
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 @Data
 @Builder

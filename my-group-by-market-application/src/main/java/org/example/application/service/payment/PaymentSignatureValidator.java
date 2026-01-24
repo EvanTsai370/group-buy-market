@@ -22,8 +22,6 @@ import java.util.TreeMap;
  * <p>
  * 注意：支付宝回调使用SDK内置验签，此类主要用于其他渠道或自定义验签场景。
  *
- * @author 开发团队
- * @since 2026-01-07
  */
 @Slf4j
 @Service

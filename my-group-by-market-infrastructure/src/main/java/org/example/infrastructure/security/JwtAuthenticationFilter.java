@@ -23,8 +23,6 @@ import java.util.List;
  * 拦截请求，从请求头中提取 JWT 令牌并验证
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Slf4j
 @Component

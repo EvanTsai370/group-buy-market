@@ -21,8 +21,6 @@ import org.example.domain.model.activity.repository.ActivityRepository;
  * <li>价格试算 - 返回是否可参与标志，供前端展示</li>
  * </ul>
  * 
- * @author 开发团队
- * @since 2026-01-14
  */
 @Slf4j
 public class FlowControlService {

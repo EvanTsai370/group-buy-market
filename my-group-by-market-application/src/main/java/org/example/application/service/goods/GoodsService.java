@@ -21,8 +21,6 @@ import java.util.List;
 /**
  * 商品管理服务（管理后台使用）
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Slf4j
 @Service

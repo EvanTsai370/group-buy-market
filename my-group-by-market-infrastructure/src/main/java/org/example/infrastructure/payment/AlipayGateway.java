@@ -25,8 +25,6 @@ import java.util.Map;
  * 仅支持余额支付，不支持银行卡、花呗等
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Slf4j
 @Service

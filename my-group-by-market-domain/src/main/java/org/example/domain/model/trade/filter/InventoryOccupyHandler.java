@@ -44,8 +44,6 @@ import org.example.domain.model.goods.repository.SkuRepository;
  * 4. InventoryOccupyHandler - 商品库存预占（本处理器）
  * </pre>
  *
- * @author 开发团队
- * @since 2026-01-11
  */
 @Slf4j
 public class InventoryOccupyHandler

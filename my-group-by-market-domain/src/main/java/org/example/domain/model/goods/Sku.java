@@ -16,8 +16,6 @@ import java.time.LocalDateTime;
  * 每个 SKU 有独立的库存和价格
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Slf4j
 @Data

@@ -37,8 +37,6 @@ import java.util.Optional;
  *   <li>拼团失败后，Order 的 lockCount 应归零（所有名额已释放）</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 @Slf4j
 public class TeamRefundStrategy implements RefundStrategy {

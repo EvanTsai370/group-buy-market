@@ -18,8 +18,6 @@ import lombok.Getter;
  * TIMEOUT / REFUND（超时/退单）
  * </pre>
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Getter
 public enum TradeStatus {

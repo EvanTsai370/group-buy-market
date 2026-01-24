@@ -7,8 +7,6 @@ import java.math.BigDecimal;
 /**
  * 商品列表项结果
  * 
- * @author 开发团队
- * @since 2026-01-11
  */
 @Data
 public class GoodsListResult {

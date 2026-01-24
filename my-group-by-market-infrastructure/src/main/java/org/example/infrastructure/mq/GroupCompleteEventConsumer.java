@@ -17,8 +17,6 @@ import org.springframework.stereotype.Component;
  * 2. 发送通知
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Slf4j
 @Component

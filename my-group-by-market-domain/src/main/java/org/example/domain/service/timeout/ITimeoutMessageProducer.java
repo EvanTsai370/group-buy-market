@@ -16,8 +16,6 @@ import org.example.domain.model.trade.message.TradeOrderTimeoutMessage;
  * <li>默认超时时间30分钟（独立于Activity.validTime）</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 public interface ITimeoutMessageProducer {
 

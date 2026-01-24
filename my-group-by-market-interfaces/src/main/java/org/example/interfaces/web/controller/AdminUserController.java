@@ -16,8 +16,6 @@ import org.springframework.web.bind.annotation.*;
 /**
  * 管理员用户控制器
  * 
- * @author 开发团队
- * @since 2026-01-12
  */
 @Slf4j
 @RestController

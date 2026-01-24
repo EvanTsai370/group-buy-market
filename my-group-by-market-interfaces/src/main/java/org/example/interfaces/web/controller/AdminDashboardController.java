@@ -19,8 +19,6 @@ import java.util.List;
 /**
  * 管理后台控制器
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Slf4j
 @RestController

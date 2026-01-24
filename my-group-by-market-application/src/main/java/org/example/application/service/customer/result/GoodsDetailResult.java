@@ -8,8 +8,6 @@ import java.time.LocalDateTime;
 /**
  * 商品详情结果
  * 
- * @author 开发团队
- * @since 2026-01-11
  */
 @Data
 public class GoodsDetailResult {

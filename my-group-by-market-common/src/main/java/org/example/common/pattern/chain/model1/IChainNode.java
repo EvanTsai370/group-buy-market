@@ -14,8 +14,6 @@ package org.example.common.pattern.chain.model1;
  * @param <CONTEXT> 动态上下文类型（用于在节点间传递数据）
  * @param <RESPONSE> 响应结果类型
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 public interface IChainNode<REQUEST, CONTEXT, RESPONSE> {
 

@@ -14,8 +14,6 @@ import org.springframework.stereotype.Component;
  * <p>
  * 职责：发送退款消息到RabbitMQ队列
  *
- * @author 开发团队
- * @since 2026-01-09
  */
 @Slf4j
 @Component

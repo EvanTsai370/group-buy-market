@@ -9,8 +9,6 @@ import org.springframework.stereotype.Component;
 /**
  * 拼团成功事件生产者
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Slf4j
 @Component

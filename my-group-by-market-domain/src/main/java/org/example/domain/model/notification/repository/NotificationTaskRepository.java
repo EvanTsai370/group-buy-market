@@ -15,8 +15,6 @@ import java.util.Optional;
  *   <li>更新任务状态</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 public interface NotificationTaskRepository {
 

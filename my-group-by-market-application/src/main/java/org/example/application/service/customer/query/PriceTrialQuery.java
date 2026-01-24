@@ -5,8 +5,6 @@ import lombok.Data;
 /**
  * 价格试算查询对象
  * 
- * @author 开发团队
- * @since 2026-01-11
  */
 @Data
 public class PriceTrialQuery {

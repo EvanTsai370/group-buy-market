@@ -80,8 +80,6 @@ import org.example.domain.model.trade.repository.TradeOrderRepository;
  *   结果：成功（使用了退款释放的名额）
  * </pre>
  *
- * @author 开发团队
- * @since 2026-01-05
  */
 @Slf4j
 public class TeamSlotOccupyHandler

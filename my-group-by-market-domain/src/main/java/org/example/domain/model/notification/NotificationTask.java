@@ -18,8 +18,6 @@ import java.time.LocalDateTime;
  *   <li>控制状态转换（PENDING → PROCESSING → SUCCESS/FAILED）</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 @Getter
 @Builder

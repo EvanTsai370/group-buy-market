@@ -40,8 +40,6 @@ import java.util.List;
  * @param <CONTEXT> 动态上下文类型
  * @param <RESPONSE> 响应结果类型（必须实现 {@link IChainResponse} 接口）
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Slf4j
 public class ChainExecutor<REQUEST, CONTEXT, RESPONSE extends IChainResponse> {

@@ -10,8 +10,6 @@ import java.util.Optional;
  * 遵循依赖倒置原则，隔离框架依赖
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-12
  */
 public interface AuthContextService {
 

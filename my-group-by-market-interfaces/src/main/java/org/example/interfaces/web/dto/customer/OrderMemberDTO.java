@@ -11,8 +11,6 @@ import java.time.LocalDateTime;
  * 表示拼团订单中的单个成员信息
  * 注意：本系统采用SPU拼团模式，不同SKU的用户可以在同一队伍中一起拼团
  *
- * @author 开发团队
- * @since 2026-01-13
  */
 @Data
 @Schema(description = "拼团成员信息")

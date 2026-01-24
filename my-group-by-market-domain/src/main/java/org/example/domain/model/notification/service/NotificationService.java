@@ -18,8 +18,6 @@ import org.example.domain.model.notification.NotificationTask;
  *   <li>Infrastructure层提供实现（使用HTTP、MQ等技术）</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 public interface NotificationService {
 

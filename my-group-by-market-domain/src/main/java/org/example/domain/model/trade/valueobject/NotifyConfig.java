@@ -10,8 +10,6 @@ import lombok.NoArgsConstructor;
  *
  * <p>封装回调通知的配置信息，支持HTTP和MQ两种通知方式
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Data
 @Builder

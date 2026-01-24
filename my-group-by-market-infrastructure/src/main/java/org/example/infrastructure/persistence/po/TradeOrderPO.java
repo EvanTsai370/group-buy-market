@@ -17,8 +17,6 @@ import java.time.LocalDateTime;
  * <p>
  * 对应数据库表：trade_order
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Data
 @Builder

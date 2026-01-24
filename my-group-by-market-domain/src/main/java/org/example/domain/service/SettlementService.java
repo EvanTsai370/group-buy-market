@@ -38,8 +38,6 @@ import java.util.concurrent.TimeUnit;
  * <li>拼团成功流程：批量将该Order下所有PAID状态的TradeOrder标记为SETTLED</li>
  * </ol>
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Slf4j
 public class SettlementService {

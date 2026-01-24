@@ -21,8 +21,6 @@ import java.util.List;
  * <li>不处理 Query → Domain 转换（Query 用于查询参数，不创建 Domain）</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Mapper(componentModel = "spring")
 public interface TradeOrderResultAssembler {

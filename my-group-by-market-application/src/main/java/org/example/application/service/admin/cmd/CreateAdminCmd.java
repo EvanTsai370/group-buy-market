@@ -5,8 +5,6 @@ import lombok.Data;
 /**
  * 创建管理员命令
  * 
- * @author 开发团队
- * @since 2026-01-12
  */
 @Data
 public class CreateAdminCmd {

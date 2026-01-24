@@ -40,8 +40,6 @@ import java.util.Map;
  * <li>Application层：通过依赖注入使用领域服务</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Configuration
 public class DomainServiceConfiguration {

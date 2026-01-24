@@ -12,8 +12,6 @@ import org.example.domain.model.notification.NotificationTask;
  * <li>MQ - 消息队列通知</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 public interface CallbackNotificationStrategy {
 

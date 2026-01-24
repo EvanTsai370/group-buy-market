@@ -21,8 +21,6 @@ import java.util.List;
  * 
  * 提供给前端用户的商品相关接口
  * 
- * @author 开发团队
- * @since 2026-01-11
  */
 @Slf4j
 @RestController

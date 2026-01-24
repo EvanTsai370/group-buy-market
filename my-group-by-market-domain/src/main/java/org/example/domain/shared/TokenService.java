@@ -7,8 +7,6 @@ package org.example.domain.shared;
  * 用于生成和验证 JWT 令牌，定义在 Domain 层以满足依赖倒置原则
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 public interface TokenService {
 

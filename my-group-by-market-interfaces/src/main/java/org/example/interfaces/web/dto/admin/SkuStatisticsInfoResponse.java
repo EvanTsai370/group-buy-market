@@ -14,8 +14,6 @@ import java.math.BigDecimal;
  * <p>
  * Interfaces 层协议出参
  *
- * @author 开发团队
- * @since 2026-01-10
  */
 @Data
 @Builder

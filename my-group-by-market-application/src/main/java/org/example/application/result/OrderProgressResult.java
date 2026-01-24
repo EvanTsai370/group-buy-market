@@ -14,8 +14,6 @@ import java.util.List;
  * - 进度信息(目标人数、完成人数、锁定人数、剩余时间)
  * - 成员列表(所有参与用户的详情)
  *
- * @author 开发团队
- * @since 2026-01-13
  */
 @Data
 public class OrderProgressResult {

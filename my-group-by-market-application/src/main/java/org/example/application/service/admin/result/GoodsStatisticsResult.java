@@ -14,8 +14,6 @@ import java.util.List;
  * <p>
  * Application 层用例输出对象
  *
- * @author 开发团队
- * @since 2026-01-10
  */
 @Data
 @Builder

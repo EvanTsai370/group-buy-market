@@ -11,8 +11,6 @@ import org.springframework.context.annotation.Configuration;
  * <p>
  * 用于异步发送退款通知（短信/邮件/推送）
  *
- * @author 开发团队
- * @since 2026-01-09
  */
 @Configuration
 public class NotificationQueueConfig {

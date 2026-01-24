@@ -14,8 +14,6 @@ import org.springframework.stereotype.Component;
  * <p>
  * TODO: 集成第三方短信服务商（如阿里云、腾讯云）
  *
- * @author 开发团队
- * @since 2026-01-09
  */
 @Slf4j
 @Component

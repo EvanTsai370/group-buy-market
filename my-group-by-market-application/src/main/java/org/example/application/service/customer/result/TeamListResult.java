@@ -8,8 +8,6 @@ import lombok.Data;
  * 用于展示SPU维度的拼团队伍信息。
  * 注意：本系统采用SPU拼团模式，不同规格(SKU)的用户可以在同一队伍中一起拼团。
  *
- * @author 开发团队
- * @since 2026-01-11
  */
 @Data
 public class TeamListResult {

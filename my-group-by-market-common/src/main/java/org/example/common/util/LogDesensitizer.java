@@ -17,8 +17,6 @@ import java.math.BigDecimal;
  * <li>其他敏感业务数据</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-07
  */
 public class LogDesensitizer {
 

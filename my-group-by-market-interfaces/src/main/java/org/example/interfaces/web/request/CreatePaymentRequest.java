@@ -13,8 +13,6 @@ import lombok.NoArgsConstructor;
  * <p>
  * Interfaces 层协议入参
  *
- * @author 开发团队
- * @since 2026-01-10
  */
 @Data
 @Builder

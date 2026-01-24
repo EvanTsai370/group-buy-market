@@ -13,8 +13,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * 提供高并发压力测试的工具方法，支持 100-500 线程同时执行。
  *
- * @author 测试团队
- * @since 2026-01-13
  */
 @Slf4j
 public class ConcurrentTestSupport {

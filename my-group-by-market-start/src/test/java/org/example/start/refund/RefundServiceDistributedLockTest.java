@@ -59,8 +59,6 @@ import static org.mockito.Mockito.doAnswer;
  * <li>PaidRefundStrategy 执行时间未考虑锁超时</li>
  * </ul>
  *
- * @author 测试团队
- * @since 2026-01-16
  */
 @Slf4j
 public class RefundServiceDistributedLockTest extends IntegrationTestBase {

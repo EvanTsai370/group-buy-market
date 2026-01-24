@@ -5,8 +5,6 @@ package org.example.domain.model.trade.valueobject;
  *
  * <p>支持多种通知方式，灵活适配不同的业务场景
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 public enum NotifyType {
 

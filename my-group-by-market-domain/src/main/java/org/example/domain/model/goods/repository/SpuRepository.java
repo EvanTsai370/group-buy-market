@@ -10,8 +10,6 @@ import java.util.Optional;
 /**
  * SPU 仓储接口
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 public interface SpuRepository {
 

@@ -26,8 +26,6 @@ import org.example.domain.service.validation.CrowdTagValidationService;
  * <li>Context 中必须已加载 Activity 信息（由 ActivityAvailabilityHandler 提供）</li>
  * </ul>
  * 
- * @author 开发团队
- * @since 2026-01-14
  */
 @Slf4j
 public class CrowdTagValidationHandler

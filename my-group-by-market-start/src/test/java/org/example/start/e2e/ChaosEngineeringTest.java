@@ -52,8 +52,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <li>验证资源无泄漏，即使在事务回滚发生时。</li>
  * </ol>
  *
- * @author 开发团队
- * @since 2026-01-18
  */
 @Slf4j
 @Import(ChaosEngineeringTest.ChaosConfig.class)

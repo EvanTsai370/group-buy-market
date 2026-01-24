@@ -16,8 +16,6 @@ import java.util.concurrent.TimeUnit;
  * <li>便于单元测试（可以mock此接口）</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 public interface IDistributedLockService {
 

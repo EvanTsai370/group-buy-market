@@ -19,8 +19,6 @@ import org.example.domain.service.ResourceReleaseService;
  * <li>无需调用支付网关退款（用户未支付）</li>
  * </ol>
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 @Slf4j
 public class UnpaidRefundStrategy implements RefundStrategy {

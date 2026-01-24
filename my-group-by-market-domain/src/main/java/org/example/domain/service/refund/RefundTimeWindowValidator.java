@@ -25,8 +25,6 @@ import java.time.LocalDateTime;
  * <li>TIMEOUT/REFUND状态：已经是终态，不允许退款</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 @Slf4j
 public class RefundTimeWindowValidator {

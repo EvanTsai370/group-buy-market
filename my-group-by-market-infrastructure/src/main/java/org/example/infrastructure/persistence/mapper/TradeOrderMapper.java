@@ -18,8 +18,6 @@ import java.util.List;
  * <li>便于添加详细的业务注释和性能说明</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Mapper
 public interface TradeOrderMapper extends BaseMapper<TradeOrderPO> {

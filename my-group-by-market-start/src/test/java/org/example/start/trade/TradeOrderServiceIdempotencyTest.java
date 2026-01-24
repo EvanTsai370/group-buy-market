@@ -35,8 +35,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - 数据库缺少 out_trade_no UNIQUE 约束 → 创建多条重复记录
  * - 幂等性检查有竞态 → 部分请求失败而非返回已有订单
  *
- * @author 测试团队
- * @since 2026-01-13
  */
 @Slf4j
 @DisplayName("Test 1: TradeOrderService 幂等性测试（500 线程并发）")

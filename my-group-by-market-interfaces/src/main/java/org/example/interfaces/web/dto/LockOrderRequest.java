@@ -25,8 +25,6 @@ import java.math.BigDecimal;
  * <li>userId 字段已移除，从认证上下文 SecurityContextUtils 获取</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 @Data
 @Builder

@@ -28,8 +28,6 @@ import java.util.stream.Collectors;
  * <li>封装MyBatis-Plus的数据访问逻辑</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Slf4j
 @Repository

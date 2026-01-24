@@ -19,8 +19,6 @@ import org.springframework.stereotype.Component;
  * <li>消息到期后由消费者处理超时退单</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 @Slf4j
 @Component

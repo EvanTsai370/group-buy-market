@@ -25,8 +25,6 @@ import java.util.List;
  * - 用户资料
  * - 用户订单列表
  * 
- * @author 开发团队
- * @since 2026-01-11
  */
 @Slf4j
 @Service

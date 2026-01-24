@@ -21,8 +21,6 @@ import org.springframework.stereotype.Component;
  * <li>失败时进入死信队列重试（最多3次）</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-09
  */
 @Slf4j
 @Component

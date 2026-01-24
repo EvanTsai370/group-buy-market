@@ -52,8 +52,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <li>catch 块只捕获 BizException，OptimisticLockException 未捕获</li>
  * </ul>
  *
- * @author 测试团队
- * @since 2026-01-15
  */
 @Slf4j
 @DisplayName("Test 2: Account 乐观锁冲突下的资源回滚测试")

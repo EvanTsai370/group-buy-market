@@ -10,8 +10,6 @@ import java.util.List;
  * C端商品 Assembler（MapStruct）
  * 负责 Application Result → Interfaces Response 转换
  * 
- * @author 开发团队
- * @since 2026-01-11
  */
 @Mapper(componentModel = "spring")
 public interface CustomerGoodsAssembler {

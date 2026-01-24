@@ -20,8 +20,6 @@ import org.example.domain.service.validation.FlowControlService;
  * <p>
  * 设计理念：早失败原则 - 在最前面拦截不符合条件的请求，避免浪费系统资源
  * 
- * @author 开发团队
- * @since 2026-01-14
  */
 @Slf4j
 public class FlowControlHandler implements IChainHandler<TradeFilterRequest, TradeFilterContext, TradeFilterResponse> {

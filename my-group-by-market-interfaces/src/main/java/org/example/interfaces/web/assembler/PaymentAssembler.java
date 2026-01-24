@@ -10,8 +10,6 @@ import org.mapstruct.Mapper;
  * <p>
  * 职责：Result → Response 转换
  *
- * @author 开发团队
- * @since 2026-01-10
  */
 @Mapper(componentModel = "spring")
 public interface PaymentAssembler {

@@ -21,8 +21,6 @@ import java.util.List;
  * 
  * 提供给前端用户的个人中心接口
  * 
- * @author 开发团队
- * @since 2026-01-11
  */
 @Slf4j
 @RestController

@@ -8,8 +8,6 @@ import org.springframework.context.annotation.Configuration;
 /**
  * 拼团成功事件 RabbitMQ 配置
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Configuration
 public class GroupCompleteRabbitMQConfig {

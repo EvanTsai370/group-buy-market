@@ -34,8 +34,6 @@ import java.util.Set;
  * <li>一个Order可能有多个TradeOrder（多个用户参与同一拼团）</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Slf4j
 @Data

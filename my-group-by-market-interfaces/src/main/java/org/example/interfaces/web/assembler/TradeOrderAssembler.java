@@ -25,8 +25,6 @@ import org.mapstruct.Mapping;
  * <li>确保层次边界清晰，避免协议层污染业务层</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 @Mapper(componentModel = "spring")
 public interface TradeOrderAssembler {

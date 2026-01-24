@@ -17,8 +17,6 @@ import java.util.Map;
  * <p>
  * 使用插件：rabbitmq_delayed_message_exchange
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 @Configuration
 public class RabbitMQDelayConfig {

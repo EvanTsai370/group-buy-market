@@ -30,8 +30,6 @@ package org.example.common.pattern.chain.model1;
  * @param <CONTEXT> 动态上下文类型
  * @param <RESPONSE> 响应结果类型
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 public abstract class AbstractChainNode<REQUEST, CONTEXT, RESPONSE>
         implements IChainNode<REQUEST, CONTEXT, RESPONSE> {

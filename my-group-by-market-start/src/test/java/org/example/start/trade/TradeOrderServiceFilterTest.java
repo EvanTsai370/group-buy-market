@@ -50,8 +50,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * <li>Filter reject响应未被正确处理 → 继续执行锁单逻辑</li>
  * </ul>
  *
- * @author 测试团队
- * @since 2026-01-15
  */
 @Slf4j
 @DisplayName("Test 4: Filter链部分失败的回滚测试")

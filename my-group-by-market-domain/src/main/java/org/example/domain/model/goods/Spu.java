@@ -17,8 +17,6 @@ import java.util.List;
  * 一个 SPU 可以有多个 SKU（不同规格，如颜色、尺寸）
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Slf4j
 @Data

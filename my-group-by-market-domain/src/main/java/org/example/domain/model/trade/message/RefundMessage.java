@@ -20,8 +20,6 @@ import java.io.Serializable;
  * <li>超过重试次数后人工介入</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-09
  */
 @Data
 @NoArgsConstructor

@@ -33,8 +33,6 @@ import java.util.Optional;
  * <li>已支付/已退单的订单会被忽略</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 @Slf4j
 @Component

@@ -12,8 +12,6 @@ import java.util.List;
  *
  * 用于展示拼团订单的实时进度信息
  *
- * @author 开发团队
- * @since 2026-01-13
  */
 @Data
 @Schema(description = "拼团进度响应")

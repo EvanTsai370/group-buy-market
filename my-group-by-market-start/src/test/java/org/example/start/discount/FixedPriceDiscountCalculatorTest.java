@@ -30,8 +30,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - 无价格上限校验 → 固定价可能高于原价，多收用户钱
  * - 业务逻辑：固定价超过原价时，应返回原价（优雅降级）
  *
- * @author 测试团队
- * @since 2026-01-14
  */
 @Slf4j
 @DisplayName("Test 13: 固定价格折扣验证测试（发现价格上限 Bug）")

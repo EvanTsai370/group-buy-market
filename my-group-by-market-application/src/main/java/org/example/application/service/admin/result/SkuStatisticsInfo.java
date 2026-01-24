@@ -14,8 +14,6 @@ import java.math.BigDecimal;
  * <p>
  * 用于替代直接返回 Domain 对象 Sku
  *
- * @author 开发团队
- * @since 2026-01-10
  */
 @Data
 @Builder

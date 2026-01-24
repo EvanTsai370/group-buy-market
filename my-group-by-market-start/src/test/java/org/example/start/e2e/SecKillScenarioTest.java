@@ -56,8 +56,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <li>Account乐观锁冲突未处理 → 参团次数不一致</li>
  * </ul>
  *
- * @author 测试团队
- * @since 2026-01-17
  */
 @Slf4j
 @DisplayName("E2E Test 1: 秒杀场景 - 500用户抢5人团")

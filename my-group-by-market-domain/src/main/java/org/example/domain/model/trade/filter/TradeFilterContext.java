@@ -12,8 +12,6 @@ import org.example.domain.model.activity.Activity;
  * <p>
  * 封装过滤链执行过程中需要的共享数据
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Data
 @Builder

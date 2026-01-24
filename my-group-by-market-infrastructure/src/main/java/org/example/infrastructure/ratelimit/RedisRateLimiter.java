@@ -22,8 +22,6 @@ import java.util.concurrent.TimeUnit;
  * <li>如果计数超过阈值，拒绝请求</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 @Slf4j
 @Component

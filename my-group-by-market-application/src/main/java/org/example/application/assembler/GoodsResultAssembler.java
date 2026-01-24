@@ -15,8 +15,6 @@ import java.util.List;
  * <p>
  * 职责：领域模型 → 视图模型转换
  *
- * @author 开发团队
- * @since 2026-01-10
  */
 @Mapper(componentModel = "spring")
 public interface GoodsResultAssembler {

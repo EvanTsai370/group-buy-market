@@ -9,8 +9,6 @@ import org.springframework.context.annotation.FilterType;
  * <p>
  * 排除测试环境不需要的配置类，避免启动失败
  *
- * @author 测试团队
- * @since 2026-01-13
  */
 @TestConfiguration
 @ComponentScan(

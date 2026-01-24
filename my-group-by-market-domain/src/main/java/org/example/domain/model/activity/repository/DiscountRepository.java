@@ -9,8 +9,6 @@ import java.util.Optional;
 /**
  * Discount 仓储接口
  *
- * @author 开发团队
- * @since 2026-01-21
  */
 public interface DiscountRepository {
 

@@ -14,8 +14,6 @@ package org.example.common.ratelimit;
  * <li>查询接口：防止爬虫和恶意查询</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 public interface RateLimiter {
 

@@ -13,8 +13,6 @@ import org.mapstruct.Mapper;
  * 协议模型 → 用例模型转换
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-12
  */
 @Mapper(componentModel = "spring")
 public interface AdminUserAssembler {

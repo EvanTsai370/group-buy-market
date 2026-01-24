@@ -10,8 +10,6 @@ import java.util.List;
 /**
  * 通知任务Mapper
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 @Mapper
 public interface NotificationTaskMapper extends BaseMapper<NotificationTaskPO> {

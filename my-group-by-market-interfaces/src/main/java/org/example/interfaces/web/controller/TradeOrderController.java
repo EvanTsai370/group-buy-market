@@ -28,8 +28,6 @@ import org.springframework.web.bind.annotation.*;
 /**
  * 交易订单控制器
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Slf4j
 @RestController

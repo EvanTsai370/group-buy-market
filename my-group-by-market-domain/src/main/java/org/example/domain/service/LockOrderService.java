@@ -32,8 +32,6 @@ import java.util.Optional;
  * <li>如果任何步骤失败，抛出异常（由调用方处理事务回滚）</li>
  * </ol>
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Slf4j
 public class LockOrderService {

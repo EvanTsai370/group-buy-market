@@ -19,8 +19,6 @@ import java.util.Map;
  * 负责 JWT Token 的生成、解析和验证
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Slf4j
 @Service

@@ -24,8 +24,6 @@ import java.util.Optional;
  * <li>Repository负责PO和Domain对象的转换</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 public interface TradeOrderRepository {
 

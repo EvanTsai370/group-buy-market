@@ -7,8 +7,6 @@ import java.math.BigDecimal;
 /**
  * SPU列表项结果
  *
- * @author 开发团队
- * @since 2026-01-12
  */
 @Data
 public class SpuListResult {

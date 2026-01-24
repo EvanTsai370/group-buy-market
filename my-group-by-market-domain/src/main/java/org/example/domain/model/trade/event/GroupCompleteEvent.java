@@ -20,8 +20,6 @@ import java.util.List;
  * 3. 营销活动结算
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Data
 @NoArgsConstructor

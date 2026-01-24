@@ -17,8 +17,6 @@ import org.example.common.pattern.chain.model2.IChainResponse;
  *   <li>替代原有的 null 判断逻辑，提升代码可读性和类型安全</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 @Data
 @Builder

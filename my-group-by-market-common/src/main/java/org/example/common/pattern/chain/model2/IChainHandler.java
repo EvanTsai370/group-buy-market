@@ -39,8 +39,6 @@ package org.example.common.pattern.chain.model2;
  * @param <CONTEXT> 动态上下文类型（用于在处理器间传递数据）
  * @param <RESPONSE> 响应结果类型（必须实现 {@link IChainResponse} 接口）
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 public interface IChainHandler<REQUEST, CONTEXT, RESPONSE extends IChainResponse> {
 

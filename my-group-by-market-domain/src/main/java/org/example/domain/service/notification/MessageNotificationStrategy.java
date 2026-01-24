@@ -16,8 +16,6 @@ import org.example.domain.model.trade.message.RefundNotificationMessage;
  * <li>PushNotificationStrategy - 推送通知</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-09
  */
 public interface MessageNotificationStrategy {
 

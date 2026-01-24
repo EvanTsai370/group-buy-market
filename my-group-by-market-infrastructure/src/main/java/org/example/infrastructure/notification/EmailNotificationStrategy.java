@@ -14,8 +14,6 @@ import org.springframework.stereotype.Component;
  * <p>
  * TODO: 集成Spring Mail或第三方邮件服务
  *
- * @author 开发团队
- * @since 2026-01-09
  */
 @Slf4j
 @Component

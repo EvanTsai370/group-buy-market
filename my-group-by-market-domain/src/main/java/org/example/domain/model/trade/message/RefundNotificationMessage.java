@@ -20,8 +20,6 @@ import java.io.Serializable;
  * <li>推送（Push）</li>
  * </ul>
  *
- * @author 开发团队
- * @since 2026-01-09
  */
 @Data
 @NoArgsConstructor

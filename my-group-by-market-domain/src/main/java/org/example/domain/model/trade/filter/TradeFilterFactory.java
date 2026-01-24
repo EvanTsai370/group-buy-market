@@ -27,8 +27,6 @@ import org.example.domain.model.trade.repository.TradeOrderRepository;
  * <li>InventoryOccupyHandler - 商品库存预占校验（防止库存超卖）</li>
  * </ol>
  *
- * @author 开发团队
- * @since 2026-01-04
  */
 public class TradeFilterFactory {
 

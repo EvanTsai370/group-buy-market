@@ -8,8 +8,6 @@ import lombok.Data;
  *
  * 注意：本系统采用SPU拼团模式，不同规格(SKU)的用户可以在同一队伍中一起拼团
  *
- * @author 开发团队
- * @since 2026-01-11
  */
 @Data
 @Schema(description = "拼团队伍信息")

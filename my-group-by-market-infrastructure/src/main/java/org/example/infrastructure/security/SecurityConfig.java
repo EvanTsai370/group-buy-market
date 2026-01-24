@@ -26,8 +26,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * <li>管理接口：需要ADMIN角色</li>
  * </ul>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Configuration
 @EnableWebSecurity

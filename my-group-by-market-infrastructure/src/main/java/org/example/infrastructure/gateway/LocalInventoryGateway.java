@@ -17,8 +17,6 @@ import java.util.Optional;
  * 生产环境可替换为外部库存服务实现
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 @Slf4j
 @Component

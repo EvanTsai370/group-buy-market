@@ -15,8 +15,6 @@ import java.lang.annotation.*;
  * }
  * </pre>
  *
- * @author 开发团队
- * @since 2026-01-08
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

@@ -20,8 +20,6 @@ import java.util.Map;
  * <p>
  * 通过HTTP POST方式回调业务方接口
  *
- * @author 开发团队
- * @since 2026-01-06
  */
 @Slf4j
 @Component

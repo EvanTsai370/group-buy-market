@@ -63,7 +63,6 @@ import static org.mockito.Mockito.*;
  * <li>异常被吞没，不重试</li>
  * </ul>
  *
- * @author Claude Code
  * @date 2026-01-16
  */
 @Slf4j

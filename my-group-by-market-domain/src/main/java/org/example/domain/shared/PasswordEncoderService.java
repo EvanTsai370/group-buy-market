@@ -7,8 +7,6 @@ package org.example.domain.shared;
  * 用于密码加密和验证，定义在 Domain 层以满足依赖倒置原则
  * </p>
  * 
- * @author 开发团队
- * @since 2026-01-10
  */
 public interface PasswordEncoderService {
 

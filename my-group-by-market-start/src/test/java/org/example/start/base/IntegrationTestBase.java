@@ -18,8 +18,6 @@ import org.springframework.test.context.TestPropertySource;
  * - Bean 注册在 infrastructure 层的 DomainServiceConfiguration
  * - 因此测试必须在 start 层，使用 Application.class 作为入口
  *
- * @author 测试团队
- * @since 2026-01-13
  */
 @SpringBootTest(classes = Application.class)  // 关键改动：指定启动类
 @TestPropertySource(locations = "classpath:application-test.yml")

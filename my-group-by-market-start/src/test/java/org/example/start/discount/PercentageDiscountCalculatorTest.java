@@ -29,8 +29,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - setScale(0, DOWN) 导致精度丢失 → 每笔损失 0.01~0.99 元
  * - 最小值保护逻辑有 off-by-one 错误
  *
- * @author 测试团队
- * @since 2026-01-13
  */
 @Slf4j
 @DisplayName("Test 3: 百分比折扣精度测试（发现价格精度 Bug）")

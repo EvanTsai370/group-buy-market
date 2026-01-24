@@ -11,8 +11,6 @@ import org.mapstruct.Mapper;
  * <p>
  * 职责：Gateway record → Application Result 转换
  *
- * @author 开发团队
- * @since 2026-01-10
  */
 @Mapper(componentModel = "spring")
 public interface PaymentResultAssembler {

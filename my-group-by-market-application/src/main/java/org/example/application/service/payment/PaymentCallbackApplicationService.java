@@ -33,8 +33,6 @@ import java.time.LocalDateTime;
  * <li>Controller和Test都通过此服务调用</li>
  * </ul>
  *
- * @author Antigravity
- * @since 2026-01-16
  */
 @Slf4j
 @Service
