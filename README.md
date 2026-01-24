@@ -716,19 +716,6 @@ V{版本号}__{描述}.sql
 
 ---
 
-## 📞 联系方式
-
-- 项目地址：[GitHub](https://github.com/yourusername/my-group-by-market)
-- 问题反馈：[Issues](https://github.com/yourusername/my-group-by-market/issues)
-
----
-
-## 🙏 致谢
-
-感谢所有贡献者和开源社区的支持！
-
----
-
 <div align="center">
 
 **如果这个项目对你有帮助，请给个 ⭐️ Star 支持一下！**
