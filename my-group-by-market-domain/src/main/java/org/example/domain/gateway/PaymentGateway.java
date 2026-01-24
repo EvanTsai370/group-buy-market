@@ -1,6 +1,7 @@
 package org.example.domain.gateway;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 /**
  * 支付网关接口
@@ -61,7 +62,7 @@ public interface PaymentGateway {
     /**
      * 验证回调签名
      */
-    boolean verifyCallback(java.util.Map<String, String> params);
+    boolean verifyCallback(Map<String, String> params);
 
     /**
      * 获取商户 AppId（用于回调校验）

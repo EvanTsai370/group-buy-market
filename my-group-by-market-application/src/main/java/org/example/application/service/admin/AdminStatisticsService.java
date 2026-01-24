@@ -14,7 +14,9 @@ import org.example.domain.model.goods.repository.SpuRepository;
 import org.example.domain.model.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +45,8 @@ public class AdminStatisticsService {
                 log.info("【AdminStatistics】获取仪表盘概览");
 
                 LocalDateTime now = LocalDateTime.now();
-                LocalDateTime todayStart = LocalDateTime.of(now.toLocalDate(), java.time.LocalTime.MIN);
-                LocalDateTime todayEnd = LocalDateTime.of(now.toLocalDate(), java.time.LocalTime.MAX);
+                LocalDateTime todayStart = LocalDateTime.of(now.toLocalDate(), LocalTime.MIN);
+                LocalDateTime todayEnd = LocalDateTime.of(now.toLocalDate(), LocalTime.MAX);
 
                 // 用户统计
                 long totalUsers = userRepository.count();
@@ -62,9 +64,9 @@ public class AdminStatisticsService {
 
                 // 统计今日数据
                 long todayOrders = tradeOrderRepository.countByCreateTimeBetween(todayStart, todayEnd);
-                java.math.BigDecimal todayGMV = tradeOrderRepository.sumPayPriceByPayTimeBetween(todayStart, todayEnd);
+                BigDecimal todayGMV = tradeOrderRepository.sumPayPriceByPayTimeBetween(todayStart, todayEnd);
                 if (todayGMV == null) {
-                        todayGMV = java.math.BigDecimal.ZERO;
+                        todayGMV = BigDecimal.ZERO;
                 }
                 long todayUsers = userRepository.countByCreateTimeBetween(todayStart, todayEnd);
                 long activeActivities = activityRepository.countActive(now);

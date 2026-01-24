@@ -29,6 +29,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -240,7 +241,7 @@ public class RefundServiceResourceReleaseTest extends IntegrationTestBase {
 
                 // ========== 2. Mock SkuRepository.unfreezeStock() 第一次抛异常，之后调用真实方法 ==========
                 // 使用 AtomicInteger 计数调用次数
-                final java.util.concurrent.atomic.AtomicInteger callCount = new java.util.concurrent.atomic.AtomicInteger(
+                final AtomicInteger callCount = new AtomicInteger(
                                 0);
 
                 doAnswer(invocation -> {
@@ -321,22 +322,22 @@ public class RefundServiceResourceReleaseTest extends IntegrationTestBase {
                 TradeOrder tradeOrderFinal = tradeOrderRepository.findByTradeOrderId(tradeOrderId).orElseThrow();
                 log.info("【最终状态】TradeOrder.status = {}", tradeOrderFinal.getStatus());
 
-                //  验证1：库存最终释放成功（允许已经释放为0）
+                // 验证1：库存最终释放成功（允许已经释放为0）
                 assertThat(finalFrozenStock)
                                 .as("【最终一致性】库存最终应该释放，frozenStock应该≤初始值")
                                 .isLessThanOrEqualTo(initialFrozenStock);
 
-                //  验证2：槽位没有重复释放（幂等性）
+                // 验证2：槽位没有重复释放（幂等性）
                 assertThat(finalSlotValue)
                                 .as("【幂等性】槽位不会重复释放，仍为第一次释放后的值")
                                 .isEqualTo(afterFirstAttempt);
 
-                //  验证3：参团次数已释放
+                // 验证3：参团次数已释放
                 assertThat(finalParticipationCount)
                                 .as("【最终一致性】参团次数应该已释放 (Usage Count Should Decrease)")
                                 .isLessThan(initialParticipationCount);
 
-                //  验证4：释放标记（至少槽位已释放）
+                // 验证4：释放标记（至少槽位已释放）
                 assertThat(tradeOrderFinal.isSlotReleased())
                                 .as("【幂等性】槽位释放标记应为true")
                                 .isTrue();

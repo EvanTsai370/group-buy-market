@@ -1,7 +1,10 @@
 package org.example.domain.model.trade.repository;
 
+import org.example.common.model.PageResult;
 import org.example.domain.model.trade.TradeOrder;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -208,7 +211,7 @@ public interface TradeOrderRepository {
      * @param end   结束时间
      * @return 总金额
      */
-    java.math.BigDecimal sumPayPriceByPayTimeBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
+    BigDecimal sumPayPriceByPayTimeBetween(LocalDateTime start, LocalDateTime end);
 
     /**
      * 统计指定时间范围内创建的订单数量
@@ -217,7 +220,7 @@ public interface TradeOrderRepository {
      * @param end   结束时间
      * @return 订单数量
      */
-    long countByCreateTimeBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
+    long countByCreateTimeBetween(LocalDateTime start, LocalDateTime end);
 
     /**
      * 查询最新的交易订单
@@ -238,6 +241,6 @@ public interface TradeOrderRepository {
      * @param endDate   结束时间
      * @return 分页结果
      */
-    org.example.common.model.PageResult<TradeOrder> findByPage(int page, int size, String keyword, String status,
-            java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
+    PageResult<TradeOrder> findByPage(int page, int size, String keyword, String status,
+            LocalDateTime startDate, LocalDateTime endDate);
 }

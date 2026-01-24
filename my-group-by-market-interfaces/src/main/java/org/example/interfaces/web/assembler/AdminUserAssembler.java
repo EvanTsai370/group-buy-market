@@ -6,6 +6,8 @@ import org.example.interfaces.web.dto.admin.CreateAdminRequest;
 import org.example.interfaces.web.dto.admin.UserDetailResponse;
 import org.mapstruct.Mapper;
 
+import java.util.List;
+
 /**
  * 管理员用户 Assembler
  * 
@@ -30,5 +32,5 @@ public interface AdminUserAssembler {
     /**
      * 结果列表 → 响应列表
      */
-    java.util.List<UserDetailResponse> toResponseList(java.util.List<UserDetailResult> resultList);
+    List<UserDetailResponse> toResponseList(List<UserDetailResult> resultList);
 }

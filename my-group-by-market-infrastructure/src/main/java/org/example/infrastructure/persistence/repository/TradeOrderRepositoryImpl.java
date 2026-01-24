@@ -1,8 +1,12 @@
 package org.example.infrastructure.persistence.repository;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.example.common.cache.RedisKeyManager;
+import org.example.common.model.PageResult;
 import org.example.domain.model.trade.TradeOrder;
 import org.example.domain.model.trade.repository.TradeOrderRepository;
 import org.example.infrastructure.cache.IRedisService;
@@ -11,6 +15,8 @@ import org.example.infrastructure.persistence.mapper.TradeOrderMapper;
 import org.example.infrastructure.persistence.po.TradeOrderPO;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -224,9 +230,9 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
     }
 
     @Override
-    public java.math.BigDecimal sumPayPriceByPayTimeBetween(java.time.LocalDateTime start,
-            java.time.LocalDateTime end) {
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TradeOrderPO> wrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+    public BigDecimal sumPayPriceByPayTimeBetween(LocalDateTime start,
+            LocalDateTime end) {
+        LambdaQueryWrapper<TradeOrderPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.select(TradeOrderPO::getPayPrice);
         wrapper.ge(TradeOrderPO::getPayTime, start);
         wrapper.le(TradeOrderPO::getPayTime, end);
@@ -235,12 +241,12 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
         List<TradeOrderPO> list = tradeOrderMapper.selectList(wrapper);
         return list.stream()
                 .map(TradeOrderPO::getPayPrice)
-                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     @Override
-    public long countByCreateTimeBetween(java.time.LocalDateTime start, java.time.LocalDateTime end) {
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TradeOrderPO> wrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+    public long countByCreateTimeBetween(LocalDateTime start, LocalDateTime end) {
+        LambdaQueryWrapper<TradeOrderPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.ge(TradeOrderPO::getCreateTime, start);
         wrapper.le(TradeOrderPO::getCreateTime, end);
         return tradeOrderMapper.selectCount(wrapper);
@@ -248,7 +254,7 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
 
     @Override
     public List<TradeOrder> findLatest(int limit) {
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TradeOrderPO> wrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+        LambdaQueryWrapper<TradeOrderPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByDesc(TradeOrderPO::getCreateTime);
         wrapper.last("LIMIT " + limit);
 
@@ -259,11 +265,11 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
     }
 
     @Override
-    public org.example.common.model.PageResult<TradeOrder> findByPage(int page, int size, String keyword, String status,
-            java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<TradeOrderPO> pageParam = new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(
+    public PageResult<TradeOrder> findByPage(int page, int size, String keyword, String status,
+            LocalDateTime startDate, LocalDateTime endDate) {
+        Page<TradeOrderPO> pageParam = new Page<>(
                 page, size);
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TradeOrderPO> wrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+        LambdaQueryWrapper<TradeOrderPO> wrapper = new LambdaQueryWrapper<>();
 
         // Keyword search (Order ID or User ID)
         if (StringUtils.isNotBlank(keyword)) {
@@ -286,13 +292,13 @@ public class TradeOrderRepositoryImpl implements TradeOrderRepository {
 
         wrapper.orderByDesc(TradeOrderPO::getCreateTime);
 
-        com.baomidou.mybatisplus.core.metadata.IPage<TradeOrderPO> resultPage = tradeOrderMapper.selectPage(pageParam,
+        IPage<TradeOrderPO> resultPage = tradeOrderMapper.selectPage(pageParam,
                 wrapper);
 
         List<TradeOrder> list = resultPage.getRecords().stream()
                 .map(tradeOrderConverter::toDomain)
                 .collect(Collectors.toList());
 
-        return new org.example.common.model.PageResult<>(list, resultPage.getTotal(), page, size);
+        return new PageResult<>(list, resultPage.getTotal(), page, size);
     }
 }

@@ -10,6 +10,7 @@ import org.redisson.client.codec.StringCodec;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -57,7 +58,7 @@ public class RedisService implements IRedisService {
     @Override
     public void expire(String key, long timeout, TimeUnit unit) {
         RBitSet bitSet = redissonClient.getBitSet(key);
-        bitSet.expire(java.time.Duration.of(timeout, toChronoUnit(unit)));
+        bitSet.expire(Duration.of(timeout, toChronoUnit(unit)));
     }
 
     @Override
@@ -104,7 +105,7 @@ public class RedisService implements IRedisService {
     @Override
     public void setLong(String key, Long value, long timeout, TimeUnit unit) {
         redissonClient.getAtomicLong(key).set(value);
-        redissonClient.getAtomicLong(key).expire(java.time.Duration.of(timeout, toChronoUnit(unit)));
+        redissonClient.getAtomicLong(key).expire(Duration.of(timeout, toChronoUnit(unit)));
     }
 
     @Override
@@ -135,15 +136,15 @@ public class RedisService implements IRedisService {
     /**
      * 将 TimeUnit 转换为 ChronoUnit
      */
-    private java.time.temporal.ChronoUnit toChronoUnit(TimeUnit unit) {
+    private ChronoUnit toChronoUnit(TimeUnit unit) {
         return switch (unit) {
-            case NANOSECONDS -> java.time.temporal.ChronoUnit.NANOS;
-            case MICROSECONDS -> java.time.temporal.ChronoUnit.MICROS;
-            case MILLISECONDS -> java.time.temporal.ChronoUnit.MILLIS;
-            case SECONDS -> java.time.temporal.ChronoUnit.SECONDS;
-            case MINUTES -> java.time.temporal.ChronoUnit.MINUTES;
-            case HOURS -> java.time.temporal.ChronoUnit.HOURS;
-            case DAYS -> java.time.temporal.ChronoUnit.DAYS;
+            case NANOSECONDS -> ChronoUnit.NANOS;
+            case MICROSECONDS -> ChronoUnit.MICROS;
+            case MILLISECONDS -> ChronoUnit.MILLIS;
+            case SECONDS -> ChronoUnit.SECONDS;
+            case MINUTES -> ChronoUnit.MINUTES;
+            case HOURS -> ChronoUnit.HOURS;
+            case DAYS -> ChronoUnit.DAYS;
         };
     }
 }

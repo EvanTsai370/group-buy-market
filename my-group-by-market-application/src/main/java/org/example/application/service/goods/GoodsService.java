@@ -13,10 +13,13 @@ import org.example.domain.model.goods.Spu;
 import org.example.domain.model.goods.repository.SkuRepository;
 import org.example.domain.model.goods.repository.SpuRepository;
 import org.example.domain.shared.IdGenerator;
+import org.example.domain.shared.IdGenerator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 商品管理服务（管理后台使用）
@@ -224,7 +227,7 @@ public class GoodsService {
                     if (skuList != null && !skuList.isEmpty()) {
                         result.setMinPrice(skuList.stream()
                                 .map(Sku::getOriginalPrice)
-                                .min(java.math.BigDecimal::compareTo)
+                                .min(BigDecimal::compareTo)
                                 .orElse(null));
                         result.setSkuCount(skuList.size());
                     } else {
@@ -234,7 +237,7 @@ public class GoodsService {
 
                     return result;
                 })
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
 
         return PageResult.of(list, pageResult.getTotal(), pageResult.getPage(), pageResult.getSize());
     }

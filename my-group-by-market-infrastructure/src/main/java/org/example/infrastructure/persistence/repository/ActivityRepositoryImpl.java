@@ -21,6 +21,7 @@ import org.example.infrastructure.persistence.po.DiscountPO;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -244,8 +245,8 @@ public class ActivityRepositoryImpl implements ActivityRepository {
             LambdaQueryWrapper<ActivityPO> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(ActivityPO::getActivityId, activityId)
                     .eq(ActivityPO::getStatus, "ACTIVE")
-                    .le(ActivityPO::getStartTime, java.time.LocalDateTime.now())
-                    .ge(ActivityPO::getEndTime, java.time.LocalDateTime.now());
+                    .le(ActivityPO::getStartTime, LocalDateTime.now())
+                    .ge(ActivityPO::getEndTime, LocalDateTime.now());
 
             ActivityPO po = activityMapper.selectOne(wrapper);
             if (po != null) {
@@ -261,7 +262,7 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     }
 
     @Override
-    public long countActive(java.time.LocalDateTime now) {
+    public long countActive(LocalDateTime now) {
         LambdaQueryWrapper<ActivityPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ActivityPO::getStatus, "ACTIVE");
         wrapper.le(ActivityPO::getStartTime, now);

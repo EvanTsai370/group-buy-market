@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 拼团成功事件
@@ -81,7 +82,7 @@ public class GroupCompleteEvent implements Serializable {
      */
     public static GroupCompleteEvent create(String activityId, String teamId, String leaderUserId) {
         GroupCompleteEvent event = new GroupCompleteEvent();
-        event.setEventId(java.util.UUID.randomUUID().toString());
+        event.setEventId(UUID.randomUUID().toString());
         event.setActivityId(activityId);
         event.setTeamId(teamId);
         event.setLeaderUserId(leaderUserId);

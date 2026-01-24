@@ -17,6 +17,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.time.LocalDateTime;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -293,7 +294,7 @@ public class SecKillScenarioTest extends IntegrationTestBase {
                 // 验证：Redis槽位消耗 + 数据库记录 = targetCount
                 // 如果initialSlot为null，说明是首次初始化，逻辑初始值为targetSlots
                 Long initialSlotValue = initialSlot != null ? initialSlot : (long) targetSlots;
-                Long finalSlotValue = java.util.Objects.requireNonNull(finalSlot, "最终Redis槽位不应为null");
+                Long finalSlotValue = Objects.requireNonNull(finalSlot, "最终Redis槽位不应为null");
 
                 long redisConsumed = initialSlotValue - finalSlotValue;
                 assertThat(redisConsumed)

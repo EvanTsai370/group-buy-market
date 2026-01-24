@@ -5,6 +5,7 @@ import org.example.domain.model.activity.Activity;
 import org.example.domain.model.activity.ActivityGoods;
 import org.example.domain.model.activity.Discount;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -150,5 +151,5 @@ public interface ActivityRepository {
      * @param now 当前时间
      * @return 活跃活动数量
      */
-    long countActive(java.time.LocalDateTime now);
+    long countActive(LocalDateTime now);
 }

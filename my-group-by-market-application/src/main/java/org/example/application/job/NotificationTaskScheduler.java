@@ -13,22 +13,25 @@ import jakarta.annotation.PreDestroy;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 通知任务调度器
  *
- * <p>职责：
+ * <p>
+ * 职责：
  * <ul>
- *   <li>定时扫描待处理的通知任务</li>
- *   <li>异步执行通知（使用线程池）</li>
- *   <li>处理失败重试逻辑</li>
+ * <li>定时扫描待处理的通知任务</li>
+ * <li>异步执行通知（使用线程池）</li>
+ * <li>处理失败重试逻辑</li>
  * </ul>
  *
- * <p>调度策略：
+ * <p>
+ * 调度策略：
  * <ul>
- *   <li>每30秒执行一次</li>
- *   <li>每次最多处理100个任务</li>
- *   <li>使用固定线程池（5个线程）执行通知</li>
+ * <li>每30秒执行一次</li>
+ * <li>每次最多处理100个任务</li>
+ * <li>使用固定线程池（5个线程）执行通知</li>
  * </ul>
  *
  */
@@ -55,8 +58,10 @@ public class NotificationTaskScheduler {
     /**
      * 定时扫描并执行待处理的通知任务
      *
-     * <p>执行周期：每30秒一次
-     * <p>批量大小：每次最多100个任务
+     * <p>
+     * 执行周期：每30秒一次
+     * <p>
+     * 批量大小：每次最多100个任务
      */
     @Scheduled(fixedRate = 30000, initialDelay = 10000)
     public void schedulePendingTasks() {
@@ -96,7 +101,7 @@ public class NotificationTaskScheduler {
         log.info("【通知调度器】开始关闭线程池");
         executorService.shutdown();
         try {
-            if (!executorService.awaitTermination(60, java.util.concurrent.TimeUnit.SECONDS)) {
+            if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
                 executorService.shutdownNow();
             }
         } catch (InterruptedException e) {

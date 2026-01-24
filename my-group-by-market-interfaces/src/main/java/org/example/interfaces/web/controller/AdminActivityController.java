@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 活动管理控制器
@@ -214,7 +215,7 @@ public class AdminActivityController {
         // 转换为简化的选项对象
         List<SpuOption> options = spuList.stream()
                 .map(spu -> new SpuOption(spu.getSpuId(), spu.getSpuName()))
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
 
         return Result.success(options);
     }

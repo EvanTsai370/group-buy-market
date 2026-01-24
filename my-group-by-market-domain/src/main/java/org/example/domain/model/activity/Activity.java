@@ -8,6 +8,7 @@ import org.example.domain.model.activity.valueobject.GroupType;
 import org.example.domain.model.activity.valueobject.TagScope;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Activity 聚合根（拼团活动）
@@ -226,12 +227,12 @@ public class Activity {
         if (now.isBefore(this.startTime)) {
             throw new BizException(
                     org.example.common.exception.ErrorCode.ACTIVITY_NOT_STARTED,
-                    this.startTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    this.startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         }
         if (now.isAfter(this.endTime)) {
             throw new BizException(
                     org.example.common.exception.ErrorCode.ACTIVITY_EXPIRED,
-                    this.endTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    this.endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         }
 
         log.debug("【Activity聚合】活动可用性校验通过, activityId: {}", this.activityId);

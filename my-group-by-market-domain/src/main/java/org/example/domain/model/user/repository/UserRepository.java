@@ -2,6 +2,7 @@ package org.example.domain.model.user.repository;
 
 import org.example.domain.model.user.User;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -73,7 +74,7 @@ public interface UserRepository {
      * @param end   结束时间
      * @return 用户数量
      */
-    long countByCreateTimeBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
+    long countByCreateTimeBetween(LocalDateTime start, LocalDateTime end);
 
     /**
      * 分页查询用户

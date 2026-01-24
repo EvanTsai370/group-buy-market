@@ -6,7 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 仪表盘概览响应
@@ -44,7 +46,7 @@ public class DashboardOverviewResponse {
     private long todayOrders;
 
     @Schema(description = "今日GMV")
-    private java.math.BigDecimal todayGMV;
+    private BigDecimal todayGMV;
 
     @Schema(description = "今日新增用户")
     private long todayUsers;
@@ -53,7 +55,7 @@ public class DashboardOverviewResponse {
     private long activeActivities;
 
     @Schema(description = "最近订单")
-    private java.util.List<AdminTradeOrderResponse> recentOrders;
+    private List<AdminTradeOrderResponse> recentOrders;
 
     @Schema(description = "更新时间")
     private LocalDateTime updateTime;

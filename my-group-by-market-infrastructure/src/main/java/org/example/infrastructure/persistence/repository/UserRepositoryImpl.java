@@ -1,6 +1,9 @@
 package org.example.infrastructure.persistence.repository;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
+import org.example.common.model.PageResult;
 import org.example.domain.model.user.User;
 import org.example.domain.model.user.repository.UserRepository;
 import org.example.infrastructure.persistence.converter.UserConverter;
@@ -8,6 +11,7 @@ import org.example.infrastructure.persistence.mapper.UserMapper;
 import org.example.infrastructure.persistence.po.UserPO;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -81,28 +85,28 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public List<User> findAll(int page, int size) {
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<UserPO> pageResult = userMapper
-                .selectPage(new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(page, size), null);
+        Page<UserPO> pageResult = userMapper
+                .selectPage(new Page<>(page, size), null);
         return pageResult.getRecords().stream()
                 .map(userConverter::toDomain)
                 .toList();
     }
 
     @Override
-    public long countByCreateTimeBetween(java.time.LocalDateTime start, java.time.LocalDateTime end) {
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<UserPO> wrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+    public long countByCreateTimeBetween(LocalDateTime start, LocalDateTime end) {
+        LambdaQueryWrapper<UserPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.ge(UserPO::getCreateTime, start);
         wrapper.le(UserPO::getCreateTime, end);
         return userMapper.selectCount(wrapper);
     }
 
     @Override
-    public org.example.common.model.PageResult<User> findByPage(int page, int size) {
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<UserPO> pageResult = userMapper
-                .selectPage(new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(page, size), null);
+    public PageResult<User> findByPage(int page, int size) {
+        Page<UserPO> pageResult = userMapper
+                .selectPage(new Page<>(page, size), null);
         List<User> list = pageResult.getRecords().stream()
                 .map(userConverter::toDomain)
                 .toList();
-        return new org.example.common.model.PageResult<>(list, pageResult.getTotal(), page, size);
+        return new PageResult<>(list, pageResult.getTotal(), page, size);
     }
 }
