@@ -321,22 +321,22 @@ public class RefundServiceResourceReleaseTest extends IntegrationTestBase {
                 TradeOrder tradeOrderFinal = tradeOrderRepository.findByTradeOrderId(tradeOrderId).orElseThrow();
                 log.info("【最终状态】TradeOrder.status = {}", tradeOrderFinal.getStatus());
 
-                // ✅ 验证1：库存最终释放成功（允许已经释放为0）
+                //  验证1：库存最终释放成功（允许已经释放为0）
                 assertThat(finalFrozenStock)
                                 .as("【最终一致性】库存最终应该释放，frozenStock应该≤初始值")
                                 .isLessThanOrEqualTo(initialFrozenStock);
 
-                // ✅ 验证2：槽位没有重复释放（幂等性）
+                //  验证2：槽位没有重复释放（幂等性）
                 assertThat(finalSlotValue)
                                 .as("【幂等性】槽位不会重复释放，仍为第一次释放后的值")
                                 .isEqualTo(afterFirstAttempt);
 
-                // ✅ 验证3：参团次数已释放
+                //  验证3：参团次数已释放
                 assertThat(finalParticipationCount)
                                 .as("【最终一致性】参团次数应该已释放 (Usage Count Should Decrease)")
                                 .isLessThan(initialParticipationCount);
 
-                // ✅ 验证4：释放标记（至少槽位已释放）
+                //  验证4：释放标记（至少槽位已释放）
                 assertThat(tradeOrderFinal.isSlotReleased())
                                 .as("【幂等性】槽位释放标记应为true")
                                 .isTrue();
@@ -360,19 +360,19 @@ public class RefundServiceResourceReleaseTest extends IntegrationTestBase {
                 log.info("  - 参团次数：{}", initialParticipationCount);
                 log.info("");
                 log.info("第一次执行后（中间状态）：");
-                log.info("  - Redis 槽位：{} ✅ 已释放", afterFirstAttempt);
+                log.info("  - Redis 槽位：{}  已释放", afterFirstAttempt);
                 log.info("  - 冻结库存：{} ❌ 未释放", frozenStockAfterFirstAttempt);
                 log.info("");
                 log.info("MQ重试后（最终状态）：");
-                log.info("  - Redis 槽位：{} ✅ 未重复释放（幂等性）", finalSlotValue);
-                log.info("  - 冻结库存：{} ✅ 已释放", finalFrozenStock);
-                log.info("  - 参团次数：{} ✅ 已释放", finalParticipationCount);
+                log.info("  - Redis 槽位：{}  未重复释放（幂等性）", finalSlotValue);
+                log.info("  - 冻结库存：{}  已释放", finalFrozenStock);
+                log.info("  - 参团次数：{}  已释放", finalParticipationCount);
                 log.info("  - TradeOrder.status：{}", tradeOrderFinal.getStatus());
                 log.info("");
                 log.info("【结论】方案1（幂等化 + MQ重试）成功实现最终一致性");
-                log.info("  ✅ 所有资源最终都已释放");
-                log.info("  ✅ 幂等性保证不会重复释放");
-                log.info("  ✅ MQ重试机制确保最终一致性");
+                log.info("   所有资源最终都已释放");
+                log.info("   幂等性保证不会重复释放");
+                log.info("   MQ重试机制确保最终一致性");
                 log.info("========================================");
         }
 

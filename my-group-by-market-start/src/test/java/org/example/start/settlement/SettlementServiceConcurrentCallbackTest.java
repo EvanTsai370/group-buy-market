@@ -107,11 +107,11 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
      * <p>
      * 关键验证点：
      * <ul>
-     * <li>✅ Order.completeCount = 5</li>
-     * <li>✅ Order.status = SUCCESS</li>
-     * <li>✅ 4 个 TradeOrder 是 SETTLED 状态（团员2,3,4 + 竞争成功的一个）</li>
-     * <li>✅ 3 个 PAID（团员2,3,4），1个竞争成功的变SETTLED，1个竞争失败的保持CREATE</li>
-     * <li>✅ 只有一个线程成功，另一个线程因 SQL WHERE 条件不满足而失败</li>
+     * <li> Order.completeCount = 5</li>
+     * <li> Order.status = SUCCESS</li>
+     * <li> 4 个 TradeOrder 是 SETTLED 状态（团员2,3,4 + 竞争成功的一个）</li>
+     * <li> 3 个 PAID（团员2,3,4），1个竞争成功的变SETTLED，1个竞争失败的保持CREATE</li>
+     * <li> 只有一个线程成功，另一个线程因 SQL WHERE 条件不满足而失败</li>
      * </ul>
      */
     @Test
@@ -211,7 +211,7 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
                 String outTradeNo5 = "OUT_TEST5_5";
                 paymentCallbackApplicationService.handlePaymentSuccess(outTradeNo5, BigDecimal.valueOf(79.99));
                 successCount.incrementAndGet();
-                log.info("【线程-团员5】支付回调处理完成 ✅");
+                log.info("【线程-团员5】支付回调处理完成 ");
             } catch (Exception e) {
                 failureCount.incrementAndGet();
                 log.info("【线程-团员5】支付回调失败（预期行为，SQL WHERE 条件不满足）: {}", e.getMessage());
@@ -228,7 +228,7 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
                 String outTradeNo6 = "OUT_TEST5_6";
                 paymentCallbackApplicationService.handlePaymentSuccess(outTradeNo6, BigDecimal.valueOf(79.99));
                 successCount.incrementAndGet();
-                log.info("【线程-团员6】支付回调处理完成 ✅");
+                log.info("【线程-团员6】支付回调处理完成 ");
             } catch (Exception e) {
                 failureCount.incrementAndGet();
                 log.info("【线程-团员6】支付回调失败（预期行为，SQL WHERE 条件不满足）: {}", e.getMessage());
@@ -290,11 +290,11 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
         assertThat(failureCount.get()).isEqualTo(1); // 另一个线程失败
 
         log.info("========== 【Test 5-1】测试完成 ==========");
-        log.info("【测试结论】✅ 修复后：竞争失败的线程不会污染 TradeOrder 状态");
-        log.info("【测试结论】✅ 数据一致性：Order.completeCount({}) == PAID的TradeOrder数量({})",
+        log.info("【测试结论】 修复后：竞争失败的线程不会污染 TradeOrder 状态");
+        log.info("【测试结论】 数据一致性：Order.completeCount({}) == PAID的TradeOrder数量({})",
                 orderAfter.getCompleteCount(), paidCount);
-        log.info("【测试结论】✅ 只有一个线程能成功增加 completeCount");
-        log.info("【测试结论】✅ 并发场景下数据最终一致");
+        log.info("【测试结论】 只有一个线程能成功增加 completeCount");
+        log.info("【测试结论】 并发场景下数据最终一致");
     }
 
     /**
@@ -312,9 +312,9 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
      * <p>
      * 关键验证点：
      * <ul>
-     * <li>✅ Order.completeCount 只增加 1 次</li>
-     * <li>✅ TradeOrder 状态不变（仍然是 PAID）</li>
-     * <li>✅ Order 状态不变（仍然是 PENDING）</li>
+     * <li> Order.completeCount 只增加 1 次</li>
+     * <li> TradeOrder 状态不变（仍然是 PAID）</li>
+     * <li> Order 状态不变（仍然是 PENDING）</li>
      * </ul>
      */
     @Test
@@ -406,7 +406,7 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
         assertThat(orderAfterSecond.getStatus()).isEqualTo(OrderStatus.PENDING); // 仍然未成团
         assertThat(tradeOrder1AfterSecond.getStatus()).isEqualTo(TradeStatus.PAID); // 状态不变
 
-        log.info("========== 【Test 5-2】测试完成：幂等性验证通过 ✅ ==========");
+        log.info("========== 【Test 5-2】测试完成：幂等性验证通过  ==========");
     }
 
     /**
@@ -425,9 +425,9 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
      * <p>
      * 关键验证点：
      * <ul>
-     * <li>✅ 第二次调用应该静默返回（因为 TradeOrder.status=SETTLED）</li>
-     * <li>✅ Order 和 TradeOrder 状态不变</li>
-     * <li>✅ 验证幂等性检查正确处理 SETTLED 状态</li>
+     * <li> 第二次调用应该静默返回（因为 TradeOrder.status=SETTLED）</li>
+     * <li> Order 和 TradeOrder 状态不变</li>
+     * <li> 验证幂等性检查正确处理 SETTLED 状态</li>
      * </ul>
      */
     @Test
@@ -535,7 +535,7 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
             assertThat(to.getStatus()).isEqualTo(TradeStatus.SETTLED);
         });
 
-        log.info("========== 【Test 5-3】测试完成：成团后幂等性验证通过 ✅ ==========");
+        log.info("========== 【Test 5-3】测试完成：成团后幂等性验证通过  ==========");
     }
 
     /**
@@ -554,10 +554,10 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
      * <p>
      * 关键验证点：
      * <ul>
-     * <li>✅ Order.completeCount = 11</li>
-     * <li>✅ Order.status = SUCCESS</li>
-     * <li>✅ 只有5个线程成功，其他5个失败</li>
-     * <li>✅ 11个TradeOrder都是SETTLED状态</li>
+     * <li> Order.completeCount = 11</li>
+     * <li> Order.status = SUCCESS</li>
+     * <li> 只有5个线程成功，其他5个失败</li>
+     * <li> 11个TradeOrder都是SETTLED状态</li>
      * </ul>
      */
     @Test
@@ -650,7 +650,7 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
                     String outTradeNo = "OUT_TEST54_" + userId;
                     paymentCallbackApplicationService.handlePaymentSuccess(outTradeNo, BigDecimal.valueOf(79.99));
                     successCount.incrementAndGet();
-                    log.info("【线程-用户{}】支付回调处理完成 ✅", userId);
+                    log.info("【线程-用户{}】支付回调处理完成 ", userId);
                 } catch (Exception e) {
                     failureCount.incrementAndGet();
                     log.info("【线程-用户{}】支付回调失败（预期行为，SQL WHERE 条件不满足）: {}", userId, e.getMessage());
@@ -712,10 +712,10 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
         assertThat(failureCount.get()).isEqualTo(5); // 另外5个线程失败
 
         log.info("========== 【Test 5-4】测试完成 ==========");
-        log.info("【测试结论】✅ SQL 原子更新在极端高并发（10线程）下防止了超卖");
-        log.info("【测试结论】✅ 只有5个线程能成功增加 completeCount");
-        log.info("【测试结论】✅ 事件驱动settlement成功处理所有并发支付");
-        log.info("【测试结论】✅ 并发场景下数据最终一致");
+        log.info("【测试结论】 SQL 原子更新在极端高并发（10线程）下防止了超卖");
+        log.info("【测试结论】 只有5个线程能成功增加 completeCount");
+        log.info("【测试结论】 事件驱动settlement成功处理所有并发支付");
+        log.info("【测试结论】 并发场景下数据最终一致");
     }
 
     /**
@@ -732,10 +732,10 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
      * <p>
      * 关键验证点：
      * <ul>
-     * <li>✅ 抛出BizException("支付金额异常，请联系客服")</li>
-     * <li>✅ TradeOrder状态保持CREATE</li>
-     * <li>✅ Order.completeCount不增加</li>
-     * <li>✅ 日志记录安全告警</li>
+     * <li> 抛出BizException("支付金额异常，请联系客服")</li>
+     * <li> TradeOrder状态保持CREATE</li>
+     * <li> Order.completeCount不增加</li>
+     * <li> 日志记录安全告警</li>
      * </ul>
      */
     @Test
@@ -803,7 +803,7 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
                 .isInstanceOf(BizException.class)
                 .hasMessageContaining("支付金额异常");
 
-        log.info("【金额校验测试】✅ 系统正确拒绝了错误金额的支付回调");
+        log.info("【金额校验测试】 系统正确拒绝了错误金额的支付回调");
 
         // ========== 3. 验证结果 ==========
 
@@ -821,10 +821,10 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
         log.info("【验证结果】Order.status={}", orderAfter.getStatus());
         assertThat(orderAfter.getStatus()).isEqualTo(OrderStatus.PENDING);
 
-        log.info("========== 【Test 5-5】测试完成：金额校验验证通过 ✅ ==========");
-        log.info("【测试结论】✅ 金额校验正确阻断了错误金额的支付");
-        log.info("【测试结论】✅ TradeOrder 和 Order 状态未被错误修改");
-        log.info("【测试结论】✅ 系统具备防篡改能力");
+        log.info("========== 【Test 5-5】测试完成：金额校验验证通过  ==========");
+        log.info("【测试结论】 金额校验正确阻断了错误金额的支付");
+        log.info("【测试结论】 TradeOrder 和 Order 状态未被错误修改");
+        log.info("【测试结论】 系统具备防篡改能力");
     }
 
     /**
@@ -843,10 +843,10 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
      * <p>
      * 关键验证点：
      * <ul>
-     * <li>✅ 只有一个操作成功（支付 OR 超时）</li>
-     * <li>✅ 如果支付成功：TradeOrder.status=PAID/SETTLED，Order.completeCount=2</li>
-     * <li>✅ 如果超时成功：TradeOrder.status=TIMEOUT，Order.completeCount=1</li>
-     * <li>✅ 不会出现中间状态（如支付成功但被退款）</li>
+     * <li> 只有一个操作成功（支付 OR 超时）</li>
+     * <li> 如果支付成功：TradeOrder.status=PAID/SETTLED，Order.completeCount=2</li>
+     * <li> 如果超时成功：TradeOrder.status=TIMEOUT，Order.completeCount=1</li>
+     * <li> 不会出现中间状态（如支付成功但被退款）</li>
      * </ul>
      *
      * <p>
@@ -948,7 +948,7 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
                 synchronized (successOperations) {
                     successOperations.add("PAYMENT");
                 }
-                log.info("【线程-支付】支付回调处理完成 ✅");
+                log.info("【线程-支付】支付回调处理完成 ");
             } catch (Exception e) {
                 failureCount.incrementAndGet();
                 synchronized (failureOperations) {
@@ -970,7 +970,7 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
                 synchronized (successOperations) {
                     successOperations.add("TIMEOUT");
                 }
-                log.info("【线程-超时】超时处理完成 ✅");
+                log.info("【线程-超时】超时处理完成 ");
             } catch (Exception e) {
                 failureCount.incrementAndGet();
                 synchronized (failureOperations) {
@@ -1000,7 +1000,7 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
         // 验证 1：互斥性（只有一个操作成功）
         assertThat(successCount.get()).isEqualTo(1);
         assertThat(failureCount.get()).isEqualTo(1);
-        log.info("【验证结果】✅ 互斥性验证通过：只有一个操作成功");
+        log.info("【验证结果】 互斥性验证通过：只有一个操作成功");
 
         // 验证 2：状态一致性
         TradeOrder tradeOrderAfter = tradeOrderRepository.findByTradeOrderId(tradeOrderId).orElseThrow();
@@ -1021,7 +1021,7 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
             assertThat(orderAfter.getCompleteCount())
                     .as("支付成功后，Order.completeCount应该增加到2（1团长+1支付）")
                     .isEqualTo(2);
-            log.info("【验证结果】✅ 支付成功场景验证通过：TradeOrder={}, Order.completeCount={}",
+            log.info("【验证结果】 支付成功场景验证通过：TradeOrder={}, Order.completeCount={}",
                     tradeOrderAfter.getStatus(), orderAfter.getCompleteCount());
 
         } else if ("TIMEOUT".equals(successOperation)) {
@@ -1033,7 +1033,7 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
             assertThat(orderAfter.getCompleteCount())
                     .as("超时成功后，Order.completeCount应该保持为1（仅团长）")
                     .isEqualTo(1);
-            log.info("【验证结果】✅ 超时成功场景验证通过：TradeOrder={}, Order.completeCount={}",
+            log.info("【验证结果】 超时成功场景验证通过：TradeOrder={}, Order.completeCount={}",
                     tradeOrderAfter.getStatus(), orderAfter.getCompleteCount());
 
         } else {
@@ -1054,10 +1054,10 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
         }
 
         log.info("========== 【Test 5-6】测试完成 ==========");
-        log.info("【测试结论】✅ 支付回调与超时处理具有互斥性");
-        log.info("【测试结论】✅ 不会出现用户付款但订单超时的情况");
-        log.info("【测试结论】✅ 状态一致性验证通过");
-        log.info("【测试结论】✅ Race #9 风险已被正确处理");
+        log.info("【测试结论】 支付回调与超时处理具有互斥性");
+        log.info("【测试结论】 不会出现用户付款但订单超时的情况");
+        log.info("【测试结论】 状态一致性验证通过");
+        log.info("【测试结论】 Race #9 风险已被正确处理");
     }
 
     /**
@@ -1075,10 +1075,10 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
      * <p>
      * 关键验证点：
      * <ul>
-     * <li>✅ 所有 TradeOrder 只被结算一次（PAID → SETTLED）</li>
-     * <li>✅ 通知任务只创建一次</li>
-     * <li>✅ 第二次调用静默返回（canSettle() 返回 false）</li>
-     * <li>✅ 验证方法本身的幂等性，独立于事件驱动架构</li>
+     * <li> 所有 TradeOrder 只被结算一次（PAID → SETTLED）</li>
+     * <li> 通知任务只创建一次</li>
+     * <li> 第二次调用静默返回（canSettle() 返回 false）</li>
+     * <li> 验证方法本身的幂等性，独立于事件驱动架构</li>
      * </ul>
      *
      * <p>
@@ -1230,11 +1230,11 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
         });
 
         log.info("========== 【Test 5-7】测试完成 ==========");
-        log.info("【测试结论】✅ settleCompletedOrder() 方法具有幂等性");
-        log.info("【测试结论】✅ 多次调用不会重复结算TradeOrder");
-        log.info("【测试结论】✅ 多次调用不会重复创建通知任务");
-        log.info("【测试结论】✅ canSettle() 方法正确拦截已结算的订单");
-        log.info("【测试结论】✅ 方法可以安全地被外部系统（定时任务、手动触发）多次调用");
+        log.info("【测试结论】 settleCompletedOrder() 方法具有幂等性");
+        log.info("【测试结论】 多次调用不会重复结算TradeOrder");
+        log.info("【测试结论】 多次调用不会重复创建通知任务");
+        log.info("【测试结论】 canSettle() 方法正确拦截已结算的订单");
+        log.info("【测试结论】 方法可以安全地被外部系统（定时任务、手动触发）多次调用");
     }
 
     /**
@@ -1252,10 +1252,10 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
      * <p>
      * 关键验证点：
      * <ul>
-     * <li>✅ 抛出 BizException("拼团订单状态异常或已超时")</li>
-     * <li>✅ TradeOrder 状态保持 CREATE</li>
-     * <li>✅ Order 状态保持 FAILED</li>
-     * <li>✅ Order.completeCount 不增加</li>
+     * <li> 抛出 BizException("拼团订单状态异常或已超时")</li>
+     * <li> TradeOrder 状态保持 CREATE</li>
+     * <li> Order 状态保持 FAILED</li>
+     * <li> Order.completeCount 不增加</li>
      * </ul>
      *
      * <p>
@@ -1345,7 +1345,7 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
                 .isInstanceOf(BizException.class)
                 .hasMessageContaining("拼团订单状态异常或已超时");
 
-        log.info("【状态校验测试】✅ 系统正确拒绝了FAILED状态订单的支付回调");
+        log.info("【状态校验测试】 系统正确拒绝了FAILED状态订单的支付回调");
 
         // ========== 4. 验证结果 ==========
 
@@ -1364,10 +1364,10 @@ public class SettlementServiceConcurrentCallbackTest extends IntegrationTestBase
         assertThat(orderAfter.getCompleteCount()).isEqualTo(1); // 仍然是初始值（团长）
 
         log.info("========== 【Test 5-8】测试完成 ==========");
-        log.info("【测试结论】✅ Order状态校验正确工作");
-        log.info("【测试结论】✅ FAILED状态的订单不能接受支付回调");
-        log.info("【测试结论】✅ SQL WHERE条件（status = 'PENDING'）正确保护了状态机");
-        log.info("【测试结论】✅ TradeOrder 和 Order 状态未被错误修改");
-        log.info("【测试结论】✅ 防止了已失败订单被错误激活");
+        log.info("【测试结论】 Order状态校验正确工作");
+        log.info("【测试结论】 FAILED状态的订单不能接受支付回调");
+        log.info("【测试结论】 SQL WHERE条件（status = 'PENDING'）正确保护了状态机");
+        log.info("【测试结论】 TradeOrder 和 Order 状态未被错误修改");
+        log.info("【测试结论】 防止了已失败订单被错误激活");
     }
 }

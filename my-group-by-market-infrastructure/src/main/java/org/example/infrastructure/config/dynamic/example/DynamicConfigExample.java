@@ -71,7 +71,7 @@ public class DynamicConfigExample {
      * 示例：读取配置的最佳实践
      */
     public void bestPracticeExample() {
-        // ✅ 推荐：从 Environment 读取（实时获取最新值）
+        //  推荐：从 Environment 读取（实时获取最新值）
         boolean switchValue = environment.getProperty("business.switch", Boolean.class, false);
         int timeout = environment.getProperty("business.timeout", Integer.class, 1000);
 

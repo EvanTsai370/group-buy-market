@@ -57,47 +57,47 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
-        <!-- ✅ Lettuce 连接池（可选，推荐） -->
+        <!--  Lettuce 连接池（可选，推荐） -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
         </dependency>
-        <!-- ✅ Jackson for Redis 序列化（可选） -->
+        <!--  Jackson for Redis 序列化（可选） -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
-        <!-- ✅ Redisson 分布式 Redis 客户端 -->
+        <!--  Redisson 分布式 Redis 客户端 -->
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson-spring-boot-starter</artifactId>
         </dependency>
-        <!-- ✅ Apache Commons Codec for HMAC签名验证 -->
+        <!--  Apache Commons Codec for HMAC签名验证 -->
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
         </dependency>
-        <!-- ✅ Spring AOP for rate limiting -->
+        <!--  Spring AOP for rate limiting -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
-        <!-- ✅ RabbitMQ for TradeOrder timeout handling -->
+        <!--  RabbitMQ for TradeOrder timeout handling -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
-        <!-- ✅ Spring Security for JWT authentication -->
+        <!--  Spring Security for JWT authentication -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-        <!-- ✅ Spring Web for filters -->
+        <!--  Spring Web for filters -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-        <!-- ✅ JWT -->
+        <!--  JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -112,7 +112,7 @@
             <artifactId>jjwt-jackson</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!-- ✅ Alipay SDK -->
+        <!--  Alipay SDK -->
         <dependency>
             <groupId>com.alipay.sdk</groupId>
             <artifactId>alipay-sdk-java</artifactId>

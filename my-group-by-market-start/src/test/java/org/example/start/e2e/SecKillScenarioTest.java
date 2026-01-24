@@ -308,10 +308,10 @@ public class SecKillScenarioTest extends IntegrationTestBase {
                 log.info("【资源状态】frozen_stock: {} → {}", initialFrozenStock, finalFrozenStock);
                 log.info("【数据库记录】TradeOrder记录数: {}", dbTradeOrderCount);
                 log.info("【资源回滚】失败用户中participationCount=0的数量: {}", failedUsersWithZeroCount);
-                log.info("【核心不变量】✅ lockCount ≤ targetCount: {} ≤ 5", finalLockCount);
-                log.info("【核心不变量】✅ Redis槽位消耗 = DB记录: {} = {}", redisConsumed, dbTradeOrderCount);
-                log.info("【核心不变量】✅ frozen_stock = 成功订单数: {} = {}", finalFrozenStock, successCount.get());
-                log.info("【测试结论】✅ 秒杀场景测试通过 - 系统在极端并发下正确防止超卖，资源无泄漏");
+                log.info("【核心不变量】 lockCount ≤ targetCount: {} ≤ 5", finalLockCount);
+                log.info("【核心不变量】 Redis槽位消耗 = DB记录: {} = {}", redisConsumed, dbTradeOrderCount);
+                log.info("【核心不变量】 frozen_stock = 成功订单数: {} = {}", finalFrozenStock, successCount.get());
+                log.info("【测试结论】 秒杀场景测试通过 - 系统在极端并发下正确防止超卖，资源无泄漏");
                 log.info("=====================================");
 
                 // ========== 异常分析（可选） ==========

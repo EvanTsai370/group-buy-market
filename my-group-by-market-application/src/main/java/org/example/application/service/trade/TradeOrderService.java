@@ -155,7 +155,7 @@ public class TradeOrderService {
         log.info("【TradeOrderService】开始锁单, userId: {}, activityId: {}, orderId: {}, outTradeNo: {}",
                 cmd.getUserId(), cmd.getActivityId(), cmd.getOrderId(), cmd.getOutTradeNo());
 
-        // ✅ 在外部创建context，避免异常时丢失
+        //  在外部创建context，避免异常时丢失
         TradeFilterContext filterContext = new TradeFilterContext();
 
         try {
@@ -398,7 +398,7 @@ public class TradeOrderService {
             return;
         }
 
-        // ✅ 直接从context获取标志位，避免转换
+        //  直接从context获取标志位，避免转换
         String recoveryTeamSlotKey = filterContext.getRecoveryTeamSlotKey();
         String recoverySkuId = filterContext.getRecoverySkuId();
         Activity activity = filterContext.getActivity();
@@ -406,13 +406,13 @@ public class TradeOrderService {
 
         // 使用 ResourceReleaseService 统一释放资源
         // 锁单失败时 Order.lockCount 还未增加，只需释放槽位和库存
-        // ✅ 直接传递teamSlotKey，而不是orderId
+        //  直接传递teamSlotKey，而不是orderId
         resourceReleaseService.releaseSlotAndInventory(
-                recoveryTeamSlotKey, // ✅ 传递key，不是orderId
+                recoveryTeamSlotKey, //  传递key，不是orderId
                 activityId,
                 recoverySkuId,
                 null, // tradeOrderId 还未生成
-                cmd.getUserId(), // ✅ 传递userId
+                cmd.getUserId(), //  传递userId
                 "锁单失败回滚");
     }
 

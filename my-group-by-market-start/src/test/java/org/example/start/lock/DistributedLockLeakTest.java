@@ -72,7 +72,7 @@ public class DistributedLockLeakTest extends IntegrationTestBase {
         Future<Void> future = executor.submit(() -> {
             boolean locked = lockService.tryLock(LOCK_KEY, 0, 30, TimeUnit.SECONDS);
             assertThat(locked).isTrue();
-            log.info("✅ 线程A获取锁成功");
+            log.info(" 线程A获取锁成功");
 
             lockAcquired.countDown();
 
@@ -101,7 +101,7 @@ public class DistributedLockLeakTest extends IntegrationTestBase {
         // 验证：锁已自动释放
         boolean lockedAfterTTL = lockService.tryLock(LOCK_KEY, 0, 1, TimeUnit.SECONDS);
         assertThat(lockedAfterTTL).isTrue();
-        log.info("✅ 30秒后锁自动释放（TTL机制生效）");
+        log.info(" 30秒后锁自动释放（TTL机制生效）");
 
         // 清理
         lockService.unlock(LOCK_KEY);
@@ -179,7 +179,7 @@ public class DistributedLockLeakTest extends IntegrationTestBase {
 
         boolean canAcquire = lockService.tryLock(LOCK_KEY, 0, 1, TimeUnit.SECONDS);
         assertThat(canAcquire).isTrue();
-        log.info("✅ unlock失败时，锁仍会在TTL后自动释放");
+        log.info(" unlock失败时，锁仍会在TTL后自动释放");
 
         // 清理
         lockService.unlock(LOCK_KEY);
@@ -203,7 +203,7 @@ public class DistributedLockLeakTest extends IntegrationTestBase {
         CountDownLatch lockAcquired = new CountDownLatch(1);
 
         executor.submit(() -> {
-            lockService.tryLock(LOCK_KEY, 0, 10, TimeUnit.SECONDS); // ✅ 改为10秒
+            lockService.tryLock(LOCK_KEY, 0, 10, TimeUnit.SECONDS); //  改为10秒
             lockAcquired.countDown();
             Thread.sleep(500); // 模拟崩溃
             return null;
@@ -218,7 +218,7 @@ public class DistributedLockLeakTest extends IntegrationTestBase {
         // Then: 锁已释放
         boolean canAcquire = lockService.tryLock(LOCK_KEY, 0, 1, TimeUnit.SECONDS);
         assertThat(canAcquire).isTrue();
-        log.info("✅ 推荐方案验证：10秒TTL在崩溃后快速恢复");
+        log.info(" 推荐方案验证：10秒TTL在崩溃后快速恢复");
 
         // 清理
         lockService.unlock(LOCK_KEY);
